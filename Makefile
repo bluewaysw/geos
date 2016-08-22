@@ -66,43 +66,49 @@ ALL_BINS= \
 all: geos.d64 geos.d81
 
 clean:
-	rm -f $(KERNAL_OBJECTS) drv/*.o input/*.o $(ALL_BINS) combined.prg compressed.prg geos.d64 geos.d81 compressed_c65.prg c65boot.o
+	rm -f $(KERNAL_OBJECTS) drv/*.o input/*.o $(ALL_BINS) combined.prg compressed.prg geos.d64 geos.d81 compressed_c65.prg compressed.bin loader/*.o compressed_c65m.prg
 
-geos.d64: compressed.prg compressed_c65.prg
+geos.d64: compressed.prg
 	if [ -e GEOS64.D64 ]; then \
 		cp GEOS64.D64 geos.d64; \
 		echo delete geos geoboot | c1541 geos.d64 >/dev/null; \
 		echo write compressed.prg geos | c1541 geos.d64 >/dev/null; \
-		echo write compressed_c65.prg geos65 | c1541 geos.d64 >/dev/null; \
 		echo \*\*\* Created geos.d64 based on GEOS64.D64.; \
 	else \
 		echo format geos,00 d64 geos.d64 | c1541 >/dev/null; \
 		echo write compressed.prg geos | c1541 geos.d64 >/dev/null; \
-		echo write compressed_c65.prg geos65 | c1541 geos.d64 >/dev/null; \
 		if [ -e desktop.cvt ]; then echo geoswrite desktop.cvt | c1541 geos.d64; fi >/dev/null; \
 		echo \*\*\* Created fresh geos.d64.; \
 	fi;
 
-geos.d81: compressed.prg compressed_c65.prg
+geos.d81: compressed.prg compressed_c65.prg compressed_c65m.prg
 	if [ -e GEOS64.D81 ]; then \
 		cp GEOS64.D81 geos.d81; \
 		echo delete geos geoboot | c1541 geos.d81 >/dev/null; \
 		echo write compressed.prg geos | c1541 geos.d81 >/dev/null; \
 		echo write compressed_c65.prg geos65 | c1541 geos.d81 >/dev/null; \
+		echo write compressed_c65m.prg geos65m | c1541 geos.d81 >/dev/null; \
 		echo \*\*\* Created geos.d81 based on GEOS64.D81.; \
 	else \
 		echo format geos,00 d81 geos.d81 | c1541 >/dev/null; \
 		echo write compressed.prg geos | c1541 geos.d81 >/dev/null; \
 		echo write compressed_c65.prg geos65 | c1541 geos.d81 >/dev/null; \
+		echo write compressed_c65m.prg geos65m | c1541 geos.d81 >/dev/null; \
 		if [ -e desktop.cvt ]; then echo geoswrite desktop.cvt | c1541 geos.d81; fi >/dev/null; \
 		echo \*\*\* Created fresh geos.d81.; \
 	fi;
 
-compressed_c65.prg: compressed.prg c65boot.o
-	$(LD) -t none c65boot.o -o $@
+compressed_c65.prg: compressed.prg loader/uglyboot.o
+	$(LD) -t none loader/uglyboot.o -o $@
+
+compressed_c65m.prg: compressed.bin loader/uncrunch.o loader/boot.o
+	$(LD) -C loader/c65.cfg loader/boot.o loader/uncrunch.o -o $@
 
 compressed.prg: combined.prg
-	pucrunch -f -c64 -x0x5000 $< $@
+	pucrunch +f -c64 -x0x5000 $< $@
+
+compressed.bin: combined.prg
+	pucrunch -c0 -x0x5000 $< $@
 
 combined.prg: $(ALL_BINS)
 	printf "\x00\x50" > tmp.bin
