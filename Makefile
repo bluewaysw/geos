@@ -63,23 +63,43 @@ ALL_BINS= \
 	koalapad.bin \
 	pcanalog.bin
 
-all: geos.d64
+all: geos.d64 geos.d81
 
 clean:
-	rm -f $(KERNAL_OBJECTS) drv/*.o input/*.o $(ALL_BINS) combined.prg compressed.prg geos.d64
+	rm -f $(KERNAL_OBJECTS) drv/*.o input/*.o $(ALL_BINS) combined.prg compressed.prg geos.d64 geos.d81 compressed_c65.prg c65boot.o
 
-geos.d64: compressed.prg
+geos.d64: compressed.prg compressed_c65.prg
 	if [ -e GEOS64.D64 ]; then \
 		cp GEOS64.D64 geos.d64; \
 		echo delete geos geoboot | c1541 geos.d64 >/dev/null; \
 		echo write compressed.prg geos | c1541 geos.d64 >/dev/null; \
+		echo write compressed_c65.prg geos65 | c1541 geos.d64 >/dev/null; \
 		echo \*\*\* Created geos.d64 based on GEOS64.D64.; \
 	else \
 		echo format geos,00 d64 geos.d64 | c1541 >/dev/null; \
 		echo write compressed.prg geos | c1541 geos.d64 >/dev/null; \
+		echo write compressed_c65.prg geos65 | c1541 geos.d64 >/dev/null; \
 		if [ -e desktop.cvt ]; then echo geoswrite desktop.cvt | c1541 geos.d64; fi >/dev/null; \
 		echo \*\*\* Created fresh geos.d64.; \
 	fi;
+
+geos.d81: compressed.prg compressed_c65.prg
+	if [ -e GEOS64.D81 ]; then \
+		cp GEOS64.D81 geos.d81; \
+		echo delete geos geoboot | c1541 geos.d81 >/dev/null; \
+		echo write compressed.prg geos | c1541 geos.d81 >/dev/null; \
+		echo write compressed_c65.prg geos65 | c1541 geos.d81 >/dev/null; \
+		echo \*\*\* Created geos.d81 based on GEOS64.D81.; \
+	else \
+		echo format geos,00 d81 geos.d81 | c1541 >/dev/null; \
+		echo write compressed.prg geos | c1541 geos.d81 >/dev/null; \
+		echo write compressed_c65.prg geos65 | c1541 geos.d81 >/dev/null; \
+		if [ -e desktop.cvt ]; then echo geoswrite desktop.cvt | c1541 geos.d81; fi >/dev/null; \
+		echo \*\*\* Created fresh geos.d81.; \
+	fi;
+
+compressed_c65.prg: compressed.prg c65boot.o
+	$(LD) -t none c65boot.o -o $@
 
 compressed.prg: combined.prg
 	pucrunch -f -c64 -x0x5000 $< $@
@@ -108,6 +128,9 @@ drv1571.bin: drv/drv1571.o drv/drv1571.cfg $(DEPS)
 
 drv1581.bin: drv/drv1581.o drv/drv1581.cfg $(DEPS)
 	$(LD) -C drv/drv1581.cfg drv/drv1581.o -o $@
+
+drvf011.bin: drv/drvf011.o drv/drvf011.cfg $(DEPS)
+	$(LD) -C drv/drvf011.cfg drv/drvf011.o -o $@
 
 amigamse.bin: input/amigamse.o input/amigamse.cfg $(DEPS)
 	$(LD) -C input/amigamse.cfg input/amigamse.o -o $@

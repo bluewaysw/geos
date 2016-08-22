@@ -2,5 +2,8 @@
 *.bin
 *.prg
 *.d64
-desktop.cvt
-kernal.map
+*.d81
+/desktop.cvt
+/kernal.map
+/GEOS64.D64
+/GEOS64.D81
