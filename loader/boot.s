@@ -40,7 +40,6 @@ next:	.WORD	0
 
 
 .CODE
-.IMPORT uncruncher
 
 
 
@@ -48,29 +47,30 @@ next:	.WORD	0
 	LDA	#0
 	TAX
 	TAY
-	.BYTE	$4B	; TAZ
-	.BYTE	$5C	; MAP (it also inhibits interrupts till the next NOP ... errrr ... EOM), totally unmapped status
-	.BYTE	$5B	; TAB,	zero page is _zero_ page :)
+	TAZ
+	MAP
+	TAB
 	INY
-	.BYTE	$2B	; TYS,	standard stack location
-	.BYTE	$03	; SEE,	8 bit stack
+	TYS
+	SEE
+	SEI
+	EOM
 	; Just to be sure, enable newVic mode
 	LDA	#$A5
 	STA	$D02F
 	LDA	#$96
 	STA	$D02F
-	; CPU port stuff, C64-alike config
-	LDA	#$FF
+	; CPU port stuff
+	LDA	#$2F
 	STA	0
 	LDA	#$37
-	STA	1	; the "CPU port"
+	STA	1
 	; Various VIC register stuffs
 	LDA	#64
 	STA	$D031	; turn maybe used enhanched VIC3 capabilities OFF (other than FAST mode!)
-	LDA	#0
-	STA	$D030	; turn ROM mappings / etc OFF
-	STA	$D019	; disable VIC interrupts
-	STA	$D01A
+	STZ	$D030	; turn ROM mappings / etc OFF
+	STZ	$D019	; disable VIC interrupts
+	STZ	$D01A
 	LDA	#$15
 	STA	$D018
 	; *** Uncrunch
@@ -80,28 +80,13 @@ next:	.WORD	0
 	.IMPORT __GEOS_LOAD__
 	LDX	#.HIBYTE(__GEOS_LOAD__)
 	LDY	#.LOBYTE(__GEOS_LOAD__)
+	LDA	#$30
+	STA	1
+	.IMPORT	uncruncher
 	JSR	uncruncher
+	LDA	#$37
+	STA	1
 	BCS	@unpack_error
-	JMP	$5000
-	; Copy disk driver in place
-	; Note: I want to crunch the driver itself too,
-	; maybe include *more* disk drivers, and this way
-	; hot-patch GEOS at $9000 [???] with the desired
-	; disk driver based on detection ie Mega65/plain C65
-	.IMPORT	__DISKDRIVER_LOAD__
-	.IMPORT	__DISKDRIVER_SIZE__
-	LDX	#0
-	LDY	#.HIBYTE(__DISKDRIVER_SIZE__) + 1
-@cp:
-	LDA	__DISKDRIVER_LOAD__,X
-	STA	$9000,X
-	INX
-	BNE	@cp
-	INC	@cp + 2
-	INC	@cp + 5
-	DEY
-	BNE	@cp
-	NOP
 	JMP	$5000
 @unpack_error:
 	INA
@@ -109,9 +94,6 @@ next:	.WORD	0
 	JMP	@unpack_error
 .ENDPROC
 
-
-.SEGMENT "DISKDRIVER"
-.INCBIN "drvf011.bin"
 
 .SEGMENT "GEOS"
 .INCBIN "compressed.bin"

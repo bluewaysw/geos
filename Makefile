@@ -67,7 +67,7 @@ ALL_BINS= \
 all: geos.d64 geos.d81
 
 clean:
-	rm -f $(KERNAL_OBJECTS) drv/*.o input/*.o $(ALL_BINS) combined.prg compressed.prg geos.d64 geos.d81 compressed_c65.prg compressed.bin loader/*.o compressed_c65m.prg
+	rm -f $(KERNAL_OBJECTS) drv/*.o input/*.o $(ALL_BINS) combined.prg compressed.prg geos.d64 geos.d81 compressed_c65.prg compressed.bin loader/*.o compressed_c65m.prg kernal.map
 
 geos.d64: compressed.prg
 	if [ -e GEOS64.D64 ]; then \

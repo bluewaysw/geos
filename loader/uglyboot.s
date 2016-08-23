@@ -11,6 +11,9 @@
 ; Also, a more proper solution would be use a custom un-puprunch code in the loader without the ugly
 ; copy hack ...
 
+
+.INCLUDE "c65.inc"
+
 	.ORG	$1FFF		; C65 basic loader start stuff
 
 	.WORD	basic
@@ -60,19 +63,19 @@ main:
 	LDA	#0
 	TAX
 	TAY
-	.BYTE	$4B	; TAZ
-	.BYTE	$5C	; MAP (it also inhibits interrupts till the next NOP ... errrr ... EOM), totally unmapped status
-	.BYTE	$5B	; TAB,	zero page is _zero_ page :)
+	TAZ
+	MAP		; (it also inhibits interrupts till the next NOP ... errrr ... EOM), totally unmapped status
+	TAB		; zero page is _zero_ page :)
 	INY
-	.BYTE	$2B	; TYS,	standard stack location
-	.BYTE	$03	; SEE,	8 bit stack
+	TYS		; standard stack location
+	SEE		; 8 bit stack
 	; Just to be sure, enable newVic mode
 	LDA	#$A5
 	STA	$D02F
 	LDA	#$96
 	STA	$D02F
 	; CPU port stuff, C64-alike config
-	LDA	#$FF
+	LDA	#$2F
 	STA	0
 	LDA	#$37
 	STA	1	; the "CPU port"
