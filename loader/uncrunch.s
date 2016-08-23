@@ -1,16 +1,11 @@
 ; Uncrunch code from pucrunch
 ; Somewhat reformatted to be able to be assembled with CA65
+; Also removed cli/sti/lda and sta 1 stuffs, etc
 
 ; Pucrunch (C)1997-2008 by Pasi 'Albert' Ojala, a1bert@iki.fi
 ; Pucrunch is now under LGPL: see the doc for details.
 
-; SHORTY+IRQLOAD 	354 bytes
-; no rle =~		-83 bytes -> 271
-; fixed params =~	-48 bytes -> 306
-;			223 bytes
-
 .CODE
-.FEATURE labels_without_colons 
 
 LZPOS	= $9e		; 2 ZeroPage temporaries
 bitstr	= $fb		; 1 temporary (does not need to be ZP)
@@ -21,11 +16,11 @@ bitstr	= $fb		; 1 temporary (does not need to be ZP)
 .EXPORT uncruncher
 .PROC uncruncher
 SHORTY  = 0     ;1      ; assume file is ok
-.if (SHORTY = 0)
-	sei
-	lda #$35
-	sta 1
-.endif
+;.if (SHORTY = 0)
+;	sei
+;	lda #$35
+;	sta 1
+;.endif
 	; Setup read pointer
 	sty INPOS
 	stx INPOS+1
@@ -98,27 +93,27 @@ SHORTY  = 0     ;1      ; assume file is ok
 	sta bitstr
 	jmp main
 
-getbyt	jsr getnew
+getbyt:	jsr getnew
 	lda bitstr
 	ror
 	rts
 
 
-newesc	ldy esc+1	; remember the old code (top bits for escaped byte)
-escB0	ldx #2		; ** PARAMETER	0..8
+newesc:	ldy esc+1	; remember the old code (top bits for escaped byte)
+escB0:	ldx #2		; ** PARAMETER	0..8
 	jsr getchkf	; get & save the new escape code
 	sta esc+1
 	tya		; pre-set the bits
 	; Fall through and get the rest of the bits.
-noesc	ldx #6		; ** PARAMETER	8..0
+noesc:	ldx #6		; ** PARAMETER	8..0
 	jsr getchkf
 	jsr putch	; output the escaped/normal byte
 	; Fall through and check the escape bits again
-main	ldy #0		; Reset to a defined state
+main:	ldy #0		; Reset to a defined state
 	tya		; A = 0
-escB1	ldx #2		; ** PARAMETER	0..8
+escB1:	ldx #2		; ** PARAMETER	0..8
 	jsr getchkf	; X = 0
-esc	cmp #0
+esc:	cmp #0
 	bne noesc
 	; Fall through to packed code
 
@@ -139,20 +134,20 @@ esc	cmp #0
 	;***FALL THRU***
 
 	; e..e011
-srle	iny		; Y is 1 bigger than MSB loops
+srle:	iny		; Y is 1 bigger than MSB loops
 	jsr getval	; Y is 1, get len, X = 0
 	sta LZPOS	; xstore - Save length LSB
-mg1	cmp #64		; ** PARAMETER 63-64 -> C clear, 64-64 -> C set..
+mg1:	cmp #64		; ** PARAMETER 63-64 -> C clear, 64-64 -> C set..
 	bcc chrcode	; short RLE, get bytecode
 
-longrle	ldx #2		; ** PARAMETER	111111xxxxxx
+longrle:ldx #2		; ** PARAMETER	111111xxxxxx
 	jsr getbits	; get 3/2/1 more bits to get a full byte, X = 0
 	sta LZPOS	; xstore - Save length LSB
 
 	jsr getval	; length MSB, X = 0
 	tay		; Y is 1 bigger than MSB loops
 
-chrcode	jsr getval	; Byte Code, X = 0
+chrcode:jsr getval	; Byte Code, X = 0
 	tax		; this is executed most of the time anyway
 	lda table-1,x	; Saves one jump if done here (loses one txa)
 
@@ -166,36 +161,38 @@ chrcode	jsr getval	; Byte Code, X = 0
 
 @l1:	ldx LZPOS	; xstore - get length LSB
 	inx		; adjust for cpx#$ff;bne -> bne
-dorle	jsr putch
+dorle:	jsr putch
 	dex
 	bne dorle	; xstore 0..255 -> 1..256
 	dey
 	bne dorle	; Y was 1 bigger than wanted originally
-mainbeq	beq main	; reverse condition -> jump always
+mainbeq:beq main	; reverse condition -> jump always
 
 
-lz77	jsr getval	; X = 0
-mg21	cmp #127	; ** PARAMETER	Clears carry (is maximum value)
+lz77:	jsr getval	; X = 0
+mg21:	cmp #127	; ** PARAMETER	Clears carry (is maximum value)
 	bne noeof
 	; EOF
-eof
-.if SHORTY = 0
-	; EOF
-	clc		; removed 'eof' label, duplication!
-eof2	lda #$37
-	sta 1
-	cli
-.endif
-hi	ldx #0
-lo	ldy #0
+eof:
+	clc
+eof2:
+;.if SHORTY = 0
+;	; EOF
+;	clc		; removed 'eof' label, duplication!
+;eof2	lda #$37
+;	sta 1
+;	cli
+;.endif
+hi:	ldx #0
+lo:	ldy #0
 	rts
 
 
-noeof	sbc #0		; C is clear -> subtract 1  (1..126 -> 0..125)
-elzpb	ldx #0		; ** PARAMETER (more bits to get)
+noeof:	sbc #0		; C is clear -> subtract 1  (1..126 -> 0..125)
+elzpb:	ldx #0		; ** PARAMETER (more bits to get)
 	jsr getchkf	; clears Carry, X = 0
 
-lz77_2	sta LZPOS+1	; offset MSB
+lz77_2:	sta LZPOS+1	; offset MSB
 	jsr getbyte	; clears Carry, X = 0
 	; Note: Already eor:ed in the compressor..
 	;eor #255	; offset LSB 2's complement -1 (i.e. -X = ~X+1)
@@ -209,7 +206,7 @@ lz77_2	sta LZPOS+1	; offset MSB
 	;ldy #0		; Y was 0 originally, we don't change it
 
 	inx		; adjust for cpx#$ff;bne -> bne
-lzloop	lda (LZPOS),y	; using abs,y is 3 bytes longer, only 1 cycle/byte faster
+lzloop:	lda (LZPOS),y	; using abs,y is 3 bytes longer, only 1 cycle/byte faster
 	jsr putch	; Note: must be copied forwards!
 	iny		; Y does not wrap because X=0..255 and Y initially 0
 	dex
@@ -217,7 +214,7 @@ lzloop	lda (LZPOS),y	; using abs,y is 3 bytes longer, only 1 cycle/byte faster
 	beq mainbeq	; jump through another beq (-1 byte, +3 cycles)
 
 
-getnew	pha		; 1 Byte/3 cycles
+getnew:	pha		; 1 Byte/3 cycles
 
 INPOS = *+1
 	lda $aaaa	; ** PARAMETER
@@ -234,14 +231,14 @@ INPOS = *+1
 
 ; getval : Gets a 'static huffman coded' value
 ; ** Scratches X, returns the value in A **
-getval	inx		; X <- 1
+getval:	inx		; X <- 1
 	txa		; set the top bit (value is 1..255)
-gv0	asl bitstr
+gv0:	asl bitstr
 	bne @l1
 	jsr getnew
 @l1:	bcc getchk	; got 0-bit
 	inx
-mg	cpx #7		; ** PARAMETER unary code maximum length + 1
+mg:	cpx #7		; ** PARAMETER unary code maximum length + 1
 	bne gv0
 	beq getchk	; inverse condition -> jump always
 	; getval: 18 bytes
@@ -249,20 +246,20 @@ mg	cpx #7		; ** PARAMETER unary code maximum length + 1
 
 ; getbits: Gets X bits from the stream
 ; ** Scratches X, returns the value in A **
-getbyte	ldx #7
-get1bit	inx		;2
-getbits	asl bitstr
+getbyte:ldx #7
+get1bit:inx		;2
+getbits:asl bitstr
 	bne @l1
 	jsr getnew
 @l1:	rol		;2
-getchk	dex		;2		more bits to get ?
-getchkf	bne getbits	;2/3
+getchk:	dex		;2		more bits to get ?
+getchkf:bne getbits	;2/3
 	clc		;2		return carry cleared
 	rts		;6+6
 
 
 OUTPOS = *+1		; ZP
-putch	sta $aaaa	; ** parameter
+putch:	sta $aaaa	; ** parameter
 	inc OUTPOS	; ZP
 	bne @l0
 	inc OUTPOS+1	; ZP
@@ -270,7 +267,7 @@ putch	sta $aaaa	; ** parameter
 
 
 
-table	.BYTE 0,0,0,0,0,0,0
+table:	.BYTE 0,0,0,0,0,0,0
 	.BYTE 0,0,0,0,0,0,0,0
 	;dc.b 0,0,0,0,0,0,0,0
 	;dc.b 0,0,0,0,0,0,0,0

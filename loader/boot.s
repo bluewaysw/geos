@@ -12,6 +12,9 @@
 ; copy hack ...
 
 
+.INCLUDE "c65.inc"
+
+
 .SEGMENT "LOADADDR"
 	.IMPORT __STUB_LOAD__
 	.WORD __STUB_LOAD__
@@ -38,6 +41,7 @@ next:	.WORD	0
 
 .CODE
 .IMPORT uncruncher
+
 
 
 .PROC main
@@ -73,17 +77,41 @@ next:	.WORD	0
 	; Call with X = HI of packed data, Y = LO of packed data
 	; Returns exec address in X = HI and Y = LO
 	; Carry will be set for error, cleared for OK
-	LDX	#.HIBYTE(geos_kernal_compressed)
-	LDY	#.LOBYTE(geos_kernal_compressed)
+	.IMPORT __GEOS_LOAD__
+	LDX	#.HIBYTE(__GEOS_LOAD__)
+	LDY	#.LOBYTE(__GEOS_LOAD__)
 	JSR	uncruncher
 	BCS	@unpack_error
+	JMP	$5000
+	; Copy disk driver in place
+	; Note: I want to crunch the driver itself too,
+	; maybe include *more* disk drivers, and this way
+	; hot-patch GEOS at $9000 [???] with the desired
+	; disk driver based on detection ie Mega65/plain C65
+	.IMPORT	__DISKDRIVER_LOAD__
+	.IMPORT	__DISKDRIVER_SIZE__
+	LDX	#0
+	LDY	#.HIBYTE(__DISKDRIVER_SIZE__) + 1
+@cp:
+	LDA	__DISKDRIVER_LOAD__,X
+	STA	$9000,X
+	INX
+	BNE	@cp
+	INC	@cp + 2
+	INC	@cp + 5
+	DEY
+	BNE	@cp
 	NOP
 	JMP	$5000
 @unpack_error:
-	INC	53281
+	INA
+	STA	53281
 	JMP	@unpack_error
 .ENDPROC
 
-.SEGMENT "PACKED"
-geos_kernal_compressed:
-	.INCBIN "compressed.bin"
+
+.SEGMENT "DISKDRIVER"
+.INCBIN "drvf011.bin"
+
+.SEGMENT "GEOS"
+.INCBIN "compressed.bin"

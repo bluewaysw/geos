@@ -56,6 +56,7 @@ ALL_BINS= \
 	drv1541.bin \
 	drv1571.bin \
 	drv1581.bin \
+	drvf011.bin \
 	amigamse.bin \
 	joydrv.bin \
 	lightpen.bin \
@@ -71,7 +72,7 @@ clean:
 geos.d64: compressed.prg
 	if [ -e GEOS64.D64 ]; then \
 		cp GEOS64.D64 geos.d64; \
-		echo delete geos geoboot | c1541 geos.d64 >/dev/null; \
+		echo 'delete geos geoboot configure "geos kernal"' | c1541 geos.d64 >/dev/null; \
 		echo write compressed.prg geos | c1541 geos.d64 >/dev/null; \
 		echo \*\*\* Created geos.d64 based on GEOS64.D64.; \
 	else \
@@ -84,7 +85,7 @@ geos.d64: compressed.prg
 geos.d81: compressed.prg compressed_c65.prg compressed_c65m.prg
 	if [ -e GEOS64.D81 ]; then \
 		cp GEOS64.D81 geos.d81; \
-		echo delete geos geoboot | c1541 geos.d81 >/dev/null; \
+		echo 'delete geos geoboot configure "geos kernal"' | c1541 geos.d81 >/dev/null; \
 		echo write compressed.prg geos | c1541 geos.d81 >/dev/null; \
 		echo write compressed_c65.prg geos65 | c1541 geos.d81 >/dev/null; \
 		echo write compressed_c65m.prg geos65m | c1541 geos.d81 >/dev/null; \
@@ -113,7 +114,8 @@ compressed.bin: combined.prg
 combined.prg: $(ALL_BINS)
 	printf "\x00\x50" > tmp.bin
 	cat start.bin /dev/zero | dd bs=1 count=16384 >> tmp.bin 2> /dev/null
-	cat drv1541.bin /dev/zero | dd bs=1 count=3456 >> tmp.bin 2> /dev/null
+	#cat drv1541.bin /dev/zero | dd bs=1 count=3456 >> tmp.bin 2> /dev/null
+	cat drvf011.bin /dev/zero | dd bs=1 count=3456 >> tmp.bin 2> /dev/null
 	cat lokernal.bin /dev/zero | dd bs=1 count=8640 >> tmp.bin 2> /dev/null
 	cat kernal.bin /dev/zero | dd bs=1 count=16192 >> tmp.bin 2> /dev/null
 	cat joydrv.bin >> tmp.bin 2> /dev/null
