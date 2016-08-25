@@ -11,13 +11,14 @@
 ; Also, a more proper solution would be use a custom un-puprunch code in the loader without the ugly
 ; copy hack ...
 
-
 .INCLUDE "c65.inc"
+
 
 
 .SEGMENT "LOADADDR"
 	.IMPORT __STUB_LOAD__
 	.WORD __STUB_LOAD__
+
 
 
 .SEGMENT "STUB"
@@ -32,7 +33,7 @@
 	.BYTE	<(main/100 .MOD 10+48)
 	.BYTE	<(main/10 .MOD 10+48)
 	.BYTE	<(main .MOD 10+48)
-	.BYTE	" : GEOS FOR C65"
+	.BYTE	" : GEOS LOADER AND KERNAL FOR C65 MODE ONLY"
 	.BYTE	0
 next:	.WORD	0
 .ENDSCOPE
@@ -40,22 +41,22 @@ next:	.WORD	0
 
 
 .CODE
-
-
-
 .PROC main
+	SEI
+	CLD
 	LDA	#0
 	TAX
 	TAY
-	TAZ
-	MAP
-	TAB
+	TAZ	; we use Z register as zero, so STZ is about the same as on 65C02
+	MAP	; no CPU mapping
+	TAB	; just to be sure: ZP at $0000
 	INY
-	TYS
-	SEE
-	SEI
+	TYS	; just to be sure: stack at $100
+	SEE	; just to be sure: 8 bit stack
 	EOM
-	; Just to be sure, enable newVic mode
+	; Just to be sure, enable newVic mode, to access eg VIC-3 register $30
+	; We don't need Mega65 fast mode here at any price, let's do that
+	; later maybe, in c65/start.s
 	LDA	#$A5
 	STA	$D02F
 	LDA	#$96
@@ -66,34 +67,19 @@ next:	.WORD	0
 	LDA	#$37
 	STA	1
 	; Various VIC register stuffs
-	LDA	#64
-	STA	$D031	; turn maybe used enhanched VIC3 capabilities OFF (other than FAST mode!)
 	STZ	$D030	; turn ROM mappings / etc OFF
 	STZ	$D019	; disable VIC interrupts
 	STZ	$D01A
-	LDA	#$15
-	STA	$D018
-	; *** Uncrunch
-	; Call with X = HI of packed data, Y = LO of packed data
-	; Returns exec address in X = HI and Y = LO
-	; Carry will be set for error, cleared for OK
-	.IMPORT __GEOS_LOAD__
-	LDX	#.HIBYTE(__GEOS_LOAD__)
-	LDY	#.LOBYTE(__GEOS_LOAD__)
-	LDA	#$30
+	LDA	#$30	; full RAM for uncrunching
 	STA	1
 	.IMPORT	uncruncher
 	JSR	uncruncher
-	LDA	#$37
-	STA	1
-	BCS	@unpack_error
+	STZ	53280
+	STZ	53281
 	JMP	$5000
-@unpack_error:
-	INA
-	STA	53281
-	JMP	@unpack_error
 .ENDPROC
 
 
+
 .SEGMENT "GEOS"
-.INCBIN "compressed.bin"
+.INCBIN "compressed.bin",2

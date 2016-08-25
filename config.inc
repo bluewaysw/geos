@@ -8,7 +8,7 @@ gateway  = 0 ; the gateWay 2.51 variant
 
 ; The original GEOS binary contains a few traps to counter tampering.
 ; They can be turned off with this global switch
-trap = 1
+trap = 0
 
 ; general code generation/optimization control:
 onlyVLIR        =       0               ; only VLIR and SEQ supported
@@ -25,6 +25,7 @@ useRamCart128   =       0               ; for Ram Cart 128K
 ; runtime speedup
 use2MHz                 =       0               ; for 2MHz-on-border on C128 in 64 mode
 
+c65			=	1		; 1  = compile c65 specific init code into segment c65start
 
 ; Feel (almost) free to change values below:
 iniMaxMouseSpeed        = $7f                           ; range from $00-$7f

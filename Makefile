@@ -34,9 +34,11 @@ KERNAL_SOURCES= \
 	kernal/start.s \
 	kernal/time.s \
 	kernal/tobasic.s \
-	kernal/vars.s
+	kernal/vars.s \
+	c65/start.s
 
 DEPS= \
+	Makefile \
 	inc/c64.inc \
 	inc/const.inc \
 	inc/diskdrv.inc \
@@ -67,7 +69,7 @@ ALL_BINS= \
 all: geos.d64 geos.d81
 
 clean:
-	rm -f $(KERNAL_OBJECTS) drv/*.o input/*.o $(ALL_BINS) combined.prg compressed.prg geos.d64 geos.d81 compressed_c65.prg compressed.bin loader/*.o compressed_c65m.prg kernal.map
+	rm -f $(KERNAL_OBJECTS) drv/*.o input/*.o $(ALL_BINS) combined.bin combined.prg compressed.prg geos.d64 geos.d81 compressed_c65.prg compressed.bin c65/*.o kernal.map
 
 geos.d64: compressed.prg
 	if [ -e GEOS64.D64 ]; then \
@@ -82,44 +84,42 @@ geos.d64: compressed.prg
 		echo \*\*\* Created fresh geos.d64.; \
 	fi;
 
-geos.d81: compressed.prg compressed_c65.prg compressed_c65m.prg
+geos.d81: compressed.prg compressed_c65.prg
 	if [ -e GEOS64.D81 ]; then \
 		cp GEOS64.D81 geos.d81; \
 		echo 'delete geos geoboot configure "geos kernal"' | c1541 geos.d81 >/dev/null; \
 		echo write compressed.prg geos | c1541 geos.d81 >/dev/null; \
 		echo write compressed_c65.prg geos65 | c1541 geos.d81 >/dev/null; \
-		echo write compressed_c65m.prg geos65m | c1541 geos.d81 >/dev/null; \
 		echo \*\*\* Created geos.d81 based on GEOS64.D81.; \
 	else \
 		echo format geos,00 d81 geos.d81 | c1541 >/dev/null; \
 		echo write compressed.prg geos | c1541 geos.d81 >/dev/null; \
 		echo write compressed_c65.prg geos65 | c1541 geos.d81 >/dev/null; \
-		echo write compressed_c65m.prg geos65m | c1541 geos.d81 >/dev/null; \
 		if [ -e desktop.cvt ]; then echo geoswrite desktop.cvt | c1541 geos.d81; fi >/dev/null; \
 		echo \*\*\* Created fresh geos.d81.; \
 	fi;
 
-compressed_c65.prg: compressed.prg loader/uglyboot.o
-	$(LD) -t none loader/uglyboot.o -o $@
-
-compressed_c65m.prg: compressed.bin loader/uncrunch.o loader/boot.o
-	$(LD) -C loader/c65.cfg loader/boot.o loader/uncrunch.o -o $@
+compressed_c65.prg: compressed.bin c65/uncrunch.o c65/loader.o
+	$(LD) -C c65/loader.cfg c65/loader.o c65/uncrunch.o -o $@
 
 compressed.prg: combined.prg
 	pucrunch +f -c64 -x0x5000 $< $@
 
-compressed.bin: combined.prg
-	pucrunch -c0 -x0x5000 $< $@
+compressed.bin: combined.bin
+	exomizer mem $<,0x5002 -o $@
 
-combined.prg: $(ALL_BINS)
-	printf "\x00\x50" > tmp.bin
-	cat start.bin /dev/zero | dd bs=1 count=16384 >> tmp.bin 2> /dev/null
-	#cat drv1541.bin /dev/zero | dd bs=1 count=3456 >> tmp.bin 2> /dev/null
-	cat drvf011.bin /dev/zero | dd bs=1 count=3456 >> tmp.bin 2> /dev/null
-	cat lokernal.bin /dev/zero | dd bs=1 count=8640 >> tmp.bin 2> /dev/null
-	cat kernal.bin /dev/zero | dd bs=1 count=16192 >> tmp.bin 2> /dev/null
-	cat joydrv.bin >> tmp.bin 2> /dev/null
-	mv tmp.bin combined.prg
+combined.bin: $(ALL_BINS)
+	rm -f $@
+	cat start.bin /dev/zero | dd bs=1 count=16384 >> $@ 2> /dev/null
+	#cat drv1541.bin /dev/zero | dd bs=1 count=3456 >> $@ 2> /dev/null
+	cat drvf011.bin /dev/zero | dd bs=1 count=3456 >> $@ 2> /dev/null
+	cat lokernal.bin /dev/zero | dd bs=1 count=8640 >> $@ 2> /dev/null
+	cat kernal.bin /dev/zero | dd bs=1 count=16192 >> $@ 2> /dev/null
+	cat joydrv.bin >> $@ 2> /dev/null
+
+combined.prg: combined.bin
+	printf "\x00\x50" > $@
+	cat $< >> $@
 
 kernal.bin: $(KERNAL_OBJECTS) kernal/kernal.cfg
 	$(LD) -C kernal/kernal.cfg $(KERNAL_OBJECTS) -o $@ -m kernal.map
@@ -137,8 +137,8 @@ drv1571.bin: drv/drv1571.o drv/drv1571.cfg $(DEPS)
 drv1581.bin: drv/drv1581.o drv/drv1581.cfg $(DEPS)
 	$(LD) -C drv/drv1581.cfg drv/drv1581.o -o $@
 
-drvf011.bin: drv/drvf011.o drv/drvf011.cfg $(DEPS)
-	$(LD) -C drv/drvf011.cfg drv/drvf011.o -o $@
+drvf011.bin: c65/drvf011.o c65/drvf011.cfg $(DEPS)
+	$(LD) -C c65/drvf011.cfg c65/drvf011.o -o $@
 
 amigamse.bin: input/amigamse.o input/amigamse.cfg $(DEPS)
 	$(LD) -C input/amigamse.cfg input/amigamse.o -o $@

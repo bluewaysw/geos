@@ -52,9 +52,17 @@
 ;
 
 _ResetHandle:
+.if (c65)
+	; This should be the first, after _ResetHandle
+	; It won't be compiled in, if c65 mode is not requested
+	.import InitC65
+	jmp InitC65	; will be patched back to the original GEOS code
+	.byte $FF	; argument of ldx #$...
+.else
 	sei
 	cld
 	ldx #$FF
+.endif
 	txs
 
 	lda #IO_IN
@@ -119,7 +127,7 @@ _ResetHandle:
 	sta NUMDRV
 	ldy $BA
 	sty curDrive
-	lda #DRV_1541
+	lda #DRV_DEFAULT
 	sta curType
 	sta _driveType,y
 
