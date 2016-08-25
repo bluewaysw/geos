@@ -1,7 +1,14 @@
-AS=ca65
-LD=ld65
-
-ASFLAGS=-I inc -I .
+AS		= ca65
+LD		= ld65
+CL		= cl65
+C1541		= c1541
+EXOMIZER	= exomizer
+PUCRUNCH	= pucrunch
+D64_TEMPLATE	= GEOS64.D64
+D64_RESULT	= geos.d64
+D81_TEMPLATE	= GEOS64.D81
+D81_RESULT	= geos.d81
+ASFLAGS		= -I inc -I .
 
 KERNAL_SOURCES= \
 	kernal/bitmask.s \
@@ -39,6 +46,7 @@ KERNAL_SOURCES= \
 
 DEPS= \
 	Makefile \
+	config.inc \
 	inc/c64.inc \
 	inc/const.inc \
 	inc/diskdrv.inc \
@@ -66,56 +74,53 @@ ALL_BINS= \
 	koalapad.bin \
 	pcanalog.bin
 
-all: geos.d64 geos.d81
+all: $(D64_RESULT) $(D81_RESULT)
 
 clean:
-	rm -f $(KERNAL_OBJECTS) drv/*.o input/*.o $(ALL_BINS) combined.bin combined.prg compressed.prg geos.d64 geos.d81 compressed_c65.prg compressed.bin c65/*.o kernal.map
+	rm -f $(KERNAL_OBJECTS) drv/*.o input/*.o $(ALL_BINS) combined.bin combined.prg compressed.prg $(D64_RESULT) $(D81_RESULT) compressed_c65.prg compressed.bin c65/*.o kernal.map constructor.o
 
-geos.d64: compressed.prg
-	if [ -e GEOS64.D64 ]; then \
-		cp GEOS64.D64 geos.d64; \
-		echo 'delete geos geoboot configure "geos kernal"' | c1541 geos.d64 >/dev/null; \
-		echo write compressed.prg geos | c1541 geos.d64 >/dev/null; \
-		echo \*\*\* Created geos.d64 based on GEOS64.D64.; \
+$(D64_RESULT): compressed.prg
+	if [ -s $(D64_TEMPLATE) ]; then \
+		cp $(D64_TEMPLATE) $(D64_RESULT); \
+		echo 'delete geos geoboot configure "geos kernal"' | $(C1541) $(D64_RESULT) >/dev/null; \
+		echo write compressed.prg geos | $(C1541) $(D64_RESULT) >/dev/null; \
+		echo \*\*\* Created $(D64_RESULT) based on $(D64_TEMPLATE).; \
 	else \
-		echo format geos,00 d64 geos.d64 | c1541 >/dev/null; \
-		echo write compressed.prg geos | c1541 geos.d64 >/dev/null; \
-		if [ -e desktop.cvt ]; then echo geoswrite desktop.cvt | c1541 geos.d64; fi >/dev/null; \
-		echo \*\*\* Created fresh geos.d64.; \
+		rm -f $(D64_RESULT); \
+		echo format geos,00 d64 $(D64_RESULT) | $(C1541) >/dev/null; \
+		echo write compressed.prg geos | $(C1541) $(D64_RESULT) >/dev/null; \
+		if [ -e desktop.cvt ]; then echo geoswrite desktop.cvt | $(C1541) $(D64_RESULT); fi >/dev/null; \
+		echo \*\*\* Created fresh $(D64_RESULT).; \
 	fi;
 
-geos.d81: compressed.prg compressed_c65.prg
-	if [ -e GEOS64.D81 ]; then \
-		cp GEOS64.D81 geos.d81; \
-		echo 'delete geos geoboot configure "geos kernal"' | c1541 geos.d81 >/dev/null; \
-		echo write compressed.prg geos | c1541 geos.d81 >/dev/null; \
-		echo write compressed_c65.prg geos65 | c1541 geos.d81 >/dev/null; \
-		echo \*\*\* Created geos.d81 based on GEOS64.D81.; \
+$(D81_RESULT): compressed.prg compressed_c65.prg
+	if [ -s $(D81_TEMPLATE) ]; then \
+		cp $(D81_TEMPLATE) $(D81_RESULT); \
+		echo 'delete geos geoboot configure "geos kernal"' | $(C1541) $(D81_RESULT) >/dev/null; \
+		echo write compressed.prg geos | $(C1541) $(D81_RESULT) >/dev/null; \
+		echo write compressed_c65.prg geos65 | $(C1541) $(D81_RESULT) >/dev/null; \
+		echo \*\*\* Created $(D81_RESULT) based on $(D81_TEMPLATE).; \
 	else \
-		echo format geos,00 d81 geos.d81 | c1541 >/dev/null; \
-		echo write compressed.prg geos | c1541 geos.d81 >/dev/null; \
-		echo write compressed_c65.prg geos65 | c1541 geos.d81 >/dev/null; \
-		if [ -e desktop.cvt ]; then echo geoswrite desktop.cvt | c1541 geos.d81; fi >/dev/null; \
-		echo \*\*\* Created fresh geos.d81.; \
+		rm -f $(D81_RESULT); \
+		echo format geos,00 d81 $(D81_RESULT) | $(C1541) >/dev/null; \
+		echo write compressed.prg geos | $(C1541) $(D81_RESULT) >/dev/null; \
+		echo write compressed_c65.prg geos65 | $(C1541) $(D81_RESULT) >/dev/null; \
+		if [ -e desktop.cvt ]; then echo geoswrite desktop.cvt | $(C1541) $(D81_RESULT); fi >/dev/null; \
+		echo \*\*\* Created fresh $(D81_RESULT).; \
 	fi;
 
 compressed_c65.prg: compressed.bin c65/uncrunch.o c65/loader.o
 	$(LD) -C c65/loader.cfg c65/loader.o c65/uncrunch.o -o $@
 
 compressed.prg: combined.prg
-	pucrunch +f -c64 -x0x5000 $< $@
+	$(PUCRUNCH) +f -c64 -x0x5000 $< $@
 
 compressed.bin: combined.bin
-	exomizer mem $<,0x5002 -o $@
+	$(EXOMIZER) mem $<,0x5002 -o $@
 
-combined.bin: $(ALL_BINS)
-	rm -f $@
-	cat start.bin /dev/zero | dd bs=1 count=16384 >> $@ 2> /dev/null
-	#cat drv1541.bin /dev/zero | dd bs=1 count=3456 >> $@ 2> /dev/null
-	cat drvf011.bin /dev/zero | dd bs=1 count=3456 >> $@ 2> /dev/null
-	cat lokernal.bin /dev/zero | dd bs=1 count=8640 >> $@ 2> /dev/null
-	cat kernal.bin /dev/zero | dd bs=1 count=16192 >> $@ 2> /dev/null
-	cat joydrv.bin >> $@ 2> /dev/null
+combined.bin: $(ALL_BINS) $(DEPS) constructor.s
+	$(CL) -t none -o $@ constructor.s
+	rm -f constructor.o
 
 combined.prg: combined.bin
 	printf "\x00\x50" > $@
@@ -164,3 +169,8 @@ pcanalog.bin: input/pcanalog.o input/pcanalog.cfg $(DEPS)
 # a must!
 love:	
 	@echo "Not war, eh?"
+the:
+	@echo "Just read the .PHONY line in Makefile ;-)"
+
+.PHONY:
+	clean all the love

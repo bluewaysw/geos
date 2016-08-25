@@ -61,3 +61,13 @@ REUPresent = 0
 .else
 REUPresent = 1
 .endif
+
+
+; ----- THIS PART CONTROLS THE CONTRUCTION OF THE FINAL BINARY IMAGE -----
+; You can even define these conditionally based on the settings above, etc!
+
+.DEFINE BUILDER_BIN_START_NAME          "start.bin"
+.DEFINE BUILDER_BIN_DSKDRV_NAME         "drvf011.bin"
+.DEFINE BUILDER_BIN_LOKERNAL_NAME       "lokernal.bin"
+.DEFINE BUILDER_BIN_KERNAL_NAME         "kernal.bin"
+.DEFINE BUILDER_BIN_INPDRV_NAME         "joydrv.bin"

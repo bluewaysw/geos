@@ -1,4 +1,5 @@
 ; C65 specific stuffs, already int he combined kernal image, not the loader!
+; (C)2016 LGB Gábor Lénárt
 
 .include "config.inc"
 

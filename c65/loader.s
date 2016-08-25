@@ -1,19 +1,8 @@
-; VERY ugly C65 GEOS "loader".
+; Kind of C65 GEOS "loader" / basic stub / decruncher.
 ;
-; (C)2016 LGB (Gabor Lenart)
-;
-; Basically it gets the pucrunch'ed (for C64) version of the GEOS build, with its BASIC stub, etc
-; And copy to the address where it would be on C64, then execute it directly, bypassing the SYS stuff.
-; Also it sets up an unmapped 4510 status, without VIC3 reg $30 ROM mapping and the desired CPU port value
-; for some kind of faked "C64 compatibility", though, the CPU fast mode is kept turned on for some
-; GEOS performance boost :)
-; Note, that I was lazy to write proper linker cfg file and use segments, so it's an ugly .ORG stuff.
-; Also, a more proper solution would be use a custom un-puprunch code in the loader without the ugly
-; copy hack ...
+; (C)2016 LGB Gábor Lénárt
 
 .INCLUDE "c65.inc"
-
-
 
 .SEGMENT "LOADADDR"
 	.IMPORT __STUB_LOAD__
