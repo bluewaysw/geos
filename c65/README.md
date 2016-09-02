@@ -31,7 +31,15 @@ segment (modified `kernal/kernal.cfg`) and the C65 specific stuff purges itself
 after its turn, giving control back to `_ResetHandle` which should found the
 original state.
 
-Currently this code does almost nothing, later it can do more.
+Currently this code does almost nothing, later it can do more (ie, M65 detection
+and change disk driver to M65 specific one, so C65 is also supported this way
+still).
+
+## Makefile and building
+
+Makefile was modified by me for *my* taste :-) Also the "glue" of binary fragments
+done with the assembler itself, so the config.inc can be used to customize this
+process, instead of hacking the Makefile ...
 
 ## Disk driver code
 
