@@ -5,6 +5,9 @@ say, 4502/4510) CPU support in CA65, but till that, 65C02 is also nice, at least
 we have `STZ` works this way :) Also, it defines macros for some simple opcodes,
 like `MAP`, etc.
 
+**Breaking news**: You can mostly forget this, as it seems, new CA65 version
+supports 4510 :-)
+
 ## Loader
 
 `c65/loader.s` and `c65/loader.cfg` are the source and LD65 linker configuration
@@ -39,7 +42,8 @@ still).
 
 Makefile was modified by me for *my* taste :-) Also the "glue" of binary fragments
 done with the assembler itself, so the config.inc can be used to customize this
-process, instead of hacking the Makefile ...
+process, instead of hacking the Makefile ... Modifications: `Makefile` and
+new file `constructor.s` in the top directory.
 
 ## Disk driver code
 

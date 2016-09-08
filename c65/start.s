@@ -20,7 +20,7 @@
 	sta	__c65start_LOAD__,x
 	inx
 	bne	relocated_segment_nullifier
-	inc	relocated_segment_nullifier + 2
+	inc	$102		; self-mod of the first STA arg
 	dey
 	bne	relocated_segment_nullifier
 	jmp	_ResetHandle	; call the original stuff (at $5000)
@@ -28,6 +28,7 @@
 
 
 .PROC InitC65
+	; We don't do MAP, LDZ #0, stack/BP setup etc here, already done in the "BASIC stub" loader, in c65/loader.s
 	sei
 	cld
 	ldx	#$FF
@@ -45,7 +46,7 @@
         LDA     #$35
         STA     1
         ; Various VIC register stuffs
-        LDA	#$A5
+        LDA	#$A5	; 2 values sequence for enabling "newVic" I/O mode (that is, C65 I/O, for M65, another seq is needed)
         STA	$D02F
         LDA	#$96
         STA	$D02F
@@ -56,7 +57,11 @@
         STZ	$D01A
         LDA	#$15
         STA	$D018
-	STA	$D02F	; give up newVic mode.
+	; give up newVic mode
+	; that is for GEOS may touch new I/O regs (expecting for VIC-2 "echoes" etc) and screws up ...
+	; I'm not sure if this is needed, try to remove it.
+	; if someone wants to use C65 feature, than it's another question
+	STA	$D02F
 	; Clear our "c65start" segment with the relocated code to $100 and then jump to
 	; the original stuff there.
 to_geos:
@@ -65,7 +70,7 @@ to_geos:
 	lda	relocated_segment_nullifier,x
 	sta	$100,x
 	inx
-	bpl	@cp
+	bpl	@cp	; 128 bytes should be enough for everyone.
 	ldx	#0
 	txa
 	ldy	#.HIBYTE(__c65start_SIZE__) + 1
