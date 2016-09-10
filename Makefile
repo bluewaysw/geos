@@ -56,7 +56,6 @@ ALL_BINS= \
 	drv1541.bin \
 	drv1571.bin \
 	drv1581.bin \
-	drvf011.bin \
 	amigamse.bin \
 	joydrv.bin \
 	lightpen.bin \
@@ -70,21 +69,29 @@ clean:
 	rm -f $(KERNAL_OBJECTS) drv/*.o input/*.o $(ALL_BINS) combined.prg compressed.prg geos.d64
 
 geos.d64: compressed.prg
-		echo format geos,00 d81 geos.d81 | c1541 
-		echo write compressed.prg geos | c1541 geos.d81 
-		echo \*\*\* Created fresh geos.d64.
+	if [ -e GEOS64.D64 ]; then \
+		cp GEOS64.D64 geos.d64; \
+		echo delete geos geoboot | c1541 geos.d64 >/dev/null; \
+		echo write compressed.prg geos | c1541 geos.d64 >/dev/null; \
+		echo \*\*\* Created geos.d64 based on GEOS64.D64.; \
+	else \
+		echo format geos,00 d64 geos.d64 | c1541 >/dev/null; \
+		echo write compressed.prg geos | c1541 geos.d64 >/dev/null; \
+		if [ -e desktop.cvt ]; then echo geoswrite desktop.cvt | c1541 geos.d64; fi >/dev/null; \
+		echo \*\*\* Created fresh geos.d64.; \
+	fi;
 
 compressed.prg: combined.prg
 	pucrunch -f -c64 -x0x5000 $< $@
 
 combined.prg: $(ALL_BINS)
 	printf "\x00\x50" > tmp.bin
-	cat start.bin | dd bs=1 count=16384 >> tmp.bin
-	cat drv1541.bin | dd bs=1 count=3456 >> tmp.bin 
-	cat lokernal.bin | dd bs=1 count=8640 >> tmp.bin 
-	cat kernal.bin | dd bs=1 count=16192 >> tmp.bin 
-	cat joydrv.bin >> tmp2.bin 
-	copy tmp.bin combined.prg
+	cat start.bin /dev/zero | dd bs=1 count=16384 >> tmp.bin 2> /dev/null
+	cat drv1541.bin /dev/zero | dd bs=1 count=3456 >> tmp.bin 2> /dev/null
+	cat lokernal.bin /dev/zero | dd bs=1 count=8640 >> tmp.bin 2> /dev/null
+	cat kernal.bin /dev/zero | dd bs=1 count=16192 >> tmp.bin 2> /dev/null
+	cat joydrv.bin >> tmp.bin 2> /dev/null
+	mv tmp.bin combined.prg
 
 kernal.bin: $(KERNAL_OBJECTS) kernal/kernal.cfg
 	$(LD) -C kernal/kernal.cfg $(KERNAL_OBJECTS) -o $@ -m kernal.map
@@ -101,9 +108,6 @@ drv1571.bin: drv/drv1571.o drv/drv1571.cfg $(DEPS)
 
 drv1581.bin: drv/drv1581.o drv/drv1581.cfg $(DEPS)
 	$(LD) -C drv/drv1581.cfg drv/drv1581.o -o $@
-	
-drvf011.bin: drv/drvf011.o drv/drvf011.cfg $(DEPS)
-	$(LD) -C drv/drvf011.cfg drv/drvf011.o -o $@
 
 amigamse.bin: input/amigamse.o input/amigamse.cfg $(DEPS)
 	$(LD) -C input/amigamse.cfg input/amigamse.o -o $@
