@@ -2,12 +2,13 @@
 ;
 ; (C)2016 LGB Gábor Lénárt
 
-.INCLUDE "c65.inc"
+;.INCLUDE "c65.inc"
+
+.SETCPU "4510"
 
 .SEGMENT "LOADADDR"
 	.IMPORT __STUB_LOAD__
 	.WORD __STUB_LOAD__
-
 
 
 .SEGMENT "STUB"

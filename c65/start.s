@@ -6,7 +6,7 @@
 .if (c65)
 
 .segment "c65start"
-.include "c65.inc"
+.setcpu "4510"
 ; Note: we can't use const.inc here, as would conflict ie with MAP constant
 ; with the MAP opcode defined in c65.inc ...
 .import _ResetHandle

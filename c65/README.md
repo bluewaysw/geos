@@ -1,12 +1,9 @@
 # Commodore-65 / Mega65
 
-`c65/c65.inc` sets 65C02 CPU type for CA65. Ideally, there should be 65CE02 (better
-say, 4502/4510) CPU support in CA65, but till that, 65C02 is also nice, at least
-we have `STZ` works this way :) Also, it defines macros for some simple opcodes,
-like `MAP`, etc.
-
-**Breaking news**: You can mostly forget this, as it seems, new CA65 version
-supports 4510 :-)
+Now, for C65 build, you need CA65 (from the CC65 package) which knowns about
+65CE02/4510 opcodes, maybe the GIT version from github.org. Thus file
+`c65/c65.inc` is gone which had some intent to provide several 65CE02 opcodes
+for the old CA65 versions.
 
 ## Loader
 
