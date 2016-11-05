@@ -4,7 +4,7 @@ by Berkeley Softworks, reverse engineered by *Maciej Witkowiak*, *Michael Steil*
 
 ## Branch
 
-This branch of the code forms my playground for testing different MEGA64 integration strategies.
+This branch of the code forms my playground for testing different MEGA65 integration strategies.
 
 ## Description
 
