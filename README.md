@@ -2,6 +2,10 @@
 
 by Berkeley Softworks, reverse engineered by *Maciej Witkowiak*, *Michael Steil*.
 
+## Branch
+
+This branch of the code forms my playground for testing different MEGA64 integration strategies.
+
 ## Description
 
 [GEOS](https://en.wikipedia.org/wiki/GEOS_(8-bit_operating_system)) is a **graphical user interface for 6502-based computers**. In the 1980s, it was commercially available for the **Commodore 64**, 128 and Plus/4 as well as the Apple II.
