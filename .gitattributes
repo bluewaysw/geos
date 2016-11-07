@@ -1,0 +1,11 @@
+*.inc linguist-language=Assembly
+*.s linguist-language=Assembly
+*.asm linguist-language=Assembly
+Makefile.* linguist-language=Makefile
+Makefile linguist-language=Makefile
+*.bin linguist-language=Binary
+*.prg linguist-language=Binary
+*.d64 linguist-language=Binary
+*.D64 linguist-language=Binary
+*.d81 linguist-language=Binary
+*.D81 linguist-language=Binary

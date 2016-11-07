@@ -61,9 +61,17 @@
 ;
 
 _ResetHandle:
+.if (c65)
+	; This should be the first, after _ResetHandle
+	; It won't be compiled in, if c65 mode is not requested
+	.import InitC65
+	jmp InitC65	; will be patched back to the original GEOS code
+	.byte $FF	; argument of ldx #$...
+.else
 	sei
 	cld
 	ldx #$FF
+.endif
 	txs
 
 ASSERT_NOT_BELOW_IO

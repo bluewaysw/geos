@@ -47,7 +47,10 @@ DRV_NULL                =       0
 DRV_1541                =       1
 DRV_1571                =       2
 DRV_1581                =       3
+DRV_F011		=	DRV_1581	; As far as GEOS Kernal is concerned it's just a 1581 driver
 DRV_NETWORK             =       15
+
+DRV_DEFAULT		=	DRV_F011
 
 ; various disk
 REL_FILE_NUM            =       9
