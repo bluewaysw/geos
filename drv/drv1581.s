@@ -156,7 +156,7 @@ SDH_1:
 	stx r4H
 	sty r4L
 	sta r1H
-	lda #40
+	lda #DIR_1581_TRACK	; MEGA65_FIXED:
 	sta r1L
 	rts
 

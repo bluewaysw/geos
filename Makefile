@@ -6,9 +6,12 @@ INPUT       ?= joydrv
 AS           = ca65
 LD           = ld65
 C1541        = c1541
+EXOMIZER	= exomizer
 PUCRUNCH     = pucrunch
 D64_TEMPLATE = GEOS64.D64
 D64_RESULT   = geos.d64
+D81_TEMPLATE	= GEOS64.D81
+D81_RESULT	= geos.d81
 DESKTOP_CVT  = desktop.cvt
 
 ASFLAGS      = -I inc -I .
@@ -58,6 +61,8 @@ KERNAL_SOURCES= \
 	kernal/wheels/loadb.s \
 	kernal/wheels/tobasicb.s \
 	kernal/wheels/reux.s \
+	kernal/vars.s \
+	c65/start.s
 
 DRIVER_SOURCES= \
 	drv/drv1541.bin \
@@ -71,6 +76,7 @@ DRIVER_SOURCES= \
 	input/pcanalog.bin
 
 DEPS= \
+	Makefile \
 	config.inc \
 	inc/c64.inc \
 	inc/const.inc \
@@ -95,6 +101,7 @@ ALL_BINS= \
 	$(BUILD_DIR)/drv/drv1541.bin \
 	$(BUILD_DIR)/drv/drv1571.bin \
 	$(BUILD_DIR)/drv/drv1581.bin \
+	$(BUILD_DIR)/drv/drvf011.bin \
 	$(BUILD_DIR)/input/joydrv.bin \
 	$(BUILD_DIR)/input/amigamse.bin \
 	$(BUILD_DIR)/input/lightpen.bin \
@@ -103,7 +110,7 @@ ALL_BINS= \
 	$(BUILD_DIR)/input/pcanalog.bin
 
 
-all: $(BUILD_DIR)/$(D64_RESULT)
+all: $(BUILD_DIR)/$(D64_RESULT) $(BUILD_DIR)/$(D81_RESULT)
 
 regress:
 	@echo "********** Building variant 'bsw'"
@@ -129,9 +136,30 @@ $(BUILD_DIR)/$(D64_RESULT): $(BUILD_DIR)/kernal_compressed.prg
 		echo \*\*\* Created fresh $@.; \
 	fi;
 
-$(BUILD_DIR)/kernal_compressed.prg: $(BUILD_DIR)/kernal_combined.prg
+$(D81_RESULT): compressed.prg compressed_c65.prg
+	if [ -s $(D81_TEMPLATE) ]; then \
+		cp $(D81_TEMPLATE) $(D81_RESULT); \
+		echo 'delete geos geoboot configure "geos kernal"' | $(C1541) $(D81_RESULT) >/dev/null; \
+		echo write compressed.prg geos | $(C1541) $(D81_RESULT) >/dev/null; \
+		echo write compressed_c65.prg geos65 | $(C1541) $(D81_RESULT) >/dev/null; \
+		echo \*\*\* Created $(D81_RESULT) based on $(D81_TEMPLATE).; \
+	else \
+		rm -f $(D81_RESULT); \
+		echo format geos,00 d81 $(D81_RESULT) | $(C1541) >/dev/null; \
+		echo write compressed.prg geos | $(C1541) $(D81_RESULT) >/dev/null; \
+		echo write compressed_c65.prg geos65 | $(C1541) $(D81_RESULT) >/dev/null; \
+		if [ -e desktop.cvt ]; then echo geoswrite desktop.cvt | $(C1541) $(D81_RESULT); fi >/dev/null; \
+		echo \*\*\* Created fresh $(D81_RESULT).; \
+	fi;
+
+(BUILD_DIR)/kernal_compressed.prg: $(BUILD_DIR)/kernal_combined.prg
 	@echo Creating $@
-	$(PUCRUNCH) -f -c64 -x0x5000 $< $@ 2> /dev/null
+	
+compressed_c65.prg: compressed.bin c65/uncrunch.o c65/loader.o
+	$(LD) -C c65/loader.cfg c65/loader.o c65/uncrunch.o -o $@
+
+compressed.prg: combined.prg
+	$(PUCRUNCH) +f -c64 -x0x5000 $< $@
 
 $(BUILD_DIR)/kernal_combined.prg: $(ALL_BINS)
 	@echo Creating $@ from kernal.bin $(DRIVE).bin $(INPUT).bin
@@ -142,6 +170,9 @@ $(BUILD_DIR)/kernal_combined.prg: $(ALL_BINS)
 	@cat $(BUILD_DIR)/input/$(INPUT).bin >> $(BUILD_DIR)/tmp.bin 2> /dev/null
 	@mv $(BUILD_DIR)/tmp.bin $(BUILD_DIR)/kernal_combined.prg
 
+compressed.bin: combined.bin
+	$(EXOMIZER) mem $<,0x5002 -o $@
+
 $(BUILD_DIR)/drv/drv1541.bin: $(BUILD_DIR)/drv/drv1541.o drv/drv1541.cfg $(DEPS)
 	$(LD) -C drv/drv1541.cfg $(BUILD_DIR)/drv/drv1541.o -o $@
 
@@ -150,6 +181,9 @@ $(BUILD_DIR)/drv/drv1571.bin: $(BUILD_DIR)/drv/drv1571.o drv/drv1571.cfg $(DEPS)
 
 $(BUILD_DIR)/drv/drv1581.bin: $(BUILD_DIR)/drv/drv1581.o drv/drv1581.cfg $(DEPS)
 	$(LD) -C drv/drv1581.cfg $(BUILD_DIR)/drv/drv1581.o -o $@
+
+$(BUILD_DIR)/drv/drvf011.bin: $(BUILD_DIR)/drv/drvf011.o drv/drvf011.cfg $(DEPS)
+	$(LD) -C drv/drvf011.cfg $(BUILD_DIR)/drv/drvf011.o -o $@
 
 $(BUILD_DIR)/input/amigamse.bin: $(BUILD_DIR)/input/amigamse.o input/amigamse.cfg $(DEPS)
 	$(LD) -C input/amigamse.cfg $(BUILD_DIR)/input/amigamse.o -o $@
@@ -180,3 +214,8 @@ $(BUILD_DIR)/kernal/kernal.bin: $(PREFIXED_KERNAL_OBJS) kernal/kernal_$(VARIANT)
 # a must!
 love:	
 	@echo "Not war, eh?"
+the:
+	@echo "Just read the .PHONY line in Makefile ;-)"
+
+.PHONY:
+	clean all the love

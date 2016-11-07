@@ -42,6 +42,8 @@
 	; size optimizations that have no significant speed impact
 	wheels_size = 1
 
+c65			=	1		; 1  = compile c65 specific init code into segment c65start
+
 	; optimizations that benefit both size and speed
 	wheels_size_and_speed = 1
 
@@ -157,3 +159,14 @@ DRV_TYPE = 3; DRV_1581
 .else
 .error "Unknown drive type!"
 .endif
+
+
+
+; ----- THIS PART CONTROLS THE CONTRUCTION OF THE FINAL BINARY IMAGE -----
+; You can even define these conditionally based on the settings above, etc!
+
+.DEFINE BUILDER_BIN_START_NAME          "start.bin"
+.DEFINE BUILDER_BIN_DSKDRV_NAME         "drvf011.bin"
+.DEFINE BUILDER_BIN_LOKERNAL_NAME       "lokernal.bin"
+.DEFINE BUILDER_BIN_KERNAL_NAME         "kernal.bin"
+.DEFINE BUILDER_BIN_INPDRV_NAME         "joydrv.bin"
