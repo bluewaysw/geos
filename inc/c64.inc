@@ -1,3 +1,5 @@
+.include "config.inc"
+
 ; Commodore Kernal equates
 tapeBuffVec     =       $b2
 curScrLine      =       $d1
@@ -7,8 +9,13 @@ kbdQue          =       $0277
 BASICMemBot     =       $0282
 BASICMemTop     =       $0284
 scrAddrHi       =       $0288
+.ifdef bsw128
+PALNTSCFLAG     =       $0A03
+BASICspace      =       $1C00
+.else
 PALNTSCFLAG     =       $02a6
 BASICspace      =       $0800
+.endif
 BASIC_START     =       $a000
 curScrLineColor =       $d8f0
 KERNALVecTab    =       $fd30
@@ -75,6 +82,11 @@ mob7clr                 =       $d02e
 keyreg                  =       $d02f
 clkreg                  =       $d030
 
+scpu_base               =       $d074
+scpu_turbo              =       $d07b
+scpu_hwreg_enable       =       $d07e
+scpu_hwreg_disable      =       $d07f
+
 ;
 vdcreg                  =       $d600
 vdcdata                 =       $d601
@@ -84,3 +96,6 @@ vdcdata                 =       $d601
 PLUS60K_CR              =       $d100
 RAMC_BASE               =       $de00
 RAMC_WINDOW             =       $df00
+
+; C128
+rcr = $D506
