@@ -9,6 +9,8 @@ C1541        = c1541
 PUCRUNCH     = pucrunch
 D64_TEMPLATE = GEOS64.D64
 D64_RESULT   = geos.d64
+D81_TEMPLATE = GEOS64.D81
+D81_RESULT   = geos.d81
 DESKTOP_CVT  = desktop.cvt
 
 ASFLAGS      = -I inc -I .
@@ -278,7 +280,7 @@ ifeq ($(VARIANT), bsw128)
 	$(BUILD_DIR)/kernal/relocator.bin
 endif
 
-all: $(BUILD_DIR)/$(D64_RESULT)
+all: $(BUILD_DIR)/$(D64_RESULT) $(BUILD_DIR)/$(D81_RESULT)
 
 regress:
 	@echo "********** Building variant 'bsw'"
@@ -299,6 +301,19 @@ $(BUILD_DIR)/$(D64_RESULT): $(BUILD_DIR)/kernal_compressed.prg
 		echo \*\*\* Created $@ based on $(D64_TEMPLATE).; \
 	else \
 		echo format geos,00 d64 $@ | $(C1541) >/dev/null; \
+		echo write $< geos | $(C1541) $@ >/dev/null; \
+		if [ -e $(DESKTOP_CVT) ]; then echo geoswrite $(DESKTOP_CVT) | $(C1541) $@; fi >/dev/null; \
+		echo \*\*\* Created fresh $@.; \
+	fi;
+
+$(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg
+	@if [ -e $(D81_TEMPLATE) ]; then \
+		cp $(D81_TEMPLATE) $@; \
+		echo delete geos geoboot | $(C1541) $@ >/dev/null; \
+		echo write $< geos | $(C1541) $@ >/dev/null; \
+		echo \*\*\* Created $@ based on $(D64_TEMPLATE).; \
+	else \
+		echo format geos,00 d81 $@ | $(C1541) >/dev/null; \
 		echo write $< geos | $(C1541) $@ >/dev/null; \
 		if [ -e $(DESKTOP_CVT) ]; then echo geoswrite $(DESKTOP_CVT) | $(C1541) $@; fi >/dev/null; \
 		echo \*\*\* Created fresh $@.; \
