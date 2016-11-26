@@ -10,9 +10,13 @@
 .include "const.inc"
 .include "geossym.inc"
 .include "geosmac.inc"
+.include "config.inc"
 .include "kernal.inc"
 .include "jumptab.inc"
 .include "c64.inc"
+
+
+; this module is always built with the mega65 variant, so 4510 cpu supported enabled
 
 .segment "drvf011"
 
@@ -60,16 +64,7 @@ E904E:				.byte $03			;904e
 
 ; ==============================================================================
 
-uname:  			.byte "U? 2 0 ", NULL
-utands:			.byte "00 00", NULL
-				.byte $0d
-uname_end:
-
-bpname: 			.byte "B-P 2 0", NULL
-bpname_end:
-
-cmdname: 		.byte "            ", NULL
-cmdnameLength:	.byte 0
+evenFlag:		.byte 0
 
 ; ==============================================================================
 
@@ -647,6 +642,19 @@ __InitForIO:					;95c6
 	STY cia2base+5
 	INY
 	STY cia2base+4
+	
+	; The implementation assumes, that the environment is properly initialized
+	; already, especially VICIII or VICIV enabled, running CPU at 3.5Mhz or
+	; 48Mhz in case of MEGA65
+	;LDA #$A5      ; C65: VIC-III enable sequence
+	;STA $D02F
+	;LDA #$96
+	;STA $D02F     ; C65: VIC-III enabled
+	;lda	#$40
+	;TSB $D031     ; set bit 6 in $D031 to put CPU at 3.5MHz
+	;;lda	#$21
+	;;TSB $D030     ; bank in $C000 interface ROM and remove CIAs from IO map
+	
 	RTS
 
 __DoneWithIO:
@@ -676,34 +684,37 @@ __ReadBlock:					;98e4
 	BNE _ReadBlockEnd
 
 _ReadBlockCont1:
-	JSR OpenBlockForReading
-	BCS _ReadBlockClose      ; if carry set, the file could not be opened
-
-	LDX #$02        ; filenumber 2
-	JSR $FFC6       ; call CHKIN (file 2 now used as input)
-
-	LDY #$00
-_ReadBlockLoop:
-	JSR $FFCF       ; call CHRIN (get a byte from file)
-	STA (r4L),Y     ; write byte to memory
+; Read sector from disk
+	JSR _SetOperation	; set 
+	BCS @1
+	LDA #$01
+	STA $D081
+	LDA #$40
+	STA $D081
+@3:
+	LDA $D082
+	AND #$10
+	BNE @2
+	LDA $D083
+	BPL @3
+@2:
+@1:
+	LDY #$00		;; read over 256 bytes if needed
+	LDA evenFlag
+	BEQ @4
+@5:
+	JSR _ReadByte		
 	INY
-	BNE _ReadBlockLoop       ; next byte, end when 256 bytes are read
-
-	LDX #0
-
-_ReadBlockClose:
-	TXA
-
-	LDA #$0F        ; filenumber 15
-	JSR $FFC3       ; call CLOSE
-
-	LDA #$02        ; filenumber 2
-	JSR $FFC3       ; call CLOSE
-
-	JSR $FFCC       ; call CLRCHN
-
-	TAX
-
+	BNE @5
+@4:
+@6:
+	JSR _ReadByte		; read our 256 byte sector in the buffer?
+	STA (r4L),Y
+	INY
+	BNE @6
+	
+	LDX #0			; no error
+	
 ReadBlockDirBlock:
 	CmpBI r1L, DIR_1581_TRACK                      ;9924
 	BNE _ReadBlockWriteCache
@@ -741,73 +752,135 @@ _ReadBlockEnd:
 
 	RTS
 
+_ReadByte:
+@1:
+	LDA $D082
+	AND #$20
+	BNE @1
+	LDA $D087
+	RTS
+	
+_WriteByte:
+	STA $D087
+	RTS
+	
+_SetOperation:
+
+	JSR _WaitReady
+	
+	LDA r1L		; track 1-80
+	DEC
+	STA $D084		; track
+	
+	LDA r1H		; 
+	CMP #$14		; c set if >= 20
+	LDA #$00
+	ROL
+	EOR #1
+	STA $D086		; side
+	EOR #1
+	BEQ @1
+	LDA #$14
+@1:
+	NEG
+	CLC
+	ADC r1H
+	LSR
+	INC
+	STA $D085		; sector
+	
+	LDA #$00
+	ROR
+	STA evenFlag
+	
+	CLC
+	RTS
+
+_ExecCommand:
+	STA $D081
+_WaitReady:
+@1:
+	BIT $D082
+	BMI @1
+	RTS
+
+_CheckResult:
+	JSR _WaitReady
+	LDA $D082
+	AND #$18
+	BEQ @1
+	
+	SEC
+	RTS
+@1:
+	CLC
+	RTS
+
+_DriveReady:
+	JSR _WaitReady
+	LDA $D082
+	AND #$02
+	BNE @1
+	CLC
+	RTS
+@1:
+	SEC
+	RTS
+	
 __WriteBlock:					;9960
 	JSR CheckParams
 	BCC _WriteBlockEnd
 
 	JSR ReadBlockDirBlock
 
-	JSR OpenBlockForWriting
-	BCS _WriteBlockClose      ; if carry set, the file could not be opened
-
-	LDX #$02        ; filenumber 2
-	JSR $FFC9       ; call CHKOUT (file 2 now used as output)
-
-	LDY #$00
-_WriteBlockLoop:
-	LDA (r4L),Y     ; write byte to memory
-	JSR $FFD2       ; call CHROUT (write byte to channel buffer)
+	; f011 block write here
+	JSR _SetOperation		; set track, side, sector
+	BCS _WriteBlockEnd
+	
+	JSR _DriveReady		; drive ready, not wrote protect
+	BCS _WriteBlockEnd
+	
+	LDA #$40
+	JSR _ExecCommand		; execute read	
+	JSR _CheckResult		; test if read succeeded
+	BCS _WriteBlockEnd
+	
+	LDY #$00		; skip first 256 bytes if needed
+	LDA evenFlag
+	BEQ @1
+@2:
+	JSR _ReadByte	; read byte without checking if available
+	INY	
+	BNE @2	
+@1:
+	LDA (r4),Y		; write our 256 byte buffer
+	JSR _WriteByte
 	INY
-	BNE _WriteBlockLoop       ; next byte, end when 256 bytes have been written
+	BNE @1
+@4:
+	LDA $D082		; read up rest of the buffer
+	AND #$20
+	BNE @3
+	JSR _ReadByte 	; read byte without checking if available
+	BRA @4
+@3:
+	LDA #$80
+	JSR _ExecCommand 		; write sector
 
-	LDX #$0f        ; filenumber 15
-	JSR $FFC9       ; call CHKOUT (file 15 now used as output)
-
-	LDA #'2'
-	STA uname+1
-		
-	PushW r4
-
-	; Instrument track into command string
-	LoadW r4, utands+0
-	LDA r1L
-	JSR AToPetscii
-
-	; Instrument sector into command string
-	LoadW r4, utands+3
-	LDA r1H
-	JSR AToPetscii
-
-	PopW r4
-
-	LDY #0
-_WriteBlockLoop2:
-	LDA uname,Y
-	JSR $FFD2
-	INY
-	CPY #uname_end-uname
-	BNE _WriteBlockLoop2
-
-    LDX #0
-
-_WriteBlockClose:
-	TXA
-
-	JSR $FFCC       ; call CLRCHN
-
-	LDA #$0F        ; filenumber 15
-	JSR $FFC3       ; call CLOSE
-
-	LDA #$02        ; filenumber 2
-	JSR $FFC3       ; call CLOSE
-
-	JSR $FFCC       ; call CLRCHN
-
-	TAX
-
+	; read back written sector
+	; here we use this not for checking but to ensure the 
+	; the next read will be alined, strange
+	; TODO: double check why this fails on mega65 if reading
+	; the next blick straigt after write command
+	LDA #$40	; read command
+	JSR _ExecCommand	; execute FDC command
+	JSR _CheckResult  	; Test wether read or write succeed?
+	
+	LDX	#0
+	
+_WriteBlockEnd:
 	JSR ReadBlockDirBlock			;998b
 
-_WriteBlockEnd:
 	RTS				;998e
 
 __VerWriteBlock: 				;998f
@@ -959,135 +1032,3 @@ cname:
 	.byte "#"
 cname_end:
 
-; ==============================================================================
-
-OpenBlockForReading:
-	LDA #'1'
-	STA uname+1
-
-	PushW r4
-
-	; Instrument track into command string
-	LoadW r4, utands+0
-	LDA r1L
-	JSR AToPetscii
-
-	; Instrument sector into command string
-	LoadW r4, utands+3
-	LDA r1H
-	JSR AToPetscii
-
-	PushW r5
-
-	LDY #0
-	LoadW r4, uname
-	LoadW r5, cmdname
-_OpenBlockForReadingLoop:
-	LDA (r4),Y
-	STA (r5),Y
-	INY
-	CPY #uname_end-uname
-	BNE _OpenBlockForReadingLoop
-
-	TYA
-	STA cmdnameLength
-
-	PopW r5
-	PopW r4
-	
-	JMP OpenBlock
-		
-; ==============================================================================
-
-OpenBlockForWriting:
-	PushW r4
-	PushW r5
-
-	LDY #0
-	LoadW r4, bpname
-	LoadW r5, cmdname
-_OpenBlockForWritingLoop:
-	LDA (r4),Y
-	STA (r5),Y
-	INY
-	CPY #bpname_end-bpname
-	BNE _OpenBlockForWritingLoop
-
-	TYA
-	STA cmdnameLength
-
-	PopW r5	
-	PopW r4
-
-	JMP OpenBlock
-        
-; ==============================================================================
-
-OpenBlock:
-	
-	; open the channel file
-	LDA #cname_end-cname
-	LDX #<cname
-	LDY #>cname
-	JSR $FFBD       ; call SETNAM
-
-	LDA #$02        ; file number 2
-	LDX $BA         ; last used device number
-	BNE _OpenBlockSkip
-	LDX #$08        ; default to device 8
-
-_OpenBlockSkip:	
-	LDY #$02        ; secondary address 2
-	JSR $FFBA       ; call SETLFS
-
-	LDX #0
-	JSR $FFC0       ; call OPEN
-	BCS _OpenBlockError      ; if carry set, the file could not be opened
-
-	; open the command channel
-	LDA cmdnameLength
-	LDX #<cmdname
-	LDY #>cmdname
-	JSR $FFBD       ; call SETNAM
-	LDA #$0F        ; file number 15
-	LDX $BA         ; last used device number
-	LDY #$0F        ; secondary address 15
-	JSR $FFBA       ; call SETLFS
-
-	LDX #0
-	JSR $FFC0       ; call OPEN (open command channel and send U? command)
-	BCS _OpenBlockError
-
-_OpenBlockEnd:
-	RTS
-
-_OpenBlockError:
-	JSR $FFB7
-	TAX
-
-	JMP _OpenBlockEnd
-
-; ==============================================================================
-
-AToPetscii:
-	LDY #$2f
-	LDX #$3a
-	SEC
-_loop1:  
-	INY
-    SBC #100
-    BCS _loop1
-_loop2:
-	DEX
-	ADC #10
-	BMI _loop2
-	ADC #$2f
-
-	LDY #1
-	STA (r4),Y
-
-	DEY
-	TXA
-	STA (r4),Y
-
-	RTS

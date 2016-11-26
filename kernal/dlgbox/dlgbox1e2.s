@@ -28,7 +28,7 @@
 .global DBIcOPEN
 .global DBKeyVector
 
-.ifdef wheels
+.ifdef wheels_fixes
 .global DBKeyVector2
 .global DBStringFaultVec2
 .global DoKeyboardShortcut

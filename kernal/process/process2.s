@@ -15,7 +15,7 @@
 .import TimersCMDs
 .import NumTimers
 
-.ifdef wheels
+.ifdef wheels_fixes
 .import EnableProcess
 .endif
 

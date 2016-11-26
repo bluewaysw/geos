@@ -10,7 +10,7 @@
 .include "kernal.inc"
 .include "c64.inc"
 
-.ifdef wheels
+.ifdef wheels_fixes
 .import StringGetNext
 .import DBStringFaultVec2
 .endif

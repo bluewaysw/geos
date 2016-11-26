@@ -21,9 +21,10 @@ Add2:
         lda     #2
         adc     r6L
         sta     r6L
-        bcc     @1
+        bcc     Add2_return
         inc     r6H
-@1:	rts
+Add2_return:
+	rts
 .else
 	AddVW 2, r6
 Add2_return:

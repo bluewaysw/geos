@@ -184,10 +184,12 @@
 	PopB dest+1
 .endmacro
 
+.ifndef mega65
 .macro bra addr
 	clv
 	bvc addr
 .endmacro
+.endif
 
 .macro smb bitN, dest
 	pha

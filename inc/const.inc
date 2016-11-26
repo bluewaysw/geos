@@ -103,7 +103,10 @@ SCREENPIXELWIDTH        =       640
 EOF                     =       0
 BACKSPACE               =       8
 FORWARDSPACE            =       9
+.ifndef mega65
+; seems to be a reserved name for 4502 cpu
 TAB                     =       9
+.endif
 LF                      =       10
 HOME                    =       11
 PAGE_BREAK              =       12

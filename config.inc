@@ -96,6 +96,53 @@ config_inc = 1
 	; throughout the code
 .endif
 
+;---------------------
+; the MEGA65 variant
+;---------------------
+.ifdef mega65
+;
+;.setcpu "4510"
+
+	; make use of all reusable Wheels optimizations and fixes
+	wheels_size = 1
+	wheels_size_and_speed = 1
+	wheels_remove_BootGEOS = 1
+	wheels_fixes = 1
+
+	remove_dead_bytes = 1
+
+	; replace BASIC reboot code with trivial version (+200 bytes)
+	removeToBASIC = 1
+
+	; for 2MHz-on-border on C128 in 64 mode
+	;use2MHz = 1
+
+	; only VLIR and SEQ supported
+	;onlyVLIR = 1
+
+	; RAM expansions configuration
+	; (only one may be defined, if all are undefined, then REU is utililzed)
+	; for +60K expansion users
+	;usePlus60K = 1
+	; for Ram Cart 64K
+	;useRamCart64 = 1
+	; for Ram Cart 128K
+	;useRamCart128 = 1
+
+	; GEOS2000
+	; makes drawing dialog boxes much faster, might cause visual mess
+	; takes more bytes
+	;speedupDlgBox = 1
+
+	; GEOS2000
+	; bug - when 0 no blinking in menu
+	;newMenu_5 = 1
+	
+	; additionally, there are ".ifdef mega65" checks
+	; throughout the code
+	.setcpu "4510"
+.endif
+
 .ifdef custom
 	; make use of all reusable Wheels optimizations and fixes
 	wheels_size = 1
@@ -171,6 +218,8 @@ DRV_TYPE = 1 ; DRV_1541
 .elseif .defined(drv1571)
 DRV_TYPE = 2; DRV_1571
 .elseif .defined(drv1581)
+DRV_TYPE = 3; DRV_1581
+.elseif .defined(drvf011)
 DRV_TYPE = 3; DRV_1581
 .else
 .error "Unknown drive type!"

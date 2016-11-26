@@ -1,6 +1,6 @@
 
-VARIANT     ?= bsw
-DRIVE       ?= drv1541
+VARIANT     ?= mega65
+DRIVE       ?= drvf011
 INPUT       ?= joydrv
 
 AS           = ca65
@@ -238,6 +238,12 @@ DRIVER_SOURCES= \
 	input/koalapad.bin \
 	input/pcanalog.bin
 
+# code that is in MEGA65 compiled with 4502 cpu
+ifeq ($(VARIANT), mega65)
+DRIVER_SOURCES += \
+	drv/drvf011.bin 
+endif	
+	
 DEPS= \
 	config.inc \
 	inc/c64.inc \
@@ -273,6 +279,12 @@ ALL_BINS= \
 	$(BUILD_DIR)/input/mse1531.bin \
 	$(BUILD_DIR)/input/koalapad.bin \
 	$(BUILD_DIR)/input/pcanalog.bin
+
+# code that is in MEGA65 compiled with 4502 cpu
+ifeq ($(VARIANT), mega65)
+ALL_BINS += \
+	$(BUILD_DIR)/drv/drvf011.bin
+endif	
 
 ifeq ($(VARIANT), bsw128)
 	ALL_BINS += \
@@ -367,6 +379,9 @@ $(BUILD_DIR)/drv/drv1571.bin: $(BUILD_DIR)/drv/drv1571.o drv/drv1571.cfg $(DEPS)
 
 $(BUILD_DIR)/drv/drv1581.bin: $(BUILD_DIR)/drv/drv1581.o drv/drv1581.cfg $(DEPS)
 	$(LD) -C drv/drv1581.cfg $(BUILD_DIR)/drv/drv1581.o -o $@
+
+$(BUILD_DIR)/drv/drvf011.bin: $(BUILD_DIR)/drv/drvf011.o drv/drvf011.cfg $(DEPS)
+	$(LD) -C drv/drvf011.cfg $(BUILD_DIR)/drv/drvf011.o -o $@
 
 $(BUILD_DIR)/input/amigamse.bin: $(BUILD_DIR)/input/amigamse.o input/amigamse.cfg $(DEPS)
 	$(LD) -C input/amigamse.cfg $(BUILD_DIR)/input/amigamse.o -o $@

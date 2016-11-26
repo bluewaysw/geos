@@ -88,6 +88,20 @@ ASSERT_NOT_BELOW_IO
 	lda #0 ; monochrome mode
 	jsr SetColorMode
 .endif
+.ifdef mega65
+	; Enable C65GS IO
+	; 47, 53 = enable VIC IV
+	; a5, 96 = enable VIC III
+	
+	lda #$a5
+	sta $d02f
+	lda #$96
+	sta $d02f
+
+	lda	#$40	; 3.5Mhz
+	sta	$d031
+.endif
+
 .if .defined(wheels) || .defined(removeToBASIC)
 	ldx #32
 @3:	lda KERNALVecTab-1,x
