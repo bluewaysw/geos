@@ -7,10 +7,12 @@ AS           = ca65
 LD           = ld65
 C1541        = c1541
 PUCRUNCH     = pucrunch
+EXOMIZER     = exomizer
 D64_TEMPLATE = GEOS64.D64
 D64_RESULT   = geos.d64
 D81_TEMPLATE = GEOS64.D81
 D81_RESULT   = geos.d81
+GEOS_OUT     = geos65
 DESKTOP_CVT  = desktop.cvt
 
 ASFLAGS      = -I inc -I .
@@ -227,6 +229,7 @@ RELOCATOR_SOURCES = \
 	kernal/start/relocator128.s
 endif
 
+
 DRIVER_SOURCES= \
 	drv/drv1541.bin \
 	drv/drv1571.bin \
@@ -279,6 +282,7 @@ ALL_BINS= \
 	$(BUILD_DIR)/input/mse1531.bin \
 	$(BUILD_DIR)/input/koalapad.bin \
 	$(BUILD_DIR)/input/pcanalog.bin
+	
 
 # code that is in MEGA65 compiled with 4502 cpu
 ifeq ($(VARIANT), mega65)
@@ -309,7 +313,7 @@ $(BUILD_DIR)/$(D64_RESULT): $(BUILD_DIR)/kernal_compressed.prg
 	@if [ -e $(D64_TEMPLATE) ]; then \
 		cp $(D64_TEMPLATE) $@; \
 		echo delete geos geoboot | $(C1541) $@ >/dev/null; \
-		echo write $< geos | $(C1541) $@ >/dev/null; \
+		echo write $< geos $(GEOS_OUT) | $(C1541) $@ >/dev/null; \
 		echo \*\*\* Created $@ based on $(D64_TEMPLATE).; \
 	else \
 		echo format geos,00 d64 $@ | $(C1541) >/dev/null; \
@@ -321,20 +325,35 @@ $(BUILD_DIR)/$(D64_RESULT): $(BUILD_DIR)/kernal_compressed.prg
 $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg
 	@if [ -e $(D81_TEMPLATE) ]; then \
 		cp $(D81_TEMPLATE) $@; \
-		echo delete geos geoboot | $(C1541) $@ >/dev/null; \
-		echo write $< geos | $(C1541) $@ >/dev/null; \
-		echo \*\*\* Created $@ based on $(D64_TEMPLATE).; \
+		echo delete geos $(GEOS_OUT) geoboot | $(C1541) $@ >/dev/null; \
+		echo write $< $(GEOS_OUT) | $(C1541) $@ >/dev/null; \
+		echo \*\*\* Created $@ based on $(D81_TEMPLATE).; \
 	else \
 		echo format geos,00 d81 $@ | $(C1541) >/dev/null; \
-		echo write $< geos | $(C1541) $@ >/dev/null; \
+		echo write $< $(GEOS_OUT) | $(C1541) $@ >/dev/null; \
 		if [ -e $(DESKTOP_CVT) ]; then echo geoswrite $(DESKTOP_CVT) | $(C1541) $@; fi >/dev/null; \
 		echo \*\*\* Created fresh $@.; \
 	fi;
 
+
+ifeq ($(VARIANT), mega65)
+$(BUILD_DIR)/compressed.bin: $(BUILD_DIR)/kernal_combined.prg
+	$(EXOMIZER) mem $<,0x5000 -o $@
+
+$(BUILD_DIR)/compressed_mega65.prg: $(BUILD_DIR)/compressed.bin $(BUILD_DIR)/loader/uncrunch.o $(BUILD_DIR)/loader/loader.o
+	$(LD) -C loader/loader.cfg $(BUILD_DIR)/loader/loader.o $(BUILD_DIR)/loader/uncrunch.o -o $@
+endif
+	
+ifeq ($(VARIANT), mega65)
+$(BUILD_DIR)/kernal_compressed.prg: $(BUILD_DIR)/compressed_mega65.prg
+else
 $(BUILD_DIR)/kernal_compressed.prg: $(BUILD_DIR)/kernal_combined.prg
+endif
 	@echo Creating $@
 ifeq ($(VARIANT), bsw128)
 	# pucrunch can't compress for C128 :(
+	cp $< $@
+else ifeq ($(VARIANT), mega65)
 	cp $< $@
 else
 	$(PUCRUNCH) -f -c64 -x0x5000 $< $@ 2> /dev/null
