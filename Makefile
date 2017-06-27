@@ -329,12 +329,15 @@ $(BUILD_DIR)/$(D64_RESULT): $(BUILD_DIR)/kernal_compressed.prg
 		echo \*\*\* Created fresh $@.; \
 	fi;
 
-$(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/config.cvt
+$(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topdesk.cvt $(BUILD_DIR)/config.cvt
 	@if [ -e $(D81_TEMPLATE) ]; then \
 		cp $(D81_TEMPLATE) $@; \
 		echo delete geos $(GEOS_OUT) configure geoboot | $(C1541) $@ >/dev/null; \
 		echo write $< $(GEOS_OUT) | $(C1541) $@ >/dev/null; \
+		echo delete \"desk top\" | $(C1541) $@ >/dev/null; \
+		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
+
 		echo \*\*\* Created $@ based on $(D81_TEMPLATE).; \
 	else \
 		echo format geos,00 d81 $@ | $(C1541) >/dev/null; \
@@ -343,6 +346,16 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/conf
 		if [ -e $(DESKTOP_CVT) ]; then echo geoswrite $(DESKTOP_CVT) | $(C1541) $@; fi >/dev/null; \
 		echo \*\*\* Created fresh $@.; \
 	fi;
+
+$(BUILD_DIR)/topdesk/topdesk.o:
+	@mkdir -p `dirname $@`
+	$(GRC) -s $(BUILD_DIR)/topdesk/topdesk.s -o $(BUILD_DIR)/topdesk/topdesk.c topdesk/topdesk.grc
+	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/topdesk/topdesk.s -o $@
+
+$(BUILD_DIR)/configure/configure.o:
+	@mkdir -p `dirname $@`
+	$(GRC) -s $(BUILD_DIR)/configure/configure.s -o $(BUILD_DIR)/configure/configure.c configure/configure.grc
+	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/configure/configure.s -o $@
 
 $(BUILD_DIR)/configure/configure.o:
 	@mkdir -p `dirname $@`
@@ -355,7 +368,24 @@ $(BUILD_DIR)/config.cvt: $(BUILD_DIR)/configure/configure.o $(BUILD_DIR)/configu
 	$(LD) -C configure/configure.cfg -o $@ $(BUILD_DIR)/configure/configure.o -m $(BUILD_DIR)/configure.map $(BUILD_DIR)/configure/r0.o \
 			$(BUILD_DIR)/configure/r2.o $(BUILD_DIR)/configure/r3.o $(BUILD_DIR)/configure/r4.o \
 			$(BUILD_DIR)/configure/r5.o $(BUILD_DIR)/configure/r6.o $(BUILD_DIR)/configure/r1.o 
-	
+
+$(BUILD_DIR)/topdesk.cvt: $(BUILD_DIR)/topdesk/topdesk.o $(BUILD_DIR)/topdesk/Main/DeskTop.main.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub.o \
+											$(BUILD_DIR)/topdesk/Main/DeskTop.sub2.o \
+											$(BUILD_DIR)/topdesk/Main/DeskTop.sub3.o \
+											$(BUILD_DIR)/topdesk/Main/DeskTop.sub4.o \
+											$(BUILD_DIR)/topdesk/Main/DeskTop.sub5.o \
+											$(BUILD_DIR)/topdesk/Main/DeskTop.sub6.o \
+											$(BUILD_DIR)/topdesk/Main/DeskTop.sub7.o \
+											$(BUILD_DIR)/topdesk/Main/DeskTop.sub8.o \
+											$(BUILD_DIR)/topdesk/Main/DeskTop.sub9.o \
+											$(BUILD_DIR)/topdesk/Main/DeskTop.sub10.o 
+	$(LD) -C topdesk/topdesk.cfg -o $@ $(BUILD_DIR)/topdesk/topdesk.o -m $(BUILD_DIR)/topdesk.map $(BUILD_DIR)/topdesk/Main/DeskTop.main.o \
+								$(BUILD_DIR)/topdesk/Main/DeskTop.sub.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub2.o \
+								$(BUILD_DIR)/topdesk/Main/DeskTop.sub3.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub4.o \
+								$(BUILD_DIR)/topdesk/Main/DeskTop.sub5.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub6.o \
+								$(BUILD_DIR)/topdesk/Main/DeskTop.sub7.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub8.o \
+								$(BUILD_DIR)/topdesk/Main/DeskTop.sub9.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub10.o 
+
 ifeq ($(VARIANT), mega65)
 $(BUILD_DIR)/compressed.bin: $(BUILD_DIR)/kernal_combined.prg
 	$(EXOMIZER) mem $<,0x5000 -o $@

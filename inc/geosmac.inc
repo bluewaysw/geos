@@ -29,6 +29,11 @@
 	LoadB dest+0, <(value)
 .endmacro
 
+.macro LoadW___ dest, value
+	LoadB dest+0, <(value)
+	LoadB dest+1, >(value)
+.endmacro
+
 .macro MoveB source, dest
 	lda source
 	sta dest
@@ -110,6 +115,16 @@
 	.endif
 .endmacro
 
+.macro AddVW__ value, dest
+	lda #<(value)
+	clc
+	adc dest
+	sta dest
+	lda #>(value)
+	adc dest + 1
+	sta dest + 1
+.endmacro
+
 .macro sub source
 	sec
 	sbc source
@@ -131,6 +146,16 @@
 .macro SubVW value, dest
 	sec
 	lda dest+0
+	sbc #<(value)
+	sta dest+0
+	lda dest+1
+	sbc #>(value)
+	sta dest+1
+.endmacro
+
+.macro SubVW_ value, dest
+	lda dest+0
+	sec
 	sbc #<(value)
 	sta dest+0
 	lda dest+1
@@ -381,3 +406,24 @@ ASSERT_NOT_BELOW_IO
 .macro END_IO_128
 .endmacro
 .endif
+
+.macro bge addr
+	bcs	addr
+.endmacro
+
+.macro bgt	addr
+    .local @done
+	beq	@done
+	bcs	addr
+@done:
+.endmacro
+
+.macro blt addr
+	bcc	addr
+.endmacro
+
+.macro ble	addr
+	beq	addr
+	bcc	addr
+.endmacro
+	
