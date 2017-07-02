@@ -324,11 +324,11 @@ GFDirBlk11:
 	lda diskBlkBuf
 	bne GFDirBlk2
 	jsr AddDirBlock
-	bra GFDirBlk1
+	bra_ GFDirBlk1
 GFDirBlk2:
 	sta r1L
 	MoveB diskBlkBuf+1, r1H
-	bra GFDirBlk0
+	bra_ GFDirBlk0
 GFDirBlk3:
 	ldy #FRST_FILE_ENTRY
 	ldx #0
@@ -422,7 +422,7 @@ SNxtFree3:
 	adc #4
 	adc interleave
 	sta r6H
-	bra SNxtFree00
+	bra_ SNxtFree00
 SNxtFree4:
 	MoveW_ r6, r3
 	ldx #0
@@ -452,7 +452,7 @@ SNFHlp2_1:
 	cmp r7L
 	bcc SNFHlp2_2
 	sub r7L
-	bra SNFHlp2_1
+	bra_ SNFHlp2_1
 SNFHlp2_2:
 	sta r6H
 
@@ -1039,7 +1039,7 @@ RdBlock1:
 	bnex RdBlock2
 	bbrf 6, curType, RdBlock2
 	jsr DoCacheWrite
-	bra RdBlock2
+	bra_ RdBlock2
 RdBlock2:
 	ldy #0
 	rts

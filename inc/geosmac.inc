@@ -191,6 +191,11 @@
 .endmacro
 .endif
 
+.macro bra_ addr
+	clv
+	bvc addr
+.endmacro
+
 .macro smb bitN, dest
 	pha
 	lda #1 << bitN

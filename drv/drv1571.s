@@ -132,6 +132,7 @@ PDH_0:
 	bbrf 7, curDirHead+3, PDH_1
 	jsr SetDirHead_2
 	jsr VerWriteBlock
+	bnex PDH_1
 PDH_1:
 	jmp DoneWithIO
 
@@ -357,11 +358,11 @@ GFDirBlk11:
 	lda diskBlkBuf
 	bne GFDirBlk2
 	jsr AddDirBlock
-	bra GFDirBlk1
+	bra_ GFDirBlk1
 GFDirBlk2:
 	sta r1L
 	MoveB diskBlkBuf+1, r1H
-	bra GFDirBlk0
+	bra_ GFDirBlk0
 GFDirBlk3:
 	ldy #FRST_FILE_ENTRY
 	ldx #0
@@ -478,9 +479,9 @@ SNxtFree7:
 	adc #4
 	adc interleave
 	sta r6H
-	bra SNxtFree00
+	bra_ SNxtFree00
 SNxtFreeEnd_OK:
-	MoveW r6, r3
+	MoveW_ r6, r3
 	ldx #0
 	rts
 SNxtFreeEnd_Err:
@@ -514,7 +515,7 @@ SNFHlp2_1:
 	cmp r7L
 	bcc SNFHlp2_2
 	sub r7L
-	bra SNFHlp2_1
+	bra_ SNFHlp2_1
 SNFHlp2_2:
 	sta r6H
 
@@ -530,7 +531,7 @@ AllBlk0:
 	lda r8H
 	eor dir2Head,x
 	sta dir2Head,x
-	bra AllBlk2
+	bra_ AllBlk2
 AllBlk1:
 	lda r8H
 	eor curDirHead,x
@@ -540,7 +541,7 @@ AllBlk2:
 	plp
 	beq AllBlk3
 	dec curDirHead,x
-	bra AllBlk4
+	bra_ AllBlk4
 AllBlk3:
 	inc curDirHead,x
 AllBlk4:
@@ -598,7 +599,7 @@ FBBBitTab:
 	.byte $10, $20, $40, $80
 
 __CalcBlksFree:
-	LoadW r4, 0
+	LoadW_ r4, 0
 	ldy #OFF_TO_BAM
 CBlksFre0:
 	lda (r5),y
@@ -640,8 +641,8 @@ __SetGEOSDisk:
 	lda r4L
 	ora r4H
 	beq SetGDisk2
-	LoadB r3L, DIR_TRACK+1
 	LoadB r3H, 0
+	LoadB r3L, DIR_TRACK+1
 	jsr SetNextFree
 	beqx SetGDisk0
 	LoadB r3L, 1
@@ -889,17 +890,24 @@ SndCHNK2:
 WriteCommand:
 	.byte "M-W"
 WriteAddy:
-	.word $0300
+;XXX	.word $0300
+	.word $0000
 
 NibbleTab:
 	.byte $0f, $07, $0d, $05, $0b, $03, $09, $01
 	.byte $0e, $06, $0c, $04, $0a, $02, $08, $00
 NibbleTab2:
-	.byte $05, $85, $25, $a5, $45, $c5, $65, $e5
-	.byte $15, $95, $35, $b5, $55, $d5, $75, $f5
+;XXX	.byte $05, $85, $25, $a5, $45, $c5, $65, $e5
+    .byte $00, $80, $20, $a0, $40, $c0, $60, $e0
+;XXX	.byte $15, $95, $35, $b5, $55, $d5, $75, $f5
+    .byte $10, $90, $30, $b0, $50, $d0, $70, $f0
+
+
 E96F8:
-	.byte $05, $25, $05, $25, $15, $35, $15, $35
-	.byte $05, $25, $05, $25, $15, $35, $15, $35
+;XXX	.byte $05, $25, $05, $25, $15, $35, $15, $35
+    .byte $00, $20, $00, $20, $10, $30, $10, $30
+;XXX	.byte $05, $25, $05, $25, $15, $35, $15, $35
+    .byte $00, $20, $00, $20, $10, $30, $10, $30
 
 Hst_RecvByte:
 	PushB r0L

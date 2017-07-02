@@ -5,6 +5,7 @@ INPUT       ?= joydrv
 
 AS           = ca65
 LD           = ld65
+GRC          = grc65
 C1541        = c1541
 PUCRUNCH     = pucrunch
 EXOMIZER     = exomizer
@@ -234,6 +235,9 @@ DRIVER_SOURCES= \
 	drv/drv1541.bin \
 	drv/drv1571.bin \
 	drv/drv1581.bin \
+	drv/drv1581-21hd.bin \
+	drv/drv1571ram.bin \
+	drv/drv1581ram.bin \
 	input/joydrv.bin \
 	input/amigamse.bin \
 	input/lightpen.bin \
@@ -276,6 +280,9 @@ ALL_BINS= \
 	$(BUILD_DIR)/drv/drv1541.bin \
 	$(BUILD_DIR)/drv/drv1571.bin \
 	$(BUILD_DIR)/drv/drv1581.bin \
+	$(BUILD_DIR)/drv/drv1581-21hd.bin \
+	$(BUILD_DIR)/drv/drv1571ram.bin \
+	$(BUILD_DIR)/drv/drv1581ram.bin \
 	$(BUILD_DIR)/input/joydrv.bin \
 	$(BUILD_DIR)/input/amigamse.bin \
 	$(BUILD_DIR)/input/lightpen.bin \
@@ -322,20 +329,33 @@ $(BUILD_DIR)/$(D64_RESULT): $(BUILD_DIR)/kernal_compressed.prg
 		echo \*\*\* Created fresh $@.; \
 	fi;
 
-$(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg
+$(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/config.cvt
 	@if [ -e $(D81_TEMPLATE) ]; then \
 		cp $(D81_TEMPLATE) $@; \
-		echo delete geos $(GEOS_OUT) geoboot | $(C1541) $@ >/dev/null; \
+		echo delete geos $(GEOS_OUT) configure geoboot | $(C1541) $@ >/dev/null; \
 		echo write $< $(GEOS_OUT) | $(C1541) $@ >/dev/null; \
+		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
 		echo \*\*\* Created $@ based on $(D81_TEMPLATE).; \
 	else \
 		echo format geos,00 d81 $@ | $(C1541) >/dev/null; \
 		echo write $< $(GEOS_OUT) | $(C1541) $@ >/dev/null; \
+		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
 		if [ -e $(DESKTOP_CVT) ]; then echo geoswrite $(DESKTOP_CVT) | $(C1541) $@; fi >/dev/null; \
 		echo \*\*\* Created fresh $@.; \
 	fi;
 
+$(BUILD_DIR)/configure/configure.o:
+	@mkdir -p `dirname $@`
+	$(GRC) -s $(BUILD_DIR)/configure/configure.s -o $(BUILD_DIR)/configure/configure.c configure/configure.grc
+	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/configure/configure.s -o $@
 
+$(BUILD_DIR)/config.cvt: $(BUILD_DIR)/configure/configure.o $(BUILD_DIR)/configure/r0.o $(BUILD_DIR)/configure/r2.o \
+                                $(BUILD_DIR)/configure/r3.o $(BUILD_DIR)/configure/r4.o $(BUILD_DIR)/configure/r5.o \
+								$(BUILD_DIR)/configure/r6.o $(BUILD_DIR)/configure/r1.o
+	$(LD) -C configure/configure.cfg -o $@ $(BUILD_DIR)/configure/configure.o -m $(BUILD_DIR)/configure.map $(BUILD_DIR)/configure/r0.o \
+			$(BUILD_DIR)/configure/r2.o $(BUILD_DIR)/configure/r3.o $(BUILD_DIR)/configure/r4.o \
+			$(BUILD_DIR)/configure/r5.o $(BUILD_DIR)/configure/r6.o $(BUILD_DIR)/configure/r1.o 
+	
 ifeq ($(VARIANT), mega65)
 $(BUILD_DIR)/compressed.bin: $(BUILD_DIR)/kernal_combined.prg
 	$(EXOMIZER) mem $<,0x5000 -o $@
@@ -398,6 +418,15 @@ $(BUILD_DIR)/drv/drv1571.bin: $(BUILD_DIR)/drv/drv1571.o drv/drv1571.cfg $(DEPS)
 
 $(BUILD_DIR)/drv/drv1581.bin: $(BUILD_DIR)/drv/drv1581.o drv/drv1581.cfg $(DEPS)
 	$(LD) -C drv/drv1581.cfg $(BUILD_DIR)/drv/drv1581.o -o $@
+
+$(BUILD_DIR)/drv/drv1581-21hd.bin: $(BUILD_DIR)/drv/drv1581-21hd.o drv/drv1581-21hd.cfg $(DEPS)
+	$(LD) -C drv/drv1581-21hd.cfg $(BUILD_DIR)/drv/drv1581-21hd.o -o $@
+
+$(BUILD_DIR)/drv/drv1571ram.bin: $(BUILD_DIR)/drv/drv1571ram.o drv/drv1571ram.cfg $(DEPS)
+	$(LD) -C drv/drv1571ram.cfg $(BUILD_DIR)/drv/drv1571ram.o -o $@
+
+$(BUILD_DIR)/drv/drv1581ram.bin: $(BUILD_DIR)/drv/drv1581ram.o drv/drv1581ram.cfg $(DEPS)
+	$(LD) -C drv/drv1581ram.cfg $(BUILD_DIR)/drv/drv1581ram.o -o $@
 
 $(BUILD_DIR)/drv/drvf011.bin: $(BUILD_DIR)/drv/drvf011.o drv/drvf011.cfg $(DEPS)
 	$(LD) -C drv/drvf011.cfg $(BUILD_DIR)/drv/drvf011.o -o $@
