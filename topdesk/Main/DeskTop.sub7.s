@@ -248,13 +248,16 @@ StartUp:	lda	RamTopFlag
 	lda	sysRAMFlg	; REU-MoveData ausschalten
 	and	#$7f
 	sta	sysRAMFlg
-@norm: 	lda	c128Flag
+@norm:
+.ifndef topdesk128
+ 	lda	c128Flag
 	bpl	@010
 	lda	graphMode
 	bpl	@010
 	and	#$7f
 	sta	graphMode
 	jsr	SetNewMode
+.endif
 @010:	LoadB	iconSelFlag,0
 	ldy	#3
 @loop2:	lda	windowsOpen,y
@@ -528,8 +531,11 @@ IconC:
 IconD:
 .incbin "topdesk/IconD.map"
 
-
+.ifdef topdesk128
+ICON_X	= 2+DOUBLE_B
+.else
 ICON_X	= 2
+.endif
 ICON_Y	= 16
 
 DeskRelabel:	ldx	activeWindow

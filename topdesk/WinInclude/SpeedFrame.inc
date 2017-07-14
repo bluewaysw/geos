@@ -11,6 +11,12 @@ Schrw	=	15
 ;     r12  - Zielx-rechts (r7)
 ;Des: r0 bis r13
 SpeedFrame:
+.ifdef topdesk128
+    lda graphMode
+    bpl @z40
+    rts
+@z40:
+.endif
 
 	; **** Verschiebung von r5-r7 nach r10-r12
 	ldx	#5

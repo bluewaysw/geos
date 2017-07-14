@@ -18,6 +18,7 @@
 ;	d	"DeskWin $400"
 .include "topdesk/Main/DeskWindows.akt.inc"
 
+
 ;	n	"Dos.res"
 ;	c	"TopDesk     V1.3"
 __NewSetDevice:
@@ -26,6 +27,7 @@ __DispMarking:
 	jmp	DispMarking
 __ClearMultiFile:
 	jmp	ClearMultiFile
+
 .include "topdesk/DeskInclude/CopyFile.inc"
 .include "topdesk/DeskInclude/SearchDisk.inc"
 .include "topdesk/DeskInclude/SizeRectangle.inc"
@@ -143,19 +145,42 @@ __ClearMultiFile:
 .global SearchDeskTop
 .global __STARTUP_RUN__
 
+.ifdef topdesk128
+.global TypTab
+.global SchmalFlag
+.endif
 
 __STARTUP_RUN__:
+
 Start:
-;XXX	lda	RamTopFlag
-;XXX	bne	@10
-;XXX	ldy	#4
-;XXX@tloop:	lda	@t,y
-;XXX	cmp	$81a0,y
-;XXX	bne	@10
-;XXX	dey
-;XXX	bpl	@tloop
-;XXX	LoadB	SureFlag,1
-@10:	lda	mouseData
+.ifdef topdesk128
+    jsr SetMyNewMode
+.endif
+.ifdef topdesk13
+	lda	RamTopFlag
+.ifdef topdesk128
+	beq @05
+	lda oldGraphMode
+	cmp graphMode
+	beq @10
+	jsr SwitchWin
+	jmp @10
+@05:
+    jsr StartWin
+.endif
+	ldy	#4
+@tloop:	lda	@t,y
+	cmp	$81a0,y
+	bne	@10
+	dey
+	bpl	@tloop
+	LoadB	SureFlag,1
+.endif
+@10:
+.ifdef topdesk128
+    MoveB   graphMode, oldGraphMode
+.endif
+	lda	mouseData
 	ora	#$80
 	sta	mouseData
 
@@ -173,7 +198,9 @@ Start:
 	bne	@loop
 @02:	jmp	StartUp
 
-;XXX @t:	.byte	"SURE",$0d
+.ifdef topdesk13
+ @t:	.byte	"SURE",$0d
+.endif
 
 Loadr0AX:	sta	r0L
 	stx	r0H
@@ -186,7 +213,11 @@ MoveWr1r0:	MoveW_	r1,r0
 OpenDiskFlag:	.byte	0
 DiskDriverFlag:	.byte	0
 
-NewSetDevice:	ldy	DiskDriverFlag
+NewSetDevice:
+.ifdef topdesk128
+    jmp SetDevice
+.else
+	ldy	DiskDriverFlag
 	bpl	@04
 	rts
 @04:	bne	@10
@@ -232,6 +263,7 @@ NewSetDevice:	ldy	DiskDriverFlag
 	bcc	@30
 	txa
 	jmp	SetDevice
+.endif
 
 CopyMemHigh:	.byte	$7f
 CopyMemLow:		.byte	$60
@@ -287,6 +319,7 @@ SetColor:	lda	screencolors	; Farben wiederherstellen
 	.word	1000,$8c00
 @col:	.byte	0
 	rts
+
 University:	;d	"University 6"
 .incbin "topdesk/university6.fnt"
 
@@ -294,6 +327,9 @@ BitMap:	;j
 .incbin "topdesk/BitMap.bf"
 BitX	= 3
 BitY	= 15
+.ifdef topdesk128
+    .byte   21
+.endif
 TrashMap:	;j
 .incbin "topdesk/TrashMap.bf"
 TrashX	= 3
@@ -407,7 +443,9 @@ StartUp:	lda	#7
 	rts
 ModDepth:	.byte	0
 RamTopFlag:	.byte	0
-;XXXSureFlag:	.byte	0
+.ifdef topdesk13
+SureFlag:	.byte	0
+.endif
 
 GetTextService:	ldx	#6	; im Akku Nr. des Anzeigemodus 
 	.byte	$2c	; }bergeben
@@ -539,18 +577,192 @@ StashMain:	lda	RamTopFlag
 	dey
 	bpl	@loop
 	JmpMod	10,2
+.ifdef topdesk128
 
-STARTA_X	=	39-BitX
+oldGraphMode:    .byte   0
+
+.macro wb argx, argy
+    .word   argx
+    .byte   argy
+.endmacro
+
+.macro ww arg1, arg2
+    wb   arg1, <(arg2)
+    wb   arg1+1, >(arg2)
+.endmacro
+
+Switch:
+    jsr GotoFirstMenu
+    lda graphMode
+    eor #$80
+    sta graphMode
+    sta oldGraphMode
+    jsr SetNewMode
+    jsr SetMyNewMode
+    jsr SetColor
+    jsr RedrawHead
+    jsr DispMultiCount
+    jsr SwitchWin
+    jmp RedrawAll
+SwitchWin:
+    lda graphMode
+    bpl @g40
+    jsr G80
+    jmp @10
+@g40:
+    lda #' '
+    sta SchmalFlag
+    jsr G40
+@10:
+    rts
+G40:
+    LoadW___   r0, Window1
+    jsr Halbieren
+    LoadW___   r0, Window2
+    jsr Halbieren
+    LoadW___   r0, Window3
+    jsr Halbieren
+    LoadW___   r0, Window4
+    jmp Halbieren
+G80:
+    LoadW___   r0, Window1
+    jsr Doppeln
+    LoadW___   r0, Window2
+    jsr Doppeln
+    LoadW___   r0, Window3
+    jsr Doppeln
+    LoadW___   r0, Window4
+    jmp Doppeln
+SetMyNewMode:
+    lda graphMode
+    bpl @40
+@80:
+    LoadW___   r0, @tab2
+    jmp @10
+@40:
+    LoadW___   r0, @tab1
+@10:
+    ldy #0
+    lda (r0),y
+    sta r1L
+    iny
+    lda (r0),y
+    sta r1H
+    ora r1L
+    beq @end
+    iny
+    lda (r0),y
+    ldy #0
+    sta (r1),y
+    AddvW   3, r0
+    jmp @10
+@end:
+    rts
+
+@tab1:
+    wb  IconTab+6,(39-TrashX)
+    wb  IconTab+14,2
+    wb  IconTab+22,STARTA_X
+    wb  IconTab+30,STARTB_X
+    wb  IconTab+38,STARTC_X
+    wb  IconTab+46,STARTD_X
+    ww  RightMax, 319
+    wb  GraphIndex, 8
+;    ww  HauptMenu+4,182
+;    ww  DispMenuRight,182
+    ww  HauptMenu+4,214
+    ww  DispMenuRight,214
+    ww  geosoben+4,80
+    ww  Datei_Menue+2+3,28
+    ww  Datei_Menue+4+3,112
+;    ww  Anzeige_Menue+2+3,48
+    ww  Anzeige_Menue+2+3,57
+;    ww  Anzeige_Menue+4+3,161
+    ww  Anzeige_Menue+4+3,170
+;    ww  Disk_Menue+2+3,79
+    ww  Disk_Menue+2+3,98
+;    ww  Disk_Menue+4+3,161
+    ww  Disk_Menue+4+3,180
+;    ww  WindowMenue+2+3,103
+    ww  WindowMenue+2+3,137
+;    ww  WindowMenue+4+3,222
+    ww  WindowMenue+4+3,256
+;    ww  Speziell_Menue+2+15,145
+    ww  Speziell_Menue+2+15,174
+;    ww  Speziell_Menue+4+15,238
+    ww  Speziell_Menue+4+15,267
+    .word   0
+
+@tab2:
+    wb  IconTab+6,(39-TrashX)*2
+    wb  IconTab+14,2*2
+    wb  IconTab+22,STARTA_X*2
+    wb  IconTab+30,STARTB_X*2
+    wb  IconTab+38,STARTC_X*2
+    wb  IconTab+46,STARTD_X*2
+    ww  RightMax,639
+    wb  GraphIndex,1
+;    ww  HauptMenu+4,237
+    ww  HauptMenu+4,286
+;    ww  DispMenuRight,237
+    ww  DispMenuRight,286
+    ww  geosoben+4,104
+;    ww  Datei_Menue+2+3,37
+    ww  Datei_Menue+2+3,36
+;    ww  Datei_Menue+4+3,149
+    ww  Datei_Menue+4+3,145
+;    ww  Anzeige_Menue+2+3,63
+    ww  Anzeige_Menue+2+3,73
+;    ww  Anzeige_Menue+4+3,214
+    ww  Anzeige_Menue+4+3,224
+;    ww  Disk_Menue+2+3,103
+    ww  Disk_Menue+2+3,127
+;    ww  Disk_Menue+4+3,213
+    ww  Disk_Menue+4+3,234
+;    ww  WindowMenue+2+3,134
+    ww  WindowMenue+2+3,177+7
+;    ww  WindowMenue+4+3,293
+    ww  WindowMenue+4+3,332+7
+;    ww  Speziell_Menue+2+15,189
+    ww  Speziell_Menue+2+15,226+8
+;    ww  Speziell_Menue+4+15,314
+    ww  Speziell_Menue+4+15,346+8
+    .word   0
+.endif
+
+
+
+STARTA_X	=	(39-BitX)
 STARTA_Y	=	32
-STARTB_X	=	39-BitX
+STARTB_X	=	(39-BitX)
 STARTB_Y	=	64
-STARTC_X	=	39-BitX
+STARTC_X	=	(39-BitX)
 STARTC_Y	=	96
-STARTD_X	=	39-BitX
+STARTD_X	=	(39-BitX)
 STARTD_Y	=	128
 
-
-IconTab:	
+IconTab:
+.ifdef topdesk128
+	.byte	0,0,0,0	; Anzahl wird berechnet
+	.word	TrashMap
+	.byte	39-TrashX,191-TrashY,TrashX+DOUBLE_B,TrashY
+	.word	TrashService
+	.word	PrintMap
+	.byte	2,193-PrintY,PrintX+DOUBLE_B,PrintY
+	.word	PrintService
+	.word	BitMap
+	.byte	STARTA_X,STARTA_Y,BitX+DOUBLE_B,BitY
+	.word	OpenD8
+	.word	BitMap
+	.byte	STARTB_X,STARTB_Y,BitX+DOUBLE_B,BitY
+	.word	OpenD9
+	.word	BitMap
+	.byte	STARTC_X,STARTC_Y,BitX+DOUBLE_B,BitY
+	.word	OpenD10
+	.word	BitMap
+	.byte	STARTD_X,STARTD_Y,BitX+DOUBLE_B,BitY
+	.word	OpenD11
+.else
 	.byte	0,0,0,0	; Anzahl wird berechnet
 	.word	TrashMap
 	.byte	39-TrashX,191-TrashY,TrashX,TrashY
@@ -570,6 +782,8 @@ IconTab:
 	.word	BitMap
 	.byte	STARTD_X,STARTD_Y,BitX,BitY
 	.word	OpenD11
+.endif
+
 OpenD11:	lda	#11
 	.byte	$2c
 OpenD10:	lda	#10
@@ -588,11 +802,35 @@ OpenDa:	pha
 @09:	pla
 	sta	@dr
 	LoadW___	r4,BitMap+1
+.ifdef topdesk128
+	LoadB	r3L,2
+.else
 	LoadB	r3L,1
+.endif
 	jsr	DrawSprite
+.ifdef topdesk128
+    jsr HideOnlyMouse
+.endif
 	LoadB	ghostFile,$ff
 	jsr	InitForIO
+.ifdef topdesk128
+	MoveB	$d027,$d029	; Farbe des Ghost-Sprites von Mauszeiger
+.else
 	MoveB	$d027,$d028	; Farbe des Ghost-Sprites von Mauszeiger
+.endif
+.ifdef topdesk128
+    lda graphMode
+    bmi @g80
+    lda $d01d
+    and #%11111011
+    sta $d01d
+    jmp @gend
+@g80:
+    lda $d01d
+    ora #%100
+    sta $d01d
+@gend:
+.endif
 	jsr	DoneWithIO
 	LoadB	KSFlag,0
 	rts
@@ -649,7 +887,11 @@ DeskMain:	lda	ghostFile
 	sec
 	sbc	#10
 	sta	r5L
+.ifdef topdesk128
+	LoadB	r3L,2
+.else
 	LoadB	r3L,1
+.endif
 	jsr	PosSprite
 	jsr	EnablSprite
 	LoadB	mouseTop,15
@@ -761,9 +1003,21 @@ Datei_Menue:	jsr	MySubMenu
 	.word	DATEIRIGHT-22
 	.byte	128,BOLDON,"T",PLAINTEXT,0
 Anzeige_Menue:	jsr	MySubMenu
+.ifdef topdesk128
+	.byte	13,8*14+14
+.else
 	.byte	13,7*14+14
+.endif
+.ifdef topdesk128
+	.word	57,180
+.else
 	.word	57,132
+.endif
+.ifdef topdesk128
+	.byte	$88
+.else
 	.byte	$87
+.endif
 	mpt	@t1,$00,@rout
 	mpt	@t2,$00,@rout
 	mpt	@t3,$00,@rout
@@ -771,6 +1025,9 @@ Anzeige_Menue:	jsr	MySubMenu
 	mpt	@t5,$00,@rout
 	mpt	KBytesFlag,$00,@rout2
 	mpt	@t7,$00,@rout3
+.ifdef topdesk128
+	mpt SchmalFlag,$00,SwapSchmal
+.endif
 @t1:	.byte	"* Icons",0
 @t2:	.byte	"  nach Namen",0
 @t3:	.byte	"  nach Datum",0
@@ -809,7 +1066,41 @@ Anzeige_Menue:	jsr	MySubMenu
 @rout3:	lda	#'*'
 	ldx	#' '
 	jmp	@rout23
+
+.ifdef topdesk128
+SwapSchmal:
+    lda SchmalFlag
+    cmp #'*'
+    beq @10
+    jsr G40
+    ldx #'*'
+    jmp @20
+@10:
+    jsr G80
+    ldx #' '
+@20:
+    stx SchmalFlag
+    jsr GotoFirstMenu
+    jsr CheckAll
+    jmp RedrawAll
+.endif
+
 KBytesFlag:	.byte	"  in Bl|cken",0
+.ifdef topdesk128
+SchmalFlag: .byte   "  schmale Anzeige",GOTOX
+    .word   180-22
+    .byte   128, BOLDON, "G", PLAINTEXT, 0
+
+CheckAll:
+    LoadW___    r0,Window1
+    jsr CheckOne
+    LoadW___    r0,Window2
+    jsr CheckOne
+    LoadW___    r0,Window3
+    jsr CheckOne
+    LoadW___    r0,Window4
+    jmp CheckOne
+.endif
 
 WINWDOWRIGHT	=	256
 WindowMenue:	jsr	MySubMenu
@@ -945,7 +1236,11 @@ EndGhost:	ldx	#0
 	stx	ghostFile
 	stx	mouseTop
 	pha
+.ifdef topdesk128
+	lda	#2
+.else
 	lda	#1
+.endif
 	sta	r3L
 	jsr	DisablSprite
 	pla
@@ -1079,7 +1374,11 @@ RedrawHead:	lda	#2
 	jsr	SetPattern
 	jsr	i_Rectangle
 	.byte	1,13
+.ifdef topdesk128
+	.word	221+DOUBLE_W,237+DOUBLE_W
+.else
 	.word	221,237
+.endif
 	lda	#$ff
 	jsr	FrameRectangle
 	jmp	InitClock
@@ -1095,6 +1394,9 @@ geosunten:	.byte 28		; wird berechnet!
 	.word 0,80
 geosanz:	.byte 1		; wird eingesetzt!
 	mpt	DeskInfoText,MENU_ACTION,DispInfo
+.ifdef topdesk128
+    mpt SwitchText,MENU_ACTION, Switch
+.endif
 	mpt	DASpace + 0*17,MENU_ACTION,DA_Call
 	mpt	DASpace + 1*17,MENU_ACTION,DA_Call
 	mpt	DASpace + 2*17,MENU_ACTION,DA_Call
@@ -1104,6 +1406,9 @@ geosanz:	.byte 1		; wird eingesetzt!
 	mpt	DASpace + 6*17,MENU_ACTION,DA_Call
 	mpt	DASpace + 7*17,MENU_ACTION,DA_Call
 DeskInfoText:	.byte	"TopDesk Info",0
+.ifdef topdesk128
+SwitchText:  .byte   "switch 40/80",0
+.endif
 
 maxDesks	= 8	; maximale Anzahl der angezeigten DA's
 DA_Init:	; Erstellung der Liste der DA's
@@ -1132,7 +1437,11 @@ DA_Init:	; Erstellung der Liste der DA's
 	sec
 	sbc	r7H
 	clc
-	adc	#01	; Men}punktanzahl ermitteln
+.ifdef topdesk128
+	adc	#02; Men}punktanzahl ermitteln
+.else
+	adc	#01; Men}punktanzahl ermitteln
+.endif
 	sta	a0	; und merken
 	ora	#$80
 	sta	geosanz	; und speichern
@@ -1153,6 +1462,9 @@ DA_Init:	; Erstellung der Liste der DA's
 DA_Call:	; Nummer des Men}punktes in a
 	tax
 	dex		; minus 1
+.ifdef topdesk128
+    dex
+.endif
 	stx	a0L
 	jsr	GotoFirstMenu
 	LoadB	a1,17
@@ -1176,6 +1488,9 @@ DA_Call:	; Nummer des Men}punktes in a
 DA_Call2:	jsr	GetFile	; DA laden und ausf}hren
 DAReturn:	txa
 	pha
+.ifdef topdesk128
+    jsr SetMyNewMode
+.else
 	lda	c128Flag
 	bpl	@04
 	lda	graphMode
@@ -1183,6 +1498,7 @@ DAReturn:	txa
 	eor	#$80
 	sta	graphMode
 	jsr	SetNewMode
+.endif
 @04:	jsr	SetColor
 	jsr	RedrawHead
 	pla
@@ -1197,7 +1513,7 @@ DAReturn:	txa
 @10:	jsr	RedrawAll
 	ldx	#0
 	rts
-	
+
 KeyHandler:	lda	menuNumber
 	beq	@05
 	rts
@@ -1231,6 +1547,7 @@ KeyHandler:	lda	menuNumber
 .macro ShortCutKey	value
 	.byte	value+$80
 .endmacro
+
 KeyTab:	ShortCutKey	'm'
 	ShortCutKey	'd'
 	ShortCutKey	'r'
@@ -1259,6 +1576,9 @@ KeyTab:	ShortCutKey	'm'
 	.byte	16,17,8,30	; CRSR
 	ShortCutKey	20	; Pfeil nach links - Taste
 	ShortCutKey	'b'
+.ifdef topdesk128
+	ShortCutKey	'g'
+.endif
 	.byte	NULL
 KeyServiceTab:	.word	DeskRename,DeskDelete,Reset,DispFileInfo
 	.word	DValidate,SetWindows,DeskRelabel,DeskFormat
@@ -1269,6 +1589,9 @@ KeyServiceTab:	.word	DeskRename,DeskDelete,Reset,DispFileInfo
 	.word	Ordnen,GetTime
 	.word	ScrollUp,ScrollDown,ScrollLeft,ScrollRight
 	.word	CloseService2,BackWindow
+.ifdef topdesk128
+    .word   SwapSchmal
+.endif
 ScrollUp:	lda	#WN_SCROLL_U
 	.byte	$2c
 ScrollDown:	lda	#WN_SCROLL_D
@@ -1307,6 +1630,28 @@ BackWindow2:	LoadB	messageBuffer,WN_HIDE
 	beq	@10
 	jmp	BackWindow
 @10:	rts
+
+.ifdef topdesk128
+TypTab:	.word	@t0,@t1,@t2,@t3,@t4,@t5,@t6,@t7,@t8,@t9,@ta,@tb,@tc,@td,@te,@tf
+@t0:	.byte	"Nicht-GEOS",0
+@t1:	.byte	"BASIC",0
+@t2:	.byte	"Assembler",0
+@t3:	.byte	"Data",0
+@t4:	.byte	"Systemdatei",0
+@t5:	.byte	"Hilfsprogramm",0
+@t6:	.byte	"Anwendung",0
+@t7:	.byte	"Dokument",0
+@t8:	.byte	"Zeichensatzdatei",0
+@t9:	.byte	"Druckertreiber",0
+@ta:	.byte	"Eingabetreiber (64)",0
+@tb:	.byte	"Directory",0
+@tc:	.byte	"Startprogramm",0
+@td:	.byte	"Tempor{r",0
+@te:	.byte	"selbstausf}hrend",0
+@tf:	.byte	"Eingabetreiber (128)",0
+
+.endif
+
 
 OpenNext:	ldx	activeWindow	; eventuell selektierte Files
 	lda	windowsOpen,x	; deselektieren
@@ -1348,6 +1693,7 @@ OpenNext:	ldx	activeWindow	; eventuell selektierte Files
 	jsr	ClearList
 	pla
 	tax
+
 OpenNextNr:	lda	#0
 	sta	aktl_Sub,x	; aktl Ebene setzen
 	txa
@@ -1375,6 +1721,7 @@ OpenNextNr:	lda	#0
 	jsr	GetDiskDrivers
 OpenNext10:	rts
 
+.ifndef topdesk128
 GetZielPos:	ldx	#6
 	.byte	$2c
 GetStartPos: ldx	#00
@@ -1397,6 +1744,7 @@ GetStartPos: ldx	#00
 @xL:	.byte	<(STARTA_X*8),<(STARTB_X*8),<(STARTC_X*8),<(STARTD_X*8)
 @xH:	.byte	>(STARTA_X*8),>(STARTB_X*8),>(STARTC_X*8),>(STARTD_X*8)
 @y:	.byte	STARTA_Y,STARTB_Y,STARTC_Y,STARTD_Y
+.endif
 
 ReLoad2:	jsr	GetWinTabAdr
 	pha
@@ -1500,6 +1848,8 @@ ReLoad:	; NeuEinladen der Files / Icons
 ;	.byte	0
 MainAdr:	.word 	0
 
+.ifndef topdesk128
+
 DispMarking:	; File-Markierungen darstellen
 	; Par:	messageBuffer+1 : Window-Nummer
 	jsr	MyDCFilesSub
@@ -1540,35 +1890,80 @@ MyDCFilesSub:	ldx	messageBuffer+1
 	sta	r2L
 	AddVW__	6,r3
 	rts
-	
-WindowTab:	.byte	15	; y oben
+
+.endif
+
+WindowTab:
+.ifdef topdesk128
+Window1:
+.endif
+	.byte	15	; y oben
 	.byte	15+90	; y unten
 	.word	2	; x links
+.ifdef topdesk128
+WR1:
+.endif
 	.word	2+270	; x rechts
 	.byte	$ff	; alle Gadgets
 	.word	WinName1
 	.word	Handler
+.ifdef topdesk128
+Window2:
+.endif
 	.byte	107	; y oben
 	.byte	107+90	; y unten
 	.word	2	; x links
+.ifdef topdesk128
+WR2:
+.endif
 	.word	2+270	; x rechts
 	.byte	$ff	; alle Gadgets
 	.word	WinName2
 	.word	Handler
+.ifdef topdesk128
+Window3:
+.endif
 	.byte	24	; y oben
 	.byte	24+90	; y unten
 	.word	30	; x links
+.ifdef topdesk128
+WR3:
+.endif
 	.word	30+270	; x rechts
 	.byte	$ff	; alle Gadgets
 	.word	WinName3
 	.word	Handler
+.ifdef topdesk128
+Window4:
+.endif
 	.byte	44	; y oben
 	.byte	44+90	; y unten
 	.word	50	; x links
+.ifdef topdesk128
+WR4:
+.endif
 	.word	50+265	; x rechts
 	.byte	$ff	; alle Gadgets
 	.word	WinName4
 	.word	Handler
+.ifdef topdesk128
+
+StartWin:
+    lda @f
+    beq @10
+@05: rts
+@10:
+    lda graphMode
+    bpl @05
+    LoadW___   WR1, 2+270*2
+    LoadW___   WR2, 2+270*2
+    LoadW___   WR3, 30+270*2
+    LoadW___   WR4, 50+265*2
+    LoadB   @f, 1
+    rts
+@f: .byte   0
+
+.endif
 FILE_ANZ	= 16	; nicht {ndern !
 MOVE_OFFS	= 60
 
@@ -1800,17 +2195,32 @@ NormHandler:	; Behandlung der Messages Activate,Close,Restore
 PrintDriveNames:	MoveB	numDrives,a7L
 	LoadWr0	University
 	jsr	LoadCharSet
+.ifdef topdesk128
+    lda graphMode
+    bpl @40
+    jsr UseSystemFont
+@40:
+.endif
 	dec	a7L
 @loop:	ldx	a7L
 	lda	@data,x
 	sta	r1H
+.ifdef topdesk128
+	LoadW___	r11,272+16+DOUBLE_W
+.else
 	LoadW___	r11,272+16
+.endif
 	jsr	PutDrive
 	dec	a7L
 	bpl	@loop
 	jsr	i_PutString
+.ifdef topdesk128
+	.word	5+DOUBLE_W
+	.byte	198,0
+.else
 	.word	5
 	.byte	196,0
+.endif
 	LoadW___	r0,PrntFileName
 	jsr	NewPutString
 	jmp	UseSystemFont
@@ -1865,7 +2275,7 @@ CheckKlick:	; Ermittlung, ob Knopf gehalten oder nicht
 	rts
 @30:	clc	; Maus-Knopf gehalten
 	rts
-	
+
 Handler:	ldx	messageBuffer+1	; File/Icontabellenadresse nach r0
 	jsr	GetWinTabAdr
 	jsr	MoveWr1r0
@@ -1976,8 +2386,13 @@ Handler:	ldx	messageBuffer+1	; File/Icontabellenadresse nach r0
 	beq	@e10
 	jsr	FehlerAusgabe2
 @e10:	rts
+.ifdef topdesk128
+@tab1:	.word	0,(6*MOVE_OFFS),MOVE_OFFS
+	.word	-(6*MOVE_OFFS),-(6*MOVE_OFFS),-MOVE_OFFS
+.else
 @tab1:	.word	0,(3*MOVE_OFFS),MOVE_OFFS
 	.word	-(3*MOVE_OFFS),-(3*MOVE_OFFS),-MOVE_OFFS
+.endif
 @10:	jsr	MyCheckFiles
 	txa
 	bmi	@20
@@ -2288,21 +2703,61 @@ File_Selected:	; Auswertung einer File-Selection
 	jsr	GetWinTabAdr
 	AddVW__	FILE_ANZ*18+1,r1
 	AddW	r1,a2
-@p20:	LoadB	r3L,1
+@p20:
+.ifdef topdesk128
+    LoadB	r3L,2
+.else
+    LoadB	r3L,1
+.endif
 	MoveW_	a2,r4
 	lda	MultiCount
 	cmp	#1
 	beq	@p20a
 	LoadW___	r4,MultiFileIcon+1
-@p20a:	jsr	DrawSprite
+@p20a:
+.ifdef topdesk128
+    ldy #63
+    lda (r4),y
+    pha
+    lda #21
+    sta (r4),y
+.endif
+    jsr	DrawSprite
+.ifdef topdesk128
+    jsr HideOnlyMouse
+    pla
+    ldy #63
+    sta (r4),y
+.endif
 	jsr	InitForIO
 	jsr	DoneWithIO
 	LoadB	ghostFile,1
 	jsr	InitForIO
+.ifdef topdesk128
+	MoveB	$d027,$d029	; Farbe des Ghost-Sprites von Mauszeiger
+.else
 	MoveB	$d027,$d028	; Farbe des Ghost-Sprites von Mauszeiger
+.endif
+.ifdef topdesk128
+    lda graphMode
+    bmi @q80
+@q40:
+    lda $d01d
+    and #%11111011
+    sta $d01d
+    jmp @qend
+@q80:
+    lda SchmalFlag
+    cmp #'*'
+    beq @q40
+    lda $d01d
+    ora #%100
+    sta $d01d
+@qend:
+.endif
 	jsr	DoneWithIO
 	rts
-	
+
 OpenFile:	jsr	ClearMultiFile2
 	jsr	MaxTextWin
 @04:	jsr	GetAktlDisk
@@ -2439,6 +2894,7 @@ Multi_Select:	jsr	InvertRectangle
 	jmp	MarkFile
 @10:	tax
 	jmp	UnMarkFile
+
 TextSprite:	
 ;j
 .incbin "topdesk/TextSprite.bf"
@@ -2558,6 +3014,7 @@ GetMark:	; markierte Filenummer holen
 	pla
 @10:	rts
 
+.ifndef topdesk128
 MultiFileFlag:	.byte	0
 MultiCount:	.byte	0
 CheckDispMark:	; Test ob File a markiert ist
@@ -2623,6 +3080,7 @@ DispMultiCount:	txa
 	pla
 	tax
 	rts
+.endif
 
 NewDirLoad:	ldx	activeWindow
 	lda	#0
@@ -2736,7 +3194,11 @@ MoveService:	; Verschieben/Kopieren von Files zwischen aktivem und
 	jsr	FrontWindow
 @020:	ldx	#0
 	stx	ghostFile
+.ifdef topdesk128
+	lda	#2
+.else
 	lda	#1
+.endif
 	sta	r3L
 	jsr	DisablSprite
 DoHauptMenu:	php
@@ -2763,5 +3225,28 @@ CheckDirNum:	sta	r1L
 	rts
 @gehtnicht:	sec
 	rts
+.ifdef topdesk128
+Doppeln:
+    ldy #2
+    lda (r0),y
+    asl
+    sta (r0),y
+    iny
+    lda (r0),y
+    rol
+    sta (r0),y
+    ldy #4
+    lda (r0),y
+    asl
+    sta (r0),y
+    iny
+    lda (r0),y
+    rol
+    sta (r0),y
+    rts
+.endif
+
+
+
 
 .include "topdesk/Include/DeskMain2.inc"

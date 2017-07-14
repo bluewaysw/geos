@@ -60,7 +60,11 @@ DispInfo:	LoadW___	r0,@db
 	jmp	NewDoDlgBox
 @db:	.byte	$01
 	.byte	32,138
+.ifdef topdesk128
+	.word	54+DOUBLE_W,265+DOUBLE_W
+.else
 	.word	54,265
+.endif
 	.byte	$0b,$10,$10
 	.word	@t1
 	.byte	$0b,$10,$20

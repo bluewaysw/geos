@@ -54,9 +54,13 @@
 ; g}ltig!
 
 FindDirFiles:
-;XXX	MoveW_	r3,@r3	; Kn 22.9.91
+.ifdef topdesk13
+	MoveW_	r3,@r3	; Kn 22.9.91
+.endif
 @10:	
-;XXX	MoveW_	@r3,r3
+.ifdef topdesk13
+	MoveW_	@r3,r3
+.endif
 	LoadB	r14L,0
 	jsr	DiskInitTurboIO
 	txa
@@ -75,10 +79,12 @@ FindDirFiles:
 	bne	@100
 @allesvoll:	ldx	#$00
 @100:	jsr	DoneWithIO
-;XXX	cpx	#$50	; Kn 22.9.91
-;XXX	bne	@125
-;XXX	jmp	@10
-;XXX@125:
+.ifdef topdesk13
+	cpx	#$50	; Kn 22.9.91
+	bne	@125
+	jmp	@10
+@125:
+.endif
 	rts
 @200:	jsr	ReadTrScBlock
 	txa
@@ -91,7 +97,9 @@ FindDirFiles:
 	bne	@200	; Kn 7.5.91
 @99:	ldx	#$00
 @1000:	rts
-;XXX	@r3:	.word	0	; Kn 22.9.91
+.ifdef topdesk13
+	@r3:	.word	0	; Kn 22.9.91
+.endif
 TrSc:	.word	0
 
 ; SortDirFiles		; (Kn 7.5.91  Copy31Byte weggek}rzt!)
@@ -141,7 +149,8 @@ SortInBuffer:
 ;	MoveW_	r3,r0
 	bit	r10L
 	bmi	@15
-.if 0
+
+.ifdef topdesk13
 	ldy	#1	; Kn 22.9.91: autom. l|schen von 
 	lda	(r5),y	; tempor{r-Dateien
 	beq	@16a
@@ -431,11 +440,13 @@ ChangeDrive:	sta	@a
 	LoadB	r3L,0
 	jsr	StashRAM
 @60:	rts
+
 @a:	.byte	0
 @x:	.byte	0
 @y:	.byte	0
 @ramdrivetyp:	.byte	0
 @rambase:	.byte	0
+
 Change:	pha
 	tay
 	lda	DriverHigh-8,y
@@ -459,11 +470,11 @@ Change:	pha
 	bpl	@NoRAM
 	lda	r0L
 	jsr	SetDevice
-
+.ifndef topdesk13
 	ldy	curDrive
 	lda	driveType,y	
 	sta	curType
-	
+.endif
 	jmp	@RAM
 @NoRAM:	
     lda	r0L
@@ -471,7 +482,9 @@ Change:	pha
 @RAM:	ldy	curDrive
 	pla
 	sta	driveType-8,y
-;XXX	sta	curType
+.ifdef topdesk13
+	sta	curType
+.endif
 	pla
 	sta	ramBase-8,y
 	pla
@@ -1101,7 +1114,7 @@ CLS:	ldy	#r15H-r0L
 	bpl	@64
 	jsr	i_Rectangle
 	.byte	0,199
-	.word	0,319|DOUBLE_W|ADD1_W	
+	.word	0,319|DOUBLE_W|ADD1_W
 	rts
 @64:	jsr	i_Rectangle
 	.byte	0,199

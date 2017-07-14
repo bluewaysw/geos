@@ -1,3 +1,156 @@
+.ifdef topdesk128
+MultiFileFlag:	.byte	0
+MultiCount:	.byte	0
+CheckDispMark:	; Test ob File a markiert ist
+	; Par:	a: Nummer des Files (0-15)
+	; 	x: Nummer des Windows
+	; Ret:	c: 0: Markierung    vorhanden
+	; 	   1:      "    nicht    "
+	; 	a: Filenummer (0-143)
+	; 	x: unchanged
+	; Des: 	y
+	pha
+	lda	DispMode
+	beq	@110
+	pla
+	stx	@x
+	jsr	GetRealPos
+	ldx	@x
+	jmp	CheckMark
+@x:	.byte	0
+@110:	pla
+	clc
+	adc	windowOffs,x
+CheckMark:	; Test ob File a markiert ist
+	; Par:	a: Nummer des Files (0-143)
+	; Ret:	c: 0: Markierung    vorhanden
+	; 	   1:      "    nicht    "
+	; 	a: unchanged
+	; Des: 	y
+	ldy	#144
+@10:	cmp	MultiFileTab-1,y
+	beq	@20
+	dey
+	bne	@10
+	sec
+	rts
+@20:	clc
+	rts
+DispMultiCount:	txa
+	pha
+	ldy	#5
+@loop1:	lda	windowTop,y
+	pha
+	dey
+	bpl	@loop1
+	jsr	MaxTextWin
+	lda	#0
+	jsr	SetPattern
+	jsr	i_Rectangle
+	.byte	2,12
+	.word	222+DOUBLE_W,236+DOUBLE_W
+	MoveB	MultiCount,r0L
+	LoadB	r0H,0
+	LoadW___	r11,223+DOUBLE_W
+	LoadB	r1H,9
+	lda	#%11000000
+	jsr	PutDecimal
+	ldy	#0
+@loop2:	pla
+	sta	windowTop,y
+	iny
+	cpy	#6
+	bne	@loop2
+	pla
+	tax
+	rts
+.endif
+
+.ifdef topdesk128
+DispMarking:	; File-Markierungen darstellen
+	; Par:	messageBuffer+1 : Window-Nummer
+	jsr	MyDCFilesSub
+	MoveW_	a5,a3
+	MoveB	r2L,a2L
+	lda	#00
+@e0:	pha
+	ldx	messageBuffer+1
+	jsr	CheckDispMark
+	bcs	@e1
+	ldx	messageBuffer+1
+	pla
+	cmp	fileNum,x
+	bcs	@e2
+	pha
+	jsr	GetFileRect
+	bcs	@e1
+	jsr	InvertRectangle
+@e1:	pla
+@e2:	clc
+	adc	#01
+	cmp	#16
+	bne	@e0
+	rts
+MyDCFilesSub:	ldx	messageBuffer+1
+	jsr	GetWorkArea
+	ldx	messageBuffer+1
+	lda	xOffsL,x
+	clc
+	adc	r3L
+	sta	a5L
+	lda	xOffsH,x
+	adc	r3H
+	sta	a5H
+	lda	r2L
+	sec
+	sbc	#5
+	sta	r2L
+	AddVW__	6,r3
+	rts
+
+GetZielPos:
+    ldx #6
+    jsr GetPos
+    ldx #r6
+    jsr NormalizeX
+    ldx #r7
+    jsr NormalizeX
+    rts
+
+GetStartPos:
+    ldx #00
+    jsr GetPos
+    ldx #r3
+    jsr NormalizeX
+    ldx #r4
+    jsr NormalizeX
+    rts
+
+GetPos:
+    ldy curDrive
+    lda @xL-8,y
+    sta r3L,x
+    clc
+    adc #21
+    sta r4L,x
+    lda @xH-8,y
+    sta r3H,x
+    adc #0
+    sta r4H,x
+    lda @y-8,y
+    sta r2L,x
+    clc
+    adc #21
+    sta r2H,x
+    rts
+@xL:    .byte   <(STARTA_X*8),<(STARTB_X*8),<(STARTC_X*8),<(STARTD_X*8)
+@xH:    .byte   (>(STARTA_X*8))+$80
+        .byte   (>(STARTB_X*8))+$80
+        .byte   (>(STARTC_X*8))+$80
+        .byte   (>(STARTD_X*8))+$80
+@y:     .byte   STARTA_Y, STARTB_Y, STARTC_Y, STARTD_Y
+.endif
+
 SetWindows:	jsr	GotoFirstMenu
 	PushW	a0
 	LoadB	a2L,$ff
@@ -13,9 +166,22 @@ SetWindows:	jsr	GotoFirstMenu
 	rts
 @20:	asl
 	tay
+.ifdef topdesk128
+    LoadW___   a1, Gentab
+    lda graphMode
+    bpl @40z
+    LoadW___   a1, Gentab80
+@40z:
+    lda  (a1),y
+    tax
+    iny
+    lda (a1),y
+    stx a1L
+.else
 	lda	Gentab,y
 	sta	a1L
 	lda	Gentab+1,y
+.endif
 	sta	a1H
 	ldy	#03
 @25:	sty	@y
@@ -53,6 +219,21 @@ Gentab:	.word	@tab1,@tab2,@tab3,@tab4
 	WindPos	15,105,138,272
 	WindPos	107,197,2,136
 	WindPos	107,197,138,272
+
+.ifdef topdesk128
+Gentab80:	.word	@tab5,@tab6,@tab7,@tab8
+@tab5:	WindPos	15,197,2*2,272*2
+@tab6:	WindPos	107,197,2*2,272*2
+	WindPos	15,105,2*2,272*2
+@tab7:	WindPos	15,105,138*2,272*2
+	WindPos	15,105,2*2,136*2
+	WindPos	107,197,2*2,272*2
+@tab8:	WindPos	15,105,2*2,136*2
+	WindPos	15,105,138*2,272*2
+	WindPos	107,197,2*2,136*2
+	WindPos	107,197,138*2,272*2
+.endif
+
 SwapFile:	jsr	GetAktlDisk
 	tax
 	beq	@05
@@ -161,6 +342,7 @@ DeleteDir:	; Unterverzeichnis mit Kenn-Nr. a1L l|schen
 	tya
 	tax
 	rts
+
 NewPutDecimal:	; Par:	r0	Zahl
 	;	r11/r1H	Position
 	;	 a Bit 7: 0 - rechstb}ndig, Bit 0-5 Breite des Ausgabefeldes
@@ -170,6 +352,10 @@ NewPutDecimal:	; Par:	r0	Zahl
 	PushB	r1H
 	txa
 	pha
+.ifdef topdesk128
+    ldx #r11
+    jsr NormalizeX
+.endif
 	lda	#0
 	pha
 	LoadW___	r1,10
@@ -213,6 +399,7 @@ NewPutDecimal:	; Par:	r0	Zahl
 	PopB	r1H
 	jmp	NewPutString
 @zahl:	.byte	0,0,0,0,0,0
+
 GetWinName:	; Ermittlung des Fenstertitelstring
 	; Par:	a: Fensternummer
 	; Ret:	r1: Pointer auf String
@@ -295,6 +482,7 @@ GetWinDisk:	; Diskettennamen aus dem Pfadnamen eines Fensters ermitteln
 	sta	DiskName,y
 	lda	r2L
 	rts
+
 GetEqualWindows:	; Ermittlung der Fensternummern, deren Pfadname genau mit dem
 	; Pfadnamen eines bestimmten Fensters }bereinstimmt
 	; Par:	x: FensterNummer
@@ -357,8 +545,14 @@ GetEqualWindows:	; Ermittlung der Fensternummern, deren Pfadname genau mit dem
 @50:	dey
 	bpl	@loop
 	rts
+
+.ifdef topdesk128
+ClxL	= 240 + DOUBLE_W
+ClxR	= 319 + DOUBLE_W
+.else
 ClxL	= 240
 ClxR	= 319
+.endif
 ClyO	= 1
 ClyU	= ClyO+12
 TimeX	= 55
@@ -481,6 +675,7 @@ MyMonat:	.byte	0
 MyTag:	.byte	0
 MyStd:	.byte	0
 MyMin:	.byte	0
+
 CopyService:	pha
 	ldx	messageBuffer+1
 	jsr	GetWinDisk
@@ -546,7 +741,13 @@ DispDCFName:	PushB	dispBufferOn
 	jsr	SetPattern
 	jsr	i_Rectangle
 	.byte	0,13
+.ifdef topdesk128
+	.word	0
+DispMenuRight:
+	.word   214
+.else
 	.word	0,MAIN_RIGHT
+.endif
 	lda	#$ff
 	jsr	FrameRectangle
 	jsr	MaxTextWin
@@ -674,6 +875,7 @@ DeleteSub:	; Par: a: File-Nummer
 @t2:	.byte	"ist schreibgesch}tzt",0
 @t3:	.byte	"und kann nicht gel|scht",0
 @t4:	.byte	"werden.",0
+
 BubbleSort:	; Sortieren von Byte-Werten in absteigender Reihenfolge
 	; Par:	r2: Zeiger auf zu sortierenden Bereich
 	;	    EndeKennzeichen: $ff
@@ -754,6 +956,7 @@ GetDisk:	;Die einem Fenster zugeh|rige Diskette wird zur Verf}gung gestellt
 	ldx	#0
 	clc
 	rts
+
 FehlerAusgabe2:	; Fehler, mit autom. Schlie~en des Fensters messageBuffer+1
 	ldy	messageBuffer+1
 	lda	#0
@@ -816,6 +1019,7 @@ FehlerAusgabe:	; Dialogbox-Anzeige f}r Diskettenfehlermeldungen
 	jsr	RedrawAll
 	PopB	messageBuffer+1
 	rts
+
 @db:	.byte	$81
 	.byte	$01,17,72
 	.byte	$0b,$10,14
@@ -851,11 +1055,24 @@ FehlerAusgabe:	; Dialogbox-Anzeige f}r Diskettenfehlermeldungen
 @et4:	.byte	"unpassende Dateistruktur",0
 @notext:	.byte	0
 GenTab:	.byte	0,0,0,0
+.ifdef topdesk128
+GenData:	.word	GenTab,DARecSpace
+.else
 GenData:	.word	GenTab,$7f80
+.endif
+
 MySubMenuDA:	LoadW___	GenData+2,DARecSpace
 	bne	MySub2
+.ifdef topdesk128
+MySubMenu:	LoadW___	GenData+2,DARecSpace
+.else
 MySubMenu:	LoadW___	GenData+2,$7f80
-MySub2:	pla
+.endif
+MySub2:
+.ifdef topdesk128
+    LoadB    MyCurRec, 0
+.endif
+    pla
 	clc
 	adc	#1
 	sta	@r0
@@ -864,6 +1081,9 @@ MySub2:	pla
 	adc	#0
 	sta	@r0+1
 	sta	r0H
+.ifdef topdesk128
+    jsr MoveShortCuts
+.endif
 	LoadB	OpenDiskFlag,1
 	ldy	#00
 	lda	(r0),y
@@ -916,6 +1136,7 @@ MySub2:	pla
 	MoveW_	@r0,RecoverVector
 	rts
 @r0:	.word 0
+
 SaveFG:	; Vordergrundbereich retten
 	; r0: Zeiger auf Tabelle der Rechteckdaten
 	; r1: Zeiger auf Ablagebereich
@@ -931,6 +1152,9 @@ RecvFG:	; Vordergrundbereich wiederherstellen
 	lda	dispBufferOn
 	pha
 	LoadB	dispBufferOn,%10000000
+.ifdef topdesk128
+    jsr HideOnlyMouse
+.endif
 	ldy	#01
 	lda	(r0),y
 	sta	r2L
@@ -939,16 +1163,38 @@ RecvFG:	; Vordergrundbereich wiederherstellen
 	ldy	#00
 	lda	(r0),y
 	sta	r2H
-@10:	asl
+@10:
+.ifdef topdesk128
+    ldx r5H
+    bmi @11
+    tay
+    clc
+    bcc @12
+@11:
+.endif
+	asl
 	asl
 	asl
 	tay
+.ifdef topdesk128
+@12:
+.endif
 	PushW	r5
 	bcc	@14
-	inc	r5H
+	inc r5H
 @14:	lda	r3L
 	beq	@15
-	lda	(r5),y
+.ifdef topdesk128
+	lda	r5H
+    bmi @64a
+    jsr ldar5yM
+    jmp @n10
+@64a:
+    lda (r5),y
+@n10:
+.else
+    lda (r5),y
+.endif
 	ldy	#00
 	sta	(r1),y
 	jmp	@16
@@ -956,7 +1202,17 @@ RecvFG:	; Vordergrundbereich wiederherstellen
 	ldy	#00
 	lda	(r1),y
 	ldy	r3H
-	sta	(r5),y	
+.ifdef topdesk128
+	tax
+	lda r5H
+	bmi @64b
+	txa
+	jsr star5yM
+	jmp @16
+@64b:
+    txa
+.endif
+    sta (r5),y
 @16:	PopW	r5
 	IncW	r1
 	inc	r2H
@@ -972,6 +1228,115 @@ RecvFG:	; Vordergrundbereich wiederherstellen
 	pla
 	sta	dispBufferOn
 	rts
+
+.ifdef topdesk128
+
+ldar5yM:
+    tya
+    pha
+    txa
+    pha
+    DecW    r5
+    ;lda    (r5),y
+    tya
+    clc
+    adc r5L
+    php
+    ldx #$13
+    jsr SetReg
+    dex
+    plp
+    lda r5H
+    adc #0
+    jsr SetReg
+    ldx #$1f
+    jsr GetReg
+    jsr GetReg
+    sta @b
+    IncW    r5
+    pla
+    tax
+    pla
+    tay
+    lda @b
+    rts
+@b: .byte 0
+
+star5yM:
+    sta @b
+    tya
+    pha
+    txa
+    pha
+    ;sta    (r5), y
+    tya
+    clc
+    adc r5L
+    php
+    ldx #$13
+    jsr SetReg
+    dex
+    plp
+    lda r5H
+    adc #0
+    jsr SetReg
+    ldx #$1f
+    lda @b
+    jsr SetReg
+    ldx #$12
+    jsr GetReg
+    pla
+    tax
+    pla
+    tay
+    rts
+@b: .byte 0
+
+MoveShortCuts:
+    ldy #4
+    lda (r0),y
+    sta r3L
+    iny
+    lda (r0),y
+    sta r3H
+    iny
+    lda (r0),y
+    and #$3f
+    sta r2H
+    iny
+    SubVW_   25,r3
+@loop2:
+    sty r2L
+    lda (r0),y
+    sta r1L
+    iny
+    lda (r0),y
+    sta r1H
+    ldy #0
+@loop:
+    lda (r1),y
+    beq @next
+    cmp #GOTOX
+    beq @habs
+    iny
+    bne @loop
+@habs:
+    iny
+    lda r3L
+    sta (r1),y
+    iny
+    lda r3H
+    sta (r1),y
+@next:
+    lda r2L
+    clc
+    adc #5
+    tay
+    dec r2H
+    bne @loop2
+    rts
+.endif
+
 SubDir1List:	; SubDirxLists m}ssen aufeinander folgen!
 SubDir2List	= SubDir1List + 64
 SubDir3List	= SubDir2List + 64

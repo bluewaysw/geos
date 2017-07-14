@@ -2,8 +2,33 @@ InvFrame:
 	; Parameter: r2-r4   Akku: Muster
 	; Zur}ck: ----
 	; Zerst|rt: r0,r1,r5-r7,a,x,y
+.ifdef topdesk128
+    PushW   r2
+    PushW   r3
+    PushW   r4
+    jsr HideOnlyMouse
+    PopW    r4
+    PopW    r3
+    PopW    r2
+    lda     graphMode
+    bpl @64n
+    bmi @64n
+    PushW   r8
+    PushW   r11
+    PushB   r2H
+    MoveB   r2L, r11L
+    jsr InvertLine
+    Pla
+    sta r11L
+    jsr InvertLine
+    PopW    r11
+    PopW    r8
+    rts
+@64n:
+.endif
 	jsr	VLine
 	lda	#%10101010
+
 InvHLine:	sta	r1L
 	lda	r3L
 	and	#%11111000
@@ -27,6 +52,18 @@ InvHLine:	sta	r1L
 	dey
 	bne	@10
 
+.ifdef topdesk128
+    lda graphMode
+    bpl @64e
+    lsr r0H
+    ror r0L
+    lsr r0H
+    ror r0L
+    lsr r0H
+    ror r0L
+@64e:
+.endif
+
 	ldx	r2L
 	jsr	@15
 
@@ -48,23 +85,54 @@ InvHLine:	sta	r1L
 	lda	r5H
 	sbc	#0
 	sta	r6H
+.ifdef topdesk128
+    lda graphMode
+    bpl @64f
+    lda r6L
+    clc
+    adc #7
+    sta r6L
+    lda r6H
+    adc #0
+    sta r6H
+@64f:
+.endif
+
 	ldx	r1H
 	ldy	#0
 @20:
-;XXX	lda	r5H
-;XXX	bmi	@64
-;XXX	jsr	a128
-;XXX	jmp	@128
+.ifdef topdesk128
+	lda	r5H
+	bmi	@64
+	jsr	a128
+	jmp	@128
 ;XXX	rts
-;XXX@64:
+@64:
+.endif
 	lda	(r5),y
 	eor	r1L
 	sta	(r5),y
-@128:	lda	r5L
-	clc
-	adc	#8
-	sta	r5L
+.ifdef topdesk128
+    jmp @64g
+@128:
+    inc r5L
+    beq @64h2
+    bne @22
+@64g:
+.else
+@128:
+.endif
+    lda r5L
+    clc
+    adc #8
+    sta r5L
+.ifdef topdesk128
+@64h:
+.endif
 	bcc	@22
+.ifdef topdesk128
+@64h2:
+.endif
 	inc	r5H
 @22:	dex
 	bne	@20
@@ -75,25 +143,39 @@ InvHLine:	sta	r1L
 	tax
 	lda	@maskTab,x
 	and	r1L
-;XXX	ldx	r6H
+.ifdef topdesk13
+	ldx	r6H
+	bmi @65
+.else
 ;XXX	bpl	@65
-;XXX	jsr	c128
-;XXX	jmp	@129
-;XXX@65:	
+.endif
+.ifdef topdesk128
+	jsr	c128
+	jmp	@129
+.endif
+@65:
 	eor	(r6),y
 	sta	(r6),y
-;XXX@129:
+.ifdef topdesk128
+@129:
+.endif
 	lda	r4L
 	and	#%00000111
 	tax
 	lda	@maskTab,x
 	eor	#$ff
 	and	r1L
-;XXX	ldx	r5H
-;XXX	bpl	@66
-;XXX	jsr	d128
-;XXX	rts
-;XXX@66:
+.ifdef topdesk128
+	ldx	r5H
+.ifdef topdesk128
+	bmi @66
+.else
+	bpl	@66
+.endif
+	jsr	d128
+	rts
+@66:
+.endif
 	eor	(r5),y
 	sta	(r5),y
 	rts
@@ -119,13 +201,34 @@ VLine:
 	ldy	r4H
 
 @07:	tax
+.ifdef topdesk128
+    bit graphMode
+    bmi @g80
+.endif
 	and	#%11111000
+.ifdef topdesk128
+@07a:
+.endif
 	clc
 	adc	r5L
 	sta	r6L
 	tya
 	adc	r5H
 	sta	r6H
+.ifdef topdesk128
+    jmp @g40
+@g80:
+    sty r6H
+    lsr r6H
+    ror
+    lsr r6H
+    ror
+    lsr r6H
+    ror
+    ldy r6H
+    jmp @07a
+@g40:
+.endif
 	txa
 	and	#7
 	tax
@@ -136,6 +239,21 @@ VLine:
 
 	lda	r2L
 	and	#7
+.ifdef topdesk128
+    bit graphMode
+    bpl @09
+    pha
+    tay
+    iny
+@loop:
+    dey
+    beq @08
+    AddVW__ 80, r6
+    jmp @loop
+@08:
+    pla
+@09:
+.endif
 	tay
 @10:	jsr	@110
 	tya
@@ -169,31 +287,47 @@ VLine:
 	ble @55
 @60:	rts
 @100:
-
-;XXX	lda	r6H
+.ifdef topdesk128
+	lda	r6H
 ;XXX	bpl	@64
+    bmi @64
 ;XXX	jsr	b128
-;XXX	jmp	@128
-;XXX@64:
+    jsr e128
+	jmp	@128
+@64:
+.endif
 	lda	(r6),y
 	eor	r1L
 	sta	(r6),y
 @128:	iny
 	iny
+.ifdef topdesk128
+    lda graphMode
+    bpl @g41
+    AddVW__ 160,r6
+@g41:
+.endif
 	rts
 @110:	jsr	@100
 	cpy	#8
 	
 	blt	@110
+.ifdef topdesk128
+    lda graphMode
+    bmi @g81
+.endif
 	AddVW__	320,r6
 ;XXX	lda	r6H
 ;XXX	bpl	@65
 ;XXX	AddVW__	320,r6
 
 ;XXX @65:
+.ifdef topdesk128
+@g81:
+.endif
 	rts
 Masken:	.byte	128,64,32,16,8,4,2,1
-.if 0
+.ifdef topdesk128
 d128:	;eor	(r5),y
 	;sta	(r5),y
 	sta	@a
@@ -214,40 +348,61 @@ c128:	;eor	(r6),y
 	PopB	r1L
 	rts
 @a:	.byte	0
-b128:	tya
+e128:
+    MoveW_   r6, VDCMem
+    tya
+    pha
+    ldy #0
+    jsr a128x
+    pla
+    tay
+    rts
+b128:
+    MoveW_   r6, VDCMem
+    jmp a128x
+
+a128:
+	MoveW_   r5, VDCMem
+a128x:
+	tya
 	pha
-	;lda	(r6),y
-	tya		; Zieladr (r6+y) in Reg $12/$13 setzten
-	clc
-	adc	r6L
-	ldx	#$13
-	jsr	SetReg
-	dex
-	lda	r6H
-	jmp	a128b
-a128:	tya
+	txa
 	pha
-	;lda	(r5),y
-	tya		; Zieladr (r5+y) in Reg $12/$13 setzten
-	clc
-	adc	r5L
-	ldx	#$13
-	jsr	SetReg
-	dex
-	lda	r5H
-a128b:	adc	#0
-	jsr	SetReg
-	ldx	#$1f
-	jsr	GetReg	; Inhalt aus $1f holen 
-	eor	r1L
-	;sta	(r?),y	; Zieladr noch gesetzt !
-	ldx	#$1f
-	jsr	SetReg
-	ldx	#$12	; Zeichen schreiben durch beliebiges Beschreiben
-	jsr	SetReg	;von Reg. $12
-	pla
-	tax
-	rts
+	DecW    VDCMem
+	jsr @setadr
+    IncW    VDCMem
+
+    ldx #$1f
+    jsr GetReg
+    jsr GetReg
+    eor r1L
+    pha
+    jsr @setadr
+    pla
+    ldx #$1f
+    jsr SetReg
+    ldx #$12
+    jsr SetReg
+    pla
+    tax
+    pla
+    tay
+    rts
+
+@setadr:
+    tya
+    clc
+    adc VDCMem
+    php
+    ldx #$13
+    jsr SetReg
+    dex
+    plp
+    lda VDCMem+1
+    adc #0
+    jmp SetReg
+
+VDCMem:  .word  0
 SetReg:	stx	$d600
 @wait:	bit	$d600
 	bpl	@wait

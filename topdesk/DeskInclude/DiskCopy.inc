@@ -481,14 +481,22 @@ InsertNewDisk:	jsr	OpenDisk
 @IZD_Dr:	.byte	"A",0
 @IZD_t2:	.byte	"einlegen.",PLAINTEXT,0
 InitClickingOutSide:	LoadW___	r0,IDD_SDr
+.ifdef topdesk128
+	LoadW___	r11,74+$8000
+.else
 	LoadW___	r11,74
+.endif
 	LoadB	r1H,75
 	jsr	PutString
 	MoveW_	SourceName,r0
 	jsr	PutString
 	jsr	i_FrameRectangle
 	.byte	82+32,88+32
+.ifdef topdesk128
+	.word	8+64+$8000,14+64+$a000
+.else
 	.word	8+64,14+64
+.endif
 	.byte	%11111111
 	lda	VerifyFlag
 	beq	@10
@@ -498,8 +506,13 @@ ClickOutSide:	lda	mouseData
 	beq	@10
 	LoadB	r2L,82+32
 	LoadB	r2H,88+32
+.ifdef topdesk128
+	LoadW___	r3,8+64+$8000
+	LoadW___	r4,14+64+$a000
+.else
 	LoadW___	r3,8+64
 	LoadW___	r4,14+64
+.endif
 	jsr	IsMseInRegion
 	beq	@10
 	lda	VerifyFlag
@@ -513,7 +526,11 @@ DummyDIconTab:	.word	0
 	.byte	0,0,1,1
 	.word	0
 DrivesIconTab:	.word	DrivesIcon
+.ifdef topdesk128
+	.byte	0,0,6+$80,16
+.else
 	.byte	0,0,6,16
+.endif
 	.word	DrivesIconRout
 DrivesIconRout:	LoadB	sysDBData,128
 	jmp	RstrFrmDialogue

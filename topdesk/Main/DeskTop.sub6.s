@@ -76,6 +76,9 @@
 .global GetWinTabAdr
 .global NewPutDecimal
 
+.ifdef topdesk128
+.global TypTab
+.endif
 
 FILE_ANZ = 16
 
@@ -183,7 +186,26 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 	rts
 	; Ab der eigentlichen Iconposition ist eingetragen: CBM-Typ, AltNr, Sektor,
 	; FileStruktur, GEOS-Filetyp, Jahr, Monat, Tag, Stunde, Minute
+.ifdef topdesk128
+@ssub:
+    sta r11L
+    LoadB   r11H, >DOUBLE_W
+    ldx #r11
+    jsr NormalizeX
+    lda a3L
+    clc
+    adc r11L
+    sta r11L
+    lda a3H
+    adc r11H
+    sta r11H
+    rts
+.endif
 @sub:	PushW	r0
+.ifdef topdesk128
+    lda #90
+    jsr @ssub
+.else
 	lda	a3L
 	clc
 	adc	#90
@@ -191,6 +213,7 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 	lda	a3H
 	adc	#0
 	sta	r11H
+.endif
 	ldy	#4
 	lda	(a6),y
 	asl
@@ -200,6 +223,10 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 	lda	TypTab+1,x
 	sta	r0H
 	jsr	NewPutString
+.ifdef topdesk128
+    lda #170
+    jsr @ssub
+.else
 	lda	a3L
 	clc
 	adc	#170
@@ -207,6 +234,7 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 	lda	a3H
 	adc	#0
 	sta	r11H
+.endif
 	ldy	#7	; Tag
 	lda	(a6),y
 	jsr	@num
@@ -220,6 +248,10 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 	ldy	#5	; Jahr
 	lda	(a6),y
 	jsr	@num2
+.ifdef topdesk128
+    lda #203
+    jsr @ssub
+.else
 	lda	a3L
 	clc
 	adc	#203
@@ -227,6 +259,7 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 	lda	a3H
 	adc	#0
 	sta	r11H
+.endif
 	ldy	#8	; Stunde
 	lda	(a6),y
 	and	#$7f
@@ -239,6 +272,10 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 	ldy	#9	; Minute
 	lda	(a6),y
 	jsr	@num2
+.ifdef topdesk128
+    lda #225
+    jsr @ssub
+.else
 	lda	a3L
 	clc
 	adc	#225
@@ -246,7 +283,7 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 	lda	a3H
 	adc	#0
 	sta	r11H
-
+.endif
 	ldy	#10
 	lda	(a6),y
 	sta	r0L
@@ -283,6 +320,7 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 	jsr	PutChar
 	pla
 	jmp	@num
+.ifndef topdesk128
 TypTab:	.word	@t0,@t1,@t2,@t3,@t4,@t5,@t6,@t7,@t8,@t9,@ta,@tb,@tc,@td,@te,@tf
 @t0:	.byte	"Nicht-GEOS",0
 @t1:	.byte	"BASIC",0
@@ -300,7 +338,7 @@ TypTab:	.word	@t0,@t1,@t2,@t3,@t4,@t5,@t6,@t7,@t8,@t9,@ta,@tb,@tc,@td,@te,@tf
 @td:	.byte	"Tempor{r",0
 @te:	.byte	"selbstausf}hrend",0
 @tf:	.byte	"Eingabetreiber (128)",0
-
+.endif
 __MyCheckFiles:	jsr	MyDCFilesSub
 __CheckFiles:	; Auswertung eines Mausklicks innerhalb des Textfenstern im Bezug
 	; auf die von DispFiles dargestellten Files

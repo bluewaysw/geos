@@ -42,9 +42,22 @@ RamStart:	LoadB	MyCurRec,0
 	MoveW_	ModStartAdress,r0
 	AddVW__	3,r0
 	jmp	(r0)
+
 MyName:	.byte	"Dos",0,0,0,0,0,0,0,0,0,0,0,0,0
-;XXX	MyClass:	.byte	"TopDesk     V1.3",0
+.ifdef topdesk128
+.ifdef topdesk13
+MyClass:	.byte	"TopDesk128  V1.3",0
+.else
+MyClass:	.byte	"TopDesk128  V1.2",0
+.endif
+
+.else
+.ifdef topdesk13
+MyClass:	.byte	"TopDesk     V1.3",0
+.else
 MyClass:	.byte	"TopDesk     V1.2",0
+.endif
+.endif
 MyCurRec:	.byte	0
 ghostFile:	.byte	0
 
@@ -137,6 +150,11 @@ windowsOpen: 	.byte 0, 0, 0, 0
 newAppMain:	.word	0
 iconTab:	.word	0
 NameIndex:	.byte 0, 0, 0, 0
+
+.ifdef topdesk128
+RightMax:   .word   639
+GraphIndex: .byte   1
+.endif
 
 DoWindows:	lda	curWinData
 	ora	curWinData+1
@@ -439,14 +457,25 @@ WindowData:	; LinienEndpunkte in Abh{ngigkeit von den Endpunkten
 	Punkt	-1,0,0,0,0	; Ende
 
 MaxTextWin:	; Ret: x unver{ndert
+.ifdef topdesk128
+	ldy	#3
+.else
 	ldy	#5
+.endif
 @10:	lda	@b,y
 	sta	windowTop,y
 	dey
 	bpl	@10
+.ifdef topdesk128
+	MoveW_  RightMax, rightMargin
+.endif
 	rts
 @b:	.byte	0,199
+.ifdef topdesk128
+    .byte   0, 0
+.else
 	.word	0,319
+.endif
 SetTextWin:	; Par: r2-r4 zu setzendes Textfenster
 	jsr	GetClipRec
 	jsr	CutRec
@@ -613,6 +642,9 @@ ClearScreen:	; L|schen des ganzen Bildschirms (mit Ausnahme von Zeile 0-14)
 	sta	r3H
 	LoadB	r2H,199
 	LoadW___	r4,319
+.ifdef topdesk128
+    MoveW_   RightMax, r4
+.endif
 	jmp	BackgroundRectangle
 
 RedrawAll:	; Redraw des ganzen Bildschirms (mit Ausnahme von Zeile 0-14)
@@ -708,7 +740,11 @@ DoMove:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinaten
 	MoveW_	moveKoords+7,mouseLeft
 	; linker Rand = 319-(xr-xl)+MausXOffset
 	; 	= 319-xr+xl+MausXOffSet
+.ifdef topdesk128
+    MoveW_   RightMax, mouseRight
+.else
 	LoadW___	mouseRight,319
+.endif
 	SubW	moveKoords+4,mouseRight
 	AddW	moveKoords+2,mouseRight
 	AddW	moveKoords+7,mouseRight
@@ -799,7 +835,11 @@ DoRubber:	; Gr|~enver{nderung eines Rahmens an Abh{ngigkeit der
 	sta	mouseTop
 	sta	r2H
 	; unterer Rand und rechter Rand auf Maximum
+.ifdef topdesk128
+    MoveW_   RightMax, mouseRight
+.else
 	LoadW___	mouseRight,319
+.endif
 	LoadB	mouseBottom,199
 	; linker Rand = ml + 40
 	lda	moveKoords+2
@@ -953,11 +993,18 @@ NewMouseService:	lda	mouseData	; Maus-Release?
 	bpl	@22
 	jsr	InvFrame
 	LoadB	moveFlag,0
+.ifdef topdesk128
+	ldy	#03
+.else
 	ldy	#05
+.endif
 @29:	lda	@d,y
 	sta	mouseTop,y
 	dey
 	bpl	@29
+.ifdef topdesk128
+    MoveW_   RightMax, mouseRight
+.endif
 	lda	moveVector
 	ldx	moveVector+1
 	jmp	CallRoutine
@@ -981,7 +1028,11 @@ NewMouseService:	lda	mouseData	; Maus-Release?
 	ldx	oldMsVec+1
 	jmp	CallRoutine
 @d:	.byte	0,199
+.ifdef topdesk128
+    .byte  0, 0
+.else
 	.word	0,319
+.endif
 CheckUser:	ldx	activeWindow
 	jsr	GetWorkArea
 	jsr	IsMseInRegion	; Maus innerhalb der Arbeitsfl{che?
@@ -1481,9 +1532,48 @@ ToggleTitel:	; Anbringen bzw. Entfernen eines Stricherasters im Titelbalken des
 UnPackMap:
 	ldy	r3L
 	iny
+.ifdef topdesk128
+    sty r3L
+    lda MapBreite
+    bmi @10
+.endif
 	lda	(r0),y
+.ifndef topdesk128
 	sty	r3L
+.endif
 	rts
+.ifdef topdesk128
+@10:
+    tya
+    lsr
+    tay
+    lda (r0),y
+    ldy #7
+@loop:
+    asl
+    php
+    rol @b2
+    rol @b1
+    plp
+    rol @b2
+    rol @b1
+    dey
+    bpl @loop
+
+    lda r3L
+    and #1
+    tay
+    lda @b1,y
+    rts
+@b1:    .byte   0
+@b2:    .byte   0
+
+DispTest:
+    rts
+MapBreite:  .byte   0
+
+.endif
+
 DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	; Par:
 	; x	y-Koordinate
@@ -1492,6 +1582,32 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	; r13H	BitmapH|he
 	; r0	Zeiger auf Bitmap
 	; windowTop-rightmargin: Clipping Window
+.ifdef topdesk128
+    txa
+    pha
+    ldx #r10
+    jsr NormalizeX
+    LoadB   @off80, 0
+    lda graphMode
+    bmi @n80
+    lda r13L
+    and #$7f
+    sta MapBreite
+    bne @schmal
+@n80:
+    lda r13L
+    sta MapBreite
+    bpl @schmal
+    ldx #1
+    stx @off80
+    and #$7f
+    asl
+@schmal:
+    sta r13L
+    pla
+    tax
+.endif
+
 	lda	leftMargin+1	; r10>=leftMargin?
 	cmp	r10H
 	bcc	@x0	; >nein
@@ -1520,7 +1636,7 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	and	#%111
 	eor	#%111
 	sta	r14H
-	
+
 	; jetzt steht in r14L die Anzahl der zu }berspringenden Bytes +1, und in 
 	; r14H die Nummer des Bits, ab dem einmaskiert werden soll
 @c0:	lda	rightMargin	; r15 = rightMargin-r10
@@ -1533,6 +1649,9 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	sta	r15H
 	bpl	@a1	; wenn rightMargin < r10
 	rts		; dann keine Bitmapdarstellung
+.ifdef topdesk128
+@off80: .byte   0
+.endif
 @a1:	lsr	r15H
 	ror	r15L
 	lsr	r15H
@@ -1548,8 +1667,14 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	; in r15H die Nummer des Bits, ab dem ausmaskiert werden soll
 
 	LoadB	r9H,0
+.ifdef topdesk128
+	sta	r4L
+	lda @off80
+	sta r3L
+.else
 	sta	r3L
 	sta	r4L
+.endif
 	inc	windowBottom
 @01:	LoadB	winOutFlag,0	; Zeile unter windowTop?
 	txa
@@ -1582,33 +1707,68 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	bne	@01
 	dec	windowBottom
 	rts
-@sub:	jsr	GetScanLine	; Zeilenadresse holen	
-;XXX	lda	r5H	; 80-Zeichen ?
-;XXX	bmi	@s10	; >nein
-;XXX	rts
+@sub:
+.ifdef topdesk128
+    jsr DispTest
+.endif
+
+	jsr	GetScanLine	; Zeilenadresse holen
+.ifdef topdesk13
+	lda	r5H	; 80-Zeichen ?
+	bmi	@s10	; >nein
+.ifdef topdesk128
+    MoveB   r10H, r6H
+    lda r10L
+    lsr r6H
+    ror
+    lsr r6H
+    ror
+    lsr r6H
+    ror
+    sta r11L
+    tay
+    jmp @s11
+.endif
+
 @s10:
+.endif
 	lda	r10H
 	clc
 	adc	r5H
 	sta	r5H
 
+
 ;XXX>
+.ifndef topdesk13
 	lda	r10H
 	clc
 	adc	r6H
 	sta	r6H
+.endif
 ;<XXX
 	lda	r10L
 	and	#%11111000
 	sta	r11L
 	tay
+@s11:
 	lda	r10L	; x = r10 AND 7
 	and	#%111
 	sta	r11H
 	tax
+.ifdef topdesk128
+    lda r5H
+    bmi @64a
+    jsr ldar5y
+    jmp @64b
+
+@64a:
+.endif
+
 	lda	(r5),y	; zu }berschreibende Bits am linken Rand
+@64b:
 	and	BitMaske2,x	; ausmaskieren
 	pha
+
 	jsr	UnPackMap	; Datenbyte holen
 	ldx	#0
 	ldy	r11H
@@ -1621,14 +1781,21 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	dec	r13L	; Breite verringern
 @20:	tya		; y auf n{chstes Byte einstellen
 	clc
+.ifdef topdesk128
+    adc GraphIndex
+.else
 	adc	#8
+.endif
 	tay
 	bcc	@30
 	inc	r5H
+
 ;XXX>
+.ifndef topdesk13
     inc r6H
+.endif
 ;<XXX
-	
+
 @30:	sty	r11L
 	txa
 	pha
@@ -1645,19 +1812,33 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	bne	@20	
 	tya		; y auf n{chstes Byte einstellen
 	clc
+.ifdef topdesk128
+    adc GraphIndex
+.else
 	adc	#8
+.endif
 	tay
 	bcc	@50
 	inc	r5H
 ;XXX>
+.ifndef topdesk13
 	inc r6H
+.endif
 ;<XXX
 @50:	sty	r11L
 	stx	r13H
 	lda	r11H
 	eor	#%111
 	tax
+.ifdef topdesk128
+    lda r5H
+    bmi @64c
+    jsr ldar5y
+    jmp @64d
+@64c:
+.endif
 	lda	(r5),y
+@64d:
 	and	BitMaske1,x	; Bits am rechten Rand ausmaskieren
 	pha
 	lda	#00	; Pseudo-Datenbyte
@@ -1671,6 +1852,52 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	jsr	StoreBits	; und das letztes Byte der Zeile schreiben
 	sty	r11L	
 	rts
+
+.ifdef topdesk128
+ldar5y:
+    ;lda    (r5),y
+    DecW    r5
+    jsr @sub
+    IncW    r5
+    rts
+@sub:
+    stx     @x
+    tya
+    clc
+    adc r5L
+    ldx #$13
+    jsr SetReg
+    dex
+    lda r5H
+    adc #0
+    jsr SetReg
+    ldx #$1f
+    jsr GetReg
+    jsr GetReg
+    ldx @x
+    rts
+@x: .byte   0
+
+star5y:
+    ;sta    (r5),y
+    pha
+    tya
+    clc
+    adc r5L
+    ldx #$13
+    jsr SetReg
+    dex
+    lda r5H
+    adc #0
+    jsr SetReg
+    ldx #$1f
+    pla
+    ldx #$1f
+    jsr SetReg
+    ldx #$12
+    jmp SetReg
+
+.endif
 
 Rotieren:	; Das Word a (hi) /x (lo) wird um y Schritte rechts rotiert
 	; anschlie~end wird x um (8-y) Schritte nach rechts verschoben
@@ -1707,16 +1934,35 @@ StoreBits:	; Speichern von a im Grafikschirm, falls innerhalb der Windowgrenzen
 	bmi	@ja
 	inc	winOutFlag
 	rts
-@ja:	inc	winOutFlag
+
+@ja:
+.ifdef topdesk128
+    stx @x
+.endif
+    inc	winOutFlag
 	dec	r15L	; Behandlung des rechten Randes
 	beq	@01	; >Letztes Byte maskieren
 	bpl	@05	; >normal ausgeben
 	LoadB	r15L,0	; nicht mehr ausgeben
 	rts
-@01:	stx	@x
+@01:
+.ifndef topdesk128
+    stx	@x
+.endif
 	sta	r15L
 	ldx	r15H
+
+.ifdef topdesk128
+    lda r5H
+    bmi @64a
+    jsr ldar5y
+    jmp @64b
+@64a:
+.endif
 	lda	(r5),y
+.ifdef topdesk128
+@64b:
+.endif
 	and	BitMaske0,x
 	pha
 	txa
@@ -1734,15 +1980,41 @@ StoreBits:	; Speichern von a im Grafikschirm, falls innerhalb der Windowgrenzen
 	beq	@20	; >erstes Byte maskieren
 	bpl	@10	; >noch nicht ausgeben
 	inc	r14L	; normal ausgeben
+.ifdef topdesk128
+    ldx r5H
+    bmi @64g
+    jsr star5y
+    jmp @64h
+@64g:
+.endif
 	sta	(r5),y
+.ifndef topdesk128
 	sta	(r6),y
+.endif
+@64h:
+.ifdef topdesk128
+    ldx @x
+.endif
 @10:	rts
-@20:	stx	@x
+@20:
+.ifndef topdesk128
+	stx	@x
+.endif
 	sta	r14L
 	lda	r14H
 	eor	#%111
 	tax
+.ifdef topdesk128
+    lda r5H
+    bmi @64c
+    jsr ldar5y
+    jmp @64d
+@64c:
+.endif
 	lda	(r5),y
+.ifdef topdesk128
+@64d:
+.endif
 	and	BitMaske3,x
 	pha
 	txa
@@ -1753,8 +2025,20 @@ StoreBits:	; Speichern von a im Grafikschirm, falls innerhalb der Windowgrenzen
 	sta	r14L
 	pla
 	ora	r14L
+.ifdef topdesk128
+    ldx r5H
+    bmi @64e
+    jsr star5y
+    jmp @64f
+@64e:
+.endif
+
 	sta	(r5),y
+.ifndef topdesk128
 	sta	(r6),y
+.else
+@64f:
+.endif
 	LoadB	r14L,0
 	ldx	@x
 	rts
@@ -1919,6 +2203,17 @@ BackgroundRectangle:	; Wiederherstellung des Hintergrundes im Rechteck r2-r4
 @num:	.byte	0
 MaxWindow:	; actives Window auf Maximalgr|~e setzen / bzw. zur}ck
 	; neue Gr|~e wird in r2-r4 }bergeben
+.ifdef topdesk128
+    LoadW___    r0, @w2
+    jsr CheckOne
+    lda graphMode
+    bpl @03
+    LoadW___    @wx,270*2
+    bne @05
+@03:
+    LoadW___   @wx,270
+@05:
+.endif
 	ldy	#5
 @10:	lda	(a0),y
 	cmp	@w,y
@@ -1942,10 +2237,23 @@ MaxWindow:	; actives Window auf Maximalgr|~e setzen / bzw. zur}ck
 	bpl	@25
 	rts
 @w:	.byte	Grenze_oben,197
+.ifdef topdesk128
+	.word	0
+.else
 	.word	0,270
+.endif
+.ifdef topdesk128
+@wx:    .word   270*2
+.endif
 @w2:	.byte	50,150
 	.word	100,219
-NewPutString:	ldy	#00
+
+NewPutString:
+.ifdef topdesk128
+    ldx #r11
+    jsr NormalizeX
+.endif
+	ldy	#00
 	lda	(r0),y
 	beq	@10
 	cmp	#$1b
@@ -1971,6 +2279,47 @@ MyRecoverService:	ldy	#5
 	jmp	Recover
 @10:	dec	DialBoxFlag
 	rts
+
+.ifdef topdesk128
+CheckOne:
+    ldy #4+1
+    lda (r0),y
+    cmp RightMax+1
+    bcc @geht
+    bne @gehtnicht
+    dey
+    lda (r0),y
+    cmp RightMax
+    bcc @geht
+    bne @gehtnicht
+@geht:
+    rts
+@gehtnicht:
+    ;jmp    Halbieren
+
+Halbieren:
+    ldy #3
+    lda (r0),y
+    lsr
+    sta (r0),y
+    dey
+    lda (r0),y
+    ror
+    sta (r0),y
+
+    ldy #5
+    lda (r0),y
+    lsr
+    sta (r0),y
+    dey
+    lda (r0),y
+    ror
+    sta (r0),y
+
+    rts
+.endif
+
+
 DialBoxFlag:	.byte	0
 LastRec:	.word	0,0,0
 RecoverLast:	ldy	#5
@@ -1986,6 +2335,12 @@ Recover:	lda	c128Flag
 	jsr	NormalizeX
 @10:	AddVB	8,r2H
 	AddVW__	8,r4
+.ifdef topdesk128
+    lda graphMode
+    bpl @z40
+    AddVW__ 8, r4
+@z40:
+.endif
 	ldy	#5
 @loop:	lda	windowTop,y
 	pha
@@ -2004,6 +2359,7 @@ Recover:	lda	c128Flag
 	rts
 @geht:	jsr	DrawWindowC
 	jmp	DrawShadow
+
 StringLen:
 	; Ermittlung einer Stringl{nge in Zeichen und in Pixels
 	; Par:	r0 : Zeiger auf String, max. 256 Zeichen lang.
@@ -2022,8 +2378,18 @@ StringLen:
 	cmp	#$a0
 	beq	@90	; Ende ? >ja
 	inc	r13H	; Anzahl erh|hen
+.ifdef topdesk128
+    cmp #$1b
+    bne @15
+    ldy #0
+    beq @17
+@15:
+.endif
 	ldx	currentMode
 	jsr	GetRealSize	; Zeichenbreite holen
+.ifdef topdesk128
+@17:
+.endif
 	tya
 	clc
 	adc	r1L	; Und zur Stringl{nge aufaddieren
@@ -2034,12 +2400,13 @@ StringLen:
 	bne	@10
 @90:	ldx	r13H
 	rts
+
 ;InvFrame	; Parameter: r2-r4
 	; Zur}ck: r2-r4 unver{ndert
 	; Zerst|rt: a,x,y,r0,r1,r5-r12
 	;t	"InvFrame"
 .include "topdesk/WinInclude/InvFrame.inc"
-	
+
 ;SpeedFrame	; Parameter : r2-r4 Start r5-r7 Ende r8 Min Breite r9L Min H|he r9H Temp.
 	; Des: a,x,y,r0-r12
 	;t	"SpeedFrame"

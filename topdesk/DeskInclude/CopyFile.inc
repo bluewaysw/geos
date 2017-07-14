@@ -507,9 +507,12 @@ Search_Turbo:	PushB	r2L
 	jsr	NewDoDlgBox
 	jmp	@dberr
 @nocare:	
-;XXX    lda	SureFlag
-;XXX	beq	@notsure
-;XXX	jmp	@delete
+
+.ifdef topdesk13
+    lda	SureFlag
+	beq	@notsure
+	jmp	@delete
+.endif
 
 @notsure:	
 ;XXX	LoadW___	r0, UeberschreibenBox

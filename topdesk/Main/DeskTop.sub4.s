@@ -61,6 +61,10 @@ curHeight	=	$29
 .global StringLen
 .global RecoverLast
 
+.ifdef topdesk128
+.global TypTab
+.endif
+
 SubDir2List	= SubDir1List + 64
 SubDir3List	= SubDir2List + 64
 SubDir4List	= SubDir3List+ 64
@@ -70,8 +74,13 @@ Name	= MultiFileTab + 145
 ; FileBox-Position:
 FIB_OBEN	=	40
 FIB_UNTEN	=	180
+.ifdef topdesk128
+FIB_LINKS	=	70+DOUBLE_W
+FIB_RECHTS	=	250+DOUBLE_W
+.else
 FIB_LINKS	=	70
 FIB_RECHTS	=	250
+.endif
 FileInfo:	jsr	GetAktlDisk
 	tax
 	beq	@05
@@ -301,8 +310,11 @@ DispThisInfo:	; File-Info des Files Name darstellen
 	jmp	InvertRectangle
 @c10:	rts
 CloseRoutine:	jmp	RstrFrmDialog
+
 .include "topdesk/DeskInclude/EditText.inc"
 AutTab:	.byte	0,1,1,0,1,1,1,0,0,1,1,0,1,0,1,1
+
+.ifndef topdesk128
 TypTab:	.word	@t0,@t1,@t2,@t3,@t4,@t5,@t6,@t7,@t8,@t9,@ta,@tb,@tc,@td,@te,@tf
 @t0:	.byte	"Nicht-GEOS",0
 @t1:	.byte	"BASIC",0
@@ -320,6 +332,7 @@ TypTab:	.word	@t0,@t1,@t2,@t3,@t4,@t5,@t6,@t7,@t8,@t9,@ta,@tb,@tc,@td,@te,@tf
 @td:	.byte	"Tempor{r",0
 @te:	.byte	"selbstausf}hrend",0
 @tf:	.byte	"Eingabetreiber (128)",0
+.endif
 
 CloseMap:
 .incbin "topdesk/CloseMap.map"

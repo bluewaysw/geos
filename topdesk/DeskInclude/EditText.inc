@@ -23,6 +23,17 @@ EditText:	; Text-Editierung
 	sta	Text,y
 @codeok:	dey
 	bpl	@testcodeloop
+.ifdef topdesk128
+    LoadW___    r3, $8000+80
+    ldx #r3
+    jsr NormalizeX
+    MoveW_  r3, PositionXL
+    LoadW___    r3, $8000 + 80 + 160
+    ldx #r3
+    jsr NormalizeX
+    MoveW_  r3, PositionXR
+.endif
+
 	ldy	#5
 @10:	lda	PositionYO,y
 	sta	r2L,y
@@ -126,6 +137,7 @@ TextKeyRoutine:	lda	keyData
 @118:	lda	keyData
 	jsr	PutChar
 	jmp	NewDisplay
+
 MouseRoutine:	lda	mouseData
 	bpl	@10
 @05:	lda	oldotherPress
@@ -147,13 +159,16 @@ SetTextPtr:	jsr	TextPosition
 	dex
 	dex
 	stx	ActualCharacter
+.ifndef topdesk128
 	jsr	InitForIO
 	inc	$d020
 	jsr	DoneWithIO
+.endif
 	jsr	NewDisplay
 	LoadB	keyData,30
 	jmp	TextKeyRoutine
 @20:	jmp	NewDisplay
+
 NewText:
 ; rechnet alle Zeiger neu aus und gibt alle Zeilen ab der aktuellen aus
 	jsr	RethinkText
@@ -169,6 +184,7 @@ NewText:
 	bcc	@10
 	PopB	ActualCharPointer
 	jmp	NewDisplay
+
 NewDisplay:
 ; aktualisiert den Cursor
 	jsr	RethinkActChrPtr
@@ -207,6 +223,7 @@ NewDisplay:
 @50:	MoveW_	r11,stringX
 	MoveB	r1H,stringY
 	jmp	PromptOn
+
 RethinkText:
 ; aktualisiert Pointer und TextLength
 ; Des:	a,x,y,r0-r2
@@ -260,6 +277,7 @@ RethinkText:
 	cpy	#MaxZeilen
 	bcc	@30
 	rts
+
 TextPosition:
 ; Par:	r11,r1H: gew}nschte Textposition
 ; Ret:	ActualCharacter: Zeichenposition
@@ -327,6 +345,7 @@ TextPosition:
 	stx	ActualCharacter
 	clc
 	rts
+
 RethinkActChrPtr:
 ; rechnet ActualCharPointer neu aus
 	ldy	#0

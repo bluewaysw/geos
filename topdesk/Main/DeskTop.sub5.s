@@ -70,6 +70,9 @@
 .global DispMode
 .global winMode
 .global MyDCFilesSub
+.ifdef topdesk128
+.global SchmalFlag
+.endif
 
 FILE_ANZ = 16
 
@@ -147,23 +150,71 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	adc	#21
 	sta	r2H
 	jsr	GetClipRec
+.ifdef topdesk128
+    lda SchmalFlag
+    cmp #'*'
+    beq @sc10
+    lda r3H
+    ora #$80
+    sta r3H
+    lda r4H
+    ora #$a0
+    sta r4H
+    ldx #r3
+    jsr NormalizeX
+    ldx #r4
+    jsr NormalizeX
+@sc10:
+.endif
 	jsr	CutRec
 	bcs	@005
 	MoveW_	a2,r0
 	MoveW_	a4,r10
 	LoadB	r13L,3	; Breite immer 3
 	LoadB	r13H,21	; H|he immer 21
+.ifdef topdesk128
+    lda SchmalFlag
+    cmp #'*'
+    beq @sc20
+    lda r10H
+    ora #$80
+    sta r10H
+    LoadB   r13L, $83
+@sc20:
+.endif
+
 	ldx	a3H
 	jsr	DrawMap
 	; Darstellung des Filenames, auf dessen Text a1 zeigt, zentriert
 	; an der Position a4+12, a3H+27
-@005:	lda	a4L
+@005:
+    lda	a4L
 	clc
 	adc	#12
 	sta	r11L
 	lda	a4H
 	adc	#00
 	sta	r11H
+.ifdef topdesk128
+    lda SchmalFlag
+    cmp #'*'
+    beq @sc30
+    lda r11H
+    ora #$80
+    sta r11H
+    ldx #r11
+    jsr NormalizeX
+    LoadB   @scy, 27
+    lda graphMode
+    bpl @sc30
+    lda SchmalFlag
+    cmp #'*'
+    beq @sc30
+    jsr UseSystemFont
+    inc @scy
+@sc30:
+.endif
+
 	MoveW_	a1,r0	; Filenamenzeiger setzen
 	ldy	#16
 	lda	(r0),y
@@ -177,7 +228,11 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	SubW	r1,r11	; xk:=xk-Len / 2
 	lda	a3H	; yk:=a3H + 27
 	clc
+.ifdef topdesk128
+	adc	@scy
+.else
 	adc	#27
+.endif
 	sta	r1H
 	lda	r11L
 	sta	r3L
@@ -217,6 +272,9 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 @20:	AddvW	18,a1	; n{chsten Namen und
 	AddvW	64,a2	; n{chstes Icon einstellen
 	jmp	@05	; Icon darstellen
+.ifdef topdesk128
+@scy:   .byte   27
+.endif
 @end:	lda	messageBuffer+1
 	cmp	activeWindow
 	bne	@e10
@@ -231,8 +289,22 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	lda	a5H
 	adc	#00
 	sta	a4H
+.ifdef topdesk128
+    lda graphMode
+    bpl @send
+    lda SchmalFlag
+    cmp #'*'
+    beq @send
+    AddVW__    5, a4
 	jsr	DispNumber
+    AddVW__  25, a4
+    lsr a4H
+    ror a4L
 	rts
+@send:
+.endif
+	jsr	DispNumber
+    rts
 @geticon:	; Icon nachladen
 	ldy	#16
 	lda	(a1),y
@@ -261,7 +333,17 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	sta	(a2),y
 	ldx	#0
 	rts
+
 DispNumber:	; Darstellung der aktuellen Filenummer an der Position a4-20/a3H+6
+.ifdef topdesk128
+    lda graphMode
+    bpl @10
+    lda SchmalFlag
+    cmp #'*'
+    beq @10
+    jsr UseSystemFont
+@10:
+.endif
 	lda	a3L	; Nummer (0-15) holen
 	ldx	messageBuffer+1	; Windownummer holen
 	clc
@@ -281,6 +363,7 @@ DispNumber:	; Darstellung der aktuellen Filenummer an der Position a4-20/a3H+6
 	sta	r1H
 	lda	#%11000000
 	jmp	PutDecimal
+
 _MyCheckFiles:	jsr	MyDCFilesSub
 _CheckFiles:	; Auswertung eines Mausklicks innerhalb des Textfenstern im Bezug
 	; auf die von DispFiles dargestellten Files
@@ -308,6 +391,7 @@ _CheckFiles:	; Auswertung eines Mausklicks innerhalb des Textfenstern im Bezug
 @10:	pla
 	tax
 	rts
+
 _GetFileRect:	; Ermittlung des Iconrechtecks eines Files einer DispFile-Darstellung
 	; im Bezug auf das Textfenster
 	; Par:	Textfenster (windowTop-rightMargin)
@@ -340,7 +424,9 @@ _GetFileRect:	; Ermittlung des Iconrechtecks eines Files einer DispFile-Darstell
 	adc	#10
 	sta	r2L
 	; Jetzt steht in r2L die obere y-Koordinate
+.ifndef topdesk128
 	AddW	a3,r3
+.endif
 	AddB_	a2L,r2L
 	bcs	@err	; y-Koordinate zu gro~!
 	clc
@@ -355,6 +441,25 @@ _GetFileRect:	; Ermittlung des Iconrechtecks eines Files einer DispFile-Darstell
 	adc	#00
 	sta	r4H
 	; Jetzt steht in r4 die rechte x-Koordinate
+.ifdef topdesk128
+    lda SchmalFlag
+    cmp #'*'
+    beq @sc10
+    lda r3H
+    ora #$80
+    sta r3H
+    lda r4H
+    ora #$a0
+    sta r4H
+    ldx #r3
+    jsr NormalizeX
+    ldx #r4
+    jsr NormalizeX
+@sc10:
+    AddW    a3, r3
+    AddW    a3, r4
+.endif
+
 	jsr	GetClipRec
 	jsr	CutRec	; Schnittfl{che berechnen, Ende
 	pla
