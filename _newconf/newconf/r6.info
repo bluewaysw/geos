@@ -1,7 +1,7 @@
 # This is a comment. It extends to the end of the line
         GLOBAL {
-            OUTPUTNAME      "r6.asm";
-            INPUTNAME       "configure.cvt.record.6";
+            OUTPUTNAME      "r2.asm";
+            INPUTNAME       "configure128.cvt.record.2";
             STARTADDR       $9000;
             PAGELENGTH      0;                  # No paging
             CPU             "6502";

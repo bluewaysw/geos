@@ -1,6 +1,6 @@
 ; da65 V2.15
-; Created:    2017-06-30 23:59:27
-; Input file: configure.cvt.record.6
+; Created:    2017-07-29 22:56:46
+; Input file: configure128.cvt.record.6
 ; Page:       1
 
 
@@ -89,6 +89,7 @@ irqvec          := $0314
 bkvec           := $0316
 nmivec          := $0318
 APP_RAM         := $0400
+L3531           := $3531
 BACK_SCR_BASE   := $6000
 L6216           := $6216
 PRINTBASE       := $7900
@@ -476,23 +477,23 @@ IRQ_VECTOR      := $FFFE
 _InitForIO:
         .addr   __InitForIO                     ; 9000 DF 94                    ..
 _DoneWithIO:
-        .addr   __DoneWithIO                    ; 9002 55 95                    U.
+        .addr   L9550                           ; 9002 50 95                    P.
 _ExitTurbo:
-        .addr   __ExitTurbo                     ; 9004 84 95                    ..
+        .addr   L957A                           ; 9004 7A 95                    z.
 _PurgeTurbo:
-        .addr   __ExitTurbo                     ; 9006 84 95                    ..
+        .addr   L957A                           ; 9006 7A 95                    z.
 _EnterTurbo:
-        .addr   __EnterTurbo                    ; 9008 7B 95                    {.
+        .addr   L9571                           ; 9008 71 95                    q.
 _ChangeDiskDevice:
-        .addr   __ChangeDiskDevice              ; 900A 8A 95                    ..
+        .addr   L9580                           ; 900A 80 95                    ..
 _NewDisk:
-        .addr   __NewDisk                       ; 900C 92 95                    ..
+        .addr   L9588                           ; 900C 88 95                    ..
 _ReadBlock:
-        .addr   __ReadBlock                     ; 900E 96 95                    ..
+        .addr   L958C                           ; 900E 8C 95                    ..
 _WriteBlock:
-        .addr   __WriteBlock                    ; 9010 AC 95                    ..
+        .addr   L95A2                           ; 9010 A2 95                    ..
 _VerWriteBlock:
-        .addr   __VerWriteBlock                 ; 9012 B5 95                    ..
+        .addr   L95AB                           ; 9012 AB 95                    ..
 _OpenDisk:
         .addr   __OpenDisk                      ; 9014 E5 90                    ..
 _GetBlock:
@@ -561,7 +562,7 @@ AllocateBlock:
 
 ; ----------------------------------------------------------------------------
 ReadLink:
-        jmp     _ReadLink                       ; 904B 4C A1 95                 L..
+        jmp     L9597                           ; 904B 4C 97 95                 L..
 
 ; ----------------------------------------------------------------------------
         .byte   $83                             ; 904E 83                       .
@@ -649,7 +650,7 @@ L90C7:  stx     r4H                             ; 90C7 86 0B                    
 
 ; ----------------------------------------------------------------------------
 L90D2:  lda     #$00                            ; 90D2 A9 00                    ..
-        sta     L9674                           ; 90D4 8D 74 96                 .t.
+        sta     L966A                           ; 90D4 8D 6A 96                 .j.
         ldx     #$02                            ; 90D7 A2 02                    ..
         lda     r1L                             ; 90D9 A5 04                    ..
         beq     L90E3                           ; 90DB F0 06                    ..
@@ -713,7 +714,7 @@ L9133:  sty     r3L                             ; 9133 84 08                    
         bne     L913F                           ; 913B D0 02                    ..
 __NxtBlkAlloc:
         lda     #$00                            ; 913D A9 00                    ..
-L913F:  sta     L9678                           ; 913F 8D 78 96                 .x.
+L913F:  sta     L966E                           ; 913F 8D 6E 96                 .n.
         lda     r9H                             ; 9142 A5 15                    ..
         pha                                     ; 9144 48                       H
         lda     r9L                             ; 9145 A5 14                    ..
@@ -771,9 +772,9 @@ L9193:  jsr     SetNextFree                     ; 9193 20 92 C2                 
         sta     r4L                             ; 91A9 85 0A                    ..
         bcc     L91AF                           ; 91AB 90 02                    ..
         inc     r4H                             ; 91AD E6 0B                    ..
-L91AF:  lda     L9678                           ; 91AF AD 78 96                 .x.
+L91AF:  lda     L966E                           ; 91AF AD 6E 96                 .n.
         beq     L91BD                           ; 91B2 F0 09                    ..
-        dec     L9678                           ; 91B4 CE 78 96                 .x.
+        dec     L966E                           ; 91B4 CE 6E 96                 .n.
         bne     L91BD                           ; 91B7 D0 04                    ..
         lda     #$23                            ; 91B9 A9 23                    .#
         sta     r3L                             ; 91BB 85 08                    ..
@@ -813,7 +814,7 @@ _Get1stDirEntry:
         jsr     L90C1                           ; 91EE 20 C1 90                  ..
         inc     r1H                             ; 91F1 E6 05                    ..
         lda     #$00                            ; 91F3 A9 00                    ..
-        sta     L9679                           ; 91F5 8D 79 96                 .y.
+        sta     L966F                           ; 91F5 8D 6F 96                 .o.
         beq     L9236                           ; 91F8 F0 3C                    .<
 _GetNxtDirEntry:
         ldx     #$00                            ; 91FA A2 00                    ..
@@ -836,10 +837,10 @@ L9213:  bcc     L9243                           ; 9213 90 2E                    
         lda     diskBlkBuf                      ; 921C AD 00 80                 ...
         sta     r1L                             ; 921F 85 04                    ..
         bne     L9236                           ; 9221 D0 13                    ..
-        lda     L9679                           ; 9223 AD 79 96                 .y.
+        lda     L966F                           ; 9223 AD 6F 96                 .o.
         bne     L9243                           ; 9226 D0 1B                    ..
         lda     #$FF                            ; 9228 A9 FF                    ..
-        sta     L9679                           ; 922A 8D 79 96                 .y.
+        sta     L966F                           ; 922A 8D 6F 96                 .o.
         jsr     GetBorder                       ; 922D 20 36 90                  6.
         txa                                     ; 9230 8A                       .
         bne     L9243                           ; 9231 D0 10                    ..
@@ -1241,283 +1242,289 @@ L94DE:  rts                                     ; 94DE 60                       
 __InitForIO:
         php                                     ; 94DF 08                       .
         pla                                     ; 94E0 68                       h
-        sta     L966A                           ; 94E1 8D 6A 96                 .j.
+        sta     L9660                           ; 94E1 8D 60 96                 .`.
         sei                                     ; 94E4 78                       x
-        lda     CPU_DATA                        ; 94E5 A5 01                    ..
-        sta     L966C                           ; 94E7 8D 6C 96                 .l.
-        lda     #$36                            ; 94EA A9 36                    .6
-        sta     CPU_DATA                        ; 94EC 85 01                    ..
-        lda     grirqen                         ; 94EE AD 1A D0                 ...
-        sta     L966B                           ; 94F1 8D 6B 96                 .k.
-        lda     clkreg                          ; 94F4 AD 30 D0                 .0.
-        sta     L9669                           ; 94F7 8D 69 96                 .i.
-        ldy     #$00                            ; 94FA A0 00                    ..
-        sty     clkreg                          ; 94FC 8C 30 D0                 .0.
-        sty     grirqen                         ; 94FF 8C 1A D0                 ...
-        lda     #$7F                            ; 9502 A9 7F                    ..
-        sta     grirq                           ; 9504 8D 19 D0                 ...
-        sta     $DC0D                           ; 9507 8D 0D DC                 ...
-        sta     $DD0D                           ; 950A 8D 0D DD                 ...
-        lda     #$95                            ; 950D A9 95                    ..
-        sta     $0315                           ; 950F 8D 15 03                 ...
-        lda     #$4F                            ; 9512 A9 4F                    .O
-        sta     irqvec                          ; 9514 8D 14 03                 ...
-        lda     #$95                            ; 9517 A9 95                    ..
-        sta     $0319                           ; 9519 8D 19 03                 ...
-        lda     #$54                            ; 951C A9 54                    .T
-        sta     nmivec                          ; 951E 8D 18 03                 ...
-        lda     #$3F                            ; 9521 A9 3F                    .?
-        sta     $DD02                           ; 9523 8D 02 DD                 ...
-        lda     mobenble                        ; 9526 AD 15 D0                 ...
-        sta     L966D                           ; 9529 8D 6D 96                 .m.
-        sty     mobenble                        ; 952C 8C 15 D0                 ...
-        sty     $DD05                           ; 952F 8C 05 DD                 ...
-        iny                                     ; 9532 C8                       .
-        sty     $DD04                           ; 9533 8C 04 DD                 ...
-        lda     #$81                            ; 9536 A9 81                    ..
-        sta     $DD0D                           ; 9538 8D 0D DD                 ...
-        lda     #$09                            ; 953B A9 09                    ..
-        sta     $DD0E                           ; 953D 8D 0E DD                 ...
-        ldy     #$2C                            ; 9540 A0 2C                    .,
-L9542:  lda     rasreg                          ; 9542 AD 12 D0                 ...
-        cmp     TURBO_DD00_CPY                  ; 9545 C5 8F                    ..
-        beq     L9542                           ; 9547 F0 F9                    ..
-        sta     TURBO_DD00_CPY                  ; 9549 85 8F                    ..
-        dey                                     ; 954B 88                       .
-        bne     L9542                           ; 954C D0 F4                    ..
-        rts                                     ; 954E 60                       `
+        lda     grirqen                         ; 94E5 AD 1A D0                 ...
+        sta     L9661                           ; 94E8 8D 61 96                 .a.
+        lda     clkreg                          ; 94EB AD 30 D0                 .0.
+        sta     L965F                           ; 94EE 8D 5F 96                 ._.
+        ldy     #$00                            ; 94F1 A0 00                    ..
+        sty     clkreg                          ; 94F3 8C 30 D0                 .0.
+        sty     grirqen                         ; 94F6 8C 1A D0                 ...
+        lda     #$7F                            ; 94F9 A9 7F                    ..
+        sta     grirq                           ; 94FB 8D 19 D0                 ...
+        sta     $DC0D                           ; 94FE 8D 0D DC                 ...
+        sta     $DD0D                           ; 9501 8D 0D DD                 ...
+        lda     #$95                            ; 9504 A9 95                    ..
+        sta     $0315                           ; 9506 8D 15 03                 ...
+        lda     #$46                            ; 9509 A9 46                    .F
+        sta     irqvec                          ; 950B 8D 14 03                 ...
+        lda     #$95                            ; 950E A9 95                    ..
+        sta     $0319                           ; 9510 8D 19 03                 ...
+        lda     #$46                            ; 9513 A9 46                    .F
+        sta     nmivec                          ; 9515 8D 18 03                 ...
+        lda     #$3F                            ; 9518 A9 3F                    .?
+        sta     $DD02                           ; 951A 8D 02 DD                 ...
+        lda     mobenble                        ; 951D AD 15 D0                 ...
+        sta     L9663                           ; 9520 8D 63 96                 .c.
+        sty     mobenble                        ; 9523 8C 15 D0                 ...
+        .byte   $8C                             ; 9526 8C                       .
+L9527:  ora     $DD                             ; 9527 05 DD                    ..
+        iny                                     ; 9529 C8                       .
+        sty     $DD04                           ; 952A 8C 04 DD                 ...
+        lda     #$81                            ; 952D A9 81                    ..
+        sta     $DD0D                           ; 952F 8D 0D DD                 ...
+        lda     #$09                            ; 9532 A9 09                    ..
+        sta     $DD0E                           ; 9534 8D 0E DD                 ...
+        ldy     #$2C                            ; 9537 A0 2C                    .,
+L9539:  lda     rasreg                          ; 9539 AD 12 D0                 ...
+        cmp     TURBO_DD00_CPY                  ; 953C C5 8F                    ..
+        .byte   $F0                             ; 953E F0                       .
+L953F:  sbc     $8F85,y                         ; 953F F9 85 8F                 ...
+        dey                                     ; 9542 88                       .
+        bne     L9539                           ; 9543 D0 F4                    ..
+        rts                                     ; 9545 60                       `
 
 ; ----------------------------------------------------------------------------
-        pla                                     ; 954F 68                       h
-        tay                                     ; 9550 A8                       .
-        pla                                     ; 9551 68                       h
-        tax                                     ; 9552 AA                       .
-        pla                                     ; 9553 68                       h
-        rti                                     ; 9554 40                       @
+        pla                                     ; 9546 68                       h
+        sta     config                          ; 9547 8D 00 FF                 ...
+        pla                                     ; 954A 68                       h
+        tay                                     ; 954B A8                       .
+        pla                                     ; 954C 68                       h
+        tax                                     ; 954D AA                       .
+        pla                                     ; 954E 68                       h
+        rti                                     ; 954F 40                       @
 
 ; ----------------------------------------------------------------------------
+L9550:  sei                                     ; 9550 78                       x
+        lda     L965F                           ; 9551 AD 5F 96                 ._.
+        .byte   $8D                             ; 9554 8D                       .
 __DoneWithIO:
-        sei                                     ; 9555 78                       x
-        lda     L9669                           ; 9556 AD 69 96                 .i.
-        sta     clkreg                          ; 9559 8D 30 D0                 .0.
-        lda     L966D                           ; 955C AD 6D 96                 .m.
-        sta     mobenble                        ; 955F 8D 15 D0                 ...
-        lda     #$7F                            ; 9562 A9 7F                    ..
-        sta     $DD0D                           ; 9564 8D 0D DD                 ...
-        lda     $DD0D                           ; 9567 AD 0D DD                 ...
-        lda     L966B                           ; 956A AD 6B 96                 .k.
-        sta     grirqen                         ; 956D 8D 1A D0                 ...
-        lda     L966C                           ; 9570 AD 6C 96                 .l.
-        sta     CPU_DATA                        ; 9573 85 01                    ..
-        lda     L966A                           ; 9575 AD 6A 96                 .j.
-        pha                                     ; 9578 48                       H
-        plp                                     ; 9579 28                       (
-        rts                                     ; 957A 60                       `
+        bmi     L9527                           ; 9555 30 D0                    0.
+        lda     L9663                           ; 9557 AD 63 96                 .c.
+        sta     mobenble                        ; 955A 8D 15 D0                 ...
+        lda     #$7F                            ; 955D A9 7F                    ..
+        sta     $DD0D                           ; 955F 8D 0D DD                 ...
+        lda     $DD0D                           ; 9562 AD 0D DD                 ...
+        lda     L9661                           ; 9565 AD 61 96                 .a.
+        sta     grirqen                         ; 9568 8D 1A D0                 ...
+        lda     L9660                           ; 956B AD 60 96                 .`.
+        pha                                     ; 956E 48                       H
+        plp                                     ; 956F 28                       (
+        rts                                     ; 9570 60                       `
 
 ; ----------------------------------------------------------------------------
+L9571:  lda     curDrive                        ; 9571 AD 89 84                 ...
+        jsr     SetDevice                       ; 9574 20 B0 C2                  ..
+        ldx     #$00                            ; 9577 A2 00                    ..
+        rts                                     ; 9579 60                       `
+
+; ----------------------------------------------------------------------------
+L957A:  .byte   $A9                             ; 957A A9                       .
 __EnterTurbo:
-        lda     curDrive                        ; 957B AD 89 84                 ...
-        jsr     SetDevice                       ; 957E 20 B0 C2                  ..
-        ldx     #$00                            ; 9581 A2 00                    ..
-        rts                                     ; 9583 60                       `
-
-; ----------------------------------------------------------------------------
+        ora     ($8D,x)                         ; 957B 01 8D                    ..
+        sty     $6084                           ; 957D 8C 84 60                 ..`
+L9580:  sta     curDrive                        ; 9580 8D 89 84                 ...
+        .byte   $85                             ; 9583 85                       .
 __ExitTurbo:
-        lda     #$01                            ; 9584 A9 01                    ..
-        sta     interleave                      ; 9586 8D 8C 84                 ...
-        rts                                     ; 9589 60                       `
+        tsx                                     ; 9584 BA                       .
+        ldx     #$00                            ; 9585 A2 00                    ..
+        rts                                     ; 9587 60                       `
 
 ; ----------------------------------------------------------------------------
+L9588:  .byte   $20                             ; 9588 20                        
+        .byte   $14                             ; 9589 14                       .
 __ChangeDiskDevice:
-        sta     curDrive                        ; 958A 8D 89 84                 ...
-        sta     curDevice                       ; 958D 85 BA                    ..
-        ldx     #$00                            ; 958F A2 00                    ..
-        rts                                     ; 9591 60                       `
+        .byte   $C2                             ; 958A C2                       .
+        rts                                     ; 958B 60                       `
 
 ; ----------------------------------------------------------------------------
+L958C:  jsr     L90D2                           ; 958C 20 D2 90                  ..
+        bcc     L9594                           ; 958F 90 03                    ..
+        .byte   $20                             ; 9591 20                        
 __NewDisk:
-        jsr     EnterTurbo                      ; 9592 20 14 C2                  ..
-        rts                                     ; 9595 60                       `
-
-; ----------------------------------------------------------------------------
+        .byte   $B3                             ; 9592 B3                       .
+        .byte   $95                             ; 9593 95                       .
+L9594:  ldy     #$00                            ; 9594 A0 00                    ..
 __ReadBlock:
-        jsr     L90D2                           ; 9596 20 D2 90                  ..
-        bcc     L959E                           ; 9599 90 03                    ..
-        jsr     L95BD                           ; 959B 20 BD 95                  ..
-L959E:  ldy     #$00                            ; 959E A0 00                    ..
-        rts                                     ; 95A0 60                       `
+        rts                                     ; 9596 60                       `
 
 ; ----------------------------------------------------------------------------
+L9597:  jsr     L90D2                           ; 9597 20 D2 90                  ..
+        bcc     _ReadLink                       ; 959A 90 05                    ..
+        ldy     #$91                            ; 959C A0 91                    ..
+        jsr     L95BB                           ; 959E 20 BB 95                  ..
 _ReadLink:
-        jsr     L90D2                           ; 95A1 20 D2 90                  ..
-        bcc     L95AB                           ; 95A4 90 05                    ..
-        ldy     #$91                            ; 95A6 A0 91                    ..
-        jsr     L95C5                           ; 95A8 20 C5 95                  ..
-L95AB:  rts                                     ; 95AB 60                       `
+        rts                                     ; 95A1 60                       `
 
 ; ----------------------------------------------------------------------------
+L95A2:  jsr     L90D2                           ; 95A2 20 D2 90                  ..
+        bcc     L95AA                           ; 95A5 90 03                    ..
+        jsr     L95B7                           ; 95A7 20 B7 95                  ..
+L95AA:  rts                                     ; 95AA 60                       `
+
+; ----------------------------------------------------------------------------
+L95AB:  .byte   $20                             ; 95AB 20                        
 __WriteBlock:
-        jsr     L90D2                           ; 95AC 20 D2 90                  ..
-        bcc     L95B4                           ; 95AF 90 03                    ..
-        jsr     L95C1                           ; 95B1 20 C1 95                  ..
-L95B4:  rts                                     ; 95B4 60                       `
+        .byte   $D2                             ; 95AC D2                       .
+        bcc     L953F                           ; 95AD 90 90                    ..
+        .byte   $02                             ; 95AF 02                       .
+        ldx     #$00                            ; 95B0 A2 00                    ..
+        rts                                     ; 95B2 60                       `
 
 ; ----------------------------------------------------------------------------
+        ldy     #$91                            ; 95B3 A0 91                    ..
 __VerWriteBlock:
-        jsr     L90D2                           ; 95B5 20 D2 90                  ..
-        bcc     L95BC                           ; 95B8 90 02                    ..
-        ldx     #$00                            ; 95BA A2 00                    ..
-L95BC:  rts                                     ; 95BC 60                       `
+        bne     L95CB                           ; 95B5 D0 14                    ..
+L95B7:  ldy     #$90                            ; 95B7 A0 90                    ..
+        bne     L95CB                           ; 95B9 D0 10                    ..
+L95BB:  lda     r2H                             ; 95BB A5 07                    ..
+        pha                                     ; 95BD 48                       H
+        lda     r2L                             ; 95BE A5 06                    ..
+        pha                                     ; 95C0 48                       H
+        lda     #$00                            ; 95C1 A9 00                    ..
+        sta     r2H                             ; 95C3 85 07                    ..
+        lda     #$02                            ; 95C5 A9 02                    ..
+        sta     r2L                             ; 95C7 85 06                    ..
+        bne     L95D9                           ; 95C9 D0 0E                    ..
+L95CB:  lda     r2H                             ; 95CB A5 07                    ..
+        pha                                     ; 95CD 48                       H
+        lda     r2L                             ; 95CE A5 06                    ..
+        pha                                     ; 95D0 48                       H
+        lda     #$01                            ; 95D1 A9 01                    ..
+        sta     r2H                             ; 95D3 85 07                    ..
+        lda     #$00                            ; 95D5 A9 00                    ..
+        sta     r2L                             ; 95D7 85 06                    ..
+L95D9:  lda     r0H                             ; 95D9 A5 03                    ..
+        pha                                     ; 95DB 48                       H
+        lda     r0L                             ; 95DC A5 02                    ..
+        pha                                     ; 95DE 48                       H
+        lda     r1H                             ; 95DF A5 05                    ..
+        pha                                     ; 95E1 48                       H
+        lda     r1L                             ; 95E2 A5 04                    ..
+        pha                                     ; 95E4 48                       H
+        lda     r3L                             ; 95E5 A5 08                    ..
+        pha                                     ; 95E7 48                       H
+        tya                                     ; 95E8 98                       .
+        pha                                     ; 95E9 48                       H
+        lda     r2H                             ; 95EA A5 07                    ..
+        pha                                     ; 95EC 48                       H
+        lda     r2L                             ; 95ED A5 06                    ..
+        pha                                     ; 95EF 48                       H
+        lda     r7H                             ; 95F0 A5 11                    ..
+        pha                                     ; 95F2 48                       H
+        lda     r7L                             ; 95F3 A5 10                    ..
+        pha                                     ; 95F5 48                       H
+        lda     r8H                             ; 95F6 A5 13                    ..
+        pha                                     ; 95F8 48                       H
+        lda     r8L                             ; 95F9 A5 12                    ..
+        pha                                     ; 95FB 48                       H
+        dec     r1L                             ; 95FC C6 04                    ..
+        lda     r1H                             ; 95FE A5 05                    ..
+        sta     r2H                             ; 9600 85 07                    ..
+        lda     #$28                            ; 9602 A9 28                    .(
+        sta     r2L                             ; 9604 85 06                    ..
+        ldx     #$04                            ; 9606 A2 04                    ..
+        ldy     #$06                            ; 9608 A0 06                    ..
+        jsr     BBMult                          ; 960A 20 60 C1                  `.
+        clc                                     ; 960D 18                       .
+        lda     r1L                             ; 960E A5 04                    ..
+        adc     r2H                             ; 9610 65 07                    e.
+        sta     r1L                             ; 9612 85 04                    ..
+        lda     r1H                             ; 9614 A5 05                    ..
+        ldy     curDrive                        ; 9616 AC 89 84                 ...
+        adc     driveData,y                     ; 9619 79 BF 88                 y..
+        sta     r3L                             ; 961C 85 08                    ..
+        lda     r1L                             ; 961E A5 04                    ..
+        sta     r1H                             ; 9620 85 05                    ..
+        pla                                     ; 9622 68                       h
+        sta     r8L                             ; 9623 85 12                    ..
+        pla                                     ; 9625 68                       h
+        sta     r8H                             ; 9626 85 13                    ..
+        pla                                     ; 9628 68                       h
+        sta     r7L                             ; 9629 85 10                    ..
+        pla                                     ; 962B 68                       h
+        sta     r7H                             ; 962C 85 11                    ..
+        pla                                     ; 962E 68                       h
+        sta     r2L                             ; 962F 85 06                    ..
+        pla                                     ; 9631 68                       h
+        sta     r2H                             ; 9632 85 07                    ..
+        lda     #$00                            ; 9634 A9 00                    ..
+        sta     r1L                             ; 9636 85 04                    ..
+        lda     r4H                             ; 9638 A5 0B                    ..
+        sta     r0H                             ; 963A 85 03                    ..
+        lda     r4L                             ; 963C A5 0A                    ..
+        sta     r0L                             ; 963E 85 02                    ..
+        pla                                     ; 9640 68                       h
+        tay                                     ; 9641 A8                       .
+        jsr     DoRAMOp                         ; 9642 20 D4 C2                  ..
+        tax                                     ; 9645 AA                       .
+        pla                                     ; 9646 68                       h
+        sta     r3L                             ; 9647 85 08                    ..
+        pla                                     ; 9649 68                       h
+        sta     r1L                             ; 964A 85 04                    ..
+        pla                                     ; 964C 68                       h
+        sta     r1H                             ; 964D 85 05                    ..
+        pla                                     ; 964F 68                       h
+        sta     r0L                             ; 9650 85 02                    ..
+        pla                                     ; 9652 68                       h
+        sta     r0H                             ; 9653 85 03                    ..
+        pla                                     ; 9655 68                       h
+        sta     r2L                             ; 9656 85 06                    ..
+        pla                                     ; 9658 68                       h
+        sta     r2H                             ; 9659 85 07                    ..
+        txa                                     ; 965B 8A                       .
+        ldx     #$00                            ; 965C A2 00                    ..
+        rts                                     ; 965E 60                       `
 
 ; ----------------------------------------------------------------------------
-L95BD:  ldy     #$91                            ; 95BD A0 91                    ..
-        bne     L95D5                           ; 95BF D0 14                    ..
-L95C1:  ldy     #$90                            ; 95C1 A0 90                    ..
-        bne     L95D5                           ; 95C3 D0 10                    ..
-L95C5:  lda     r2H                             ; 95C5 A5 07                    ..
-        pha                                     ; 95C7 48                       H
-        lda     r2L                             ; 95C8 A5 06                    ..
-        pha                                     ; 95CA 48                       H
-        lda     #$00                            ; 95CB A9 00                    ..
-        sta     r2H                             ; 95CD 85 07                    ..
-        lda     #$02                            ; 95CF A9 02                    ..
-        sta     r2L                             ; 95D1 85 06                    ..
-        bne     L95E3                           ; 95D3 D0 0E                    ..
-L95D5:  lda     r2H                             ; 95D5 A5 07                    ..
-        pha                                     ; 95D7 48                       H
-        lda     r2L                             ; 95D8 A5 06                    ..
-        pha                                     ; 95DA 48                       H
-        lda     #$01                            ; 95DB A9 01                    ..
-        sta     r2H                             ; 95DD 85 07                    ..
-        lda     #$00                            ; 95DF A9 00                    ..
-        sta     r2L                             ; 95E1 85 06                    ..
-L95E3:  lda     r0H                             ; 95E3 A5 03                    ..
-        pha                                     ; 95E5 48                       H
-        lda     r0L                             ; 95E6 A5 02                    ..
-        pha                                     ; 95E8 48                       H
-        lda     r1H                             ; 95E9 A5 05                    ..
-        pha                                     ; 95EB 48                       H
-        lda     r1L                             ; 95EC A5 04                    ..
-        pha                                     ; 95EE 48                       H
-        lda     r3L                             ; 95EF A5 08                    ..
-        pha                                     ; 95F1 48                       H
-        tya                                     ; 95F2 98                       .
-        pha                                     ; 95F3 48                       H
-        lda     r2H                             ; 95F4 A5 07                    ..
-        pha                                     ; 95F6 48                       H
-        lda     r2L                             ; 95F7 A5 06                    ..
-        pha                                     ; 95F9 48                       H
-        lda     r7H                             ; 95FA A5 11                    ..
-        pha                                     ; 95FC 48                       H
-        lda     r7L                             ; 95FD A5 10                    ..
-        pha                                     ; 95FF 48                       H
-        lda     r8H                             ; 9600 A5 13                    ..
-        pha                                     ; 9602 48                       H
-        lda     r8L                             ; 9603 A5 12                    ..
-        pha                                     ; 9605 48                       H
-        dec     r1L                             ; 9606 C6 04                    ..
-        lda     r1H                             ; 9608 A5 05                    ..
-        sta     r2H                             ; 960A 85 07                    ..
-        lda     #$28                            ; 960C A9 28                    .(
-        sta     r2L                             ; 960E 85 06                    ..
-        ldx     #$04                            ; 9610 A2 04                    ..
-        ldy     #$06                            ; 9612 A0 06                    ..
-        jsr     BBMult                          ; 9614 20 60 C1                  `.
-        clc                                     ; 9617 18                       .
-        lda     r1L                             ; 9618 A5 04                    ..
-        adc     r2H                             ; 961A 65 07                    e.
-        sta     r1L                             ; 961C 85 04                    ..
-        lda     r1H                             ; 961E A5 05                    ..
-        ldy     curDrive                        ; 9620 AC 89 84                 ...
-        adc     driveData,y                     ; 9623 79 BF 88                 y..
-        sta     r3L                             ; 9626 85 08                    ..
-        lda     r1L                             ; 9628 A5 04                    ..
-        sta     r1H                             ; 962A 85 05                    ..
-        pla                                     ; 962C 68                       h
-        sta     r8L                             ; 962D 85 12                    ..
-        pla                                     ; 962F 68                       h
-        sta     r8H                             ; 9630 85 13                    ..
-        pla                                     ; 9632 68                       h
-        sta     r7L                             ; 9633 85 10                    ..
-        pla                                     ; 9635 68                       h
-        sta     r7H                             ; 9636 85 11                    ..
-        pla                                     ; 9638 68                       h
-        sta     r2L                             ; 9639 85 06                    ..
-        pla                                     ; 963B 68                       h
-        sta     r2H                             ; 963C 85 07                    ..
-        lda     #$00                            ; 963E A9 00                    ..
-        sta     r1L                             ; 9640 85 04                    ..
-        lda     r4H                             ; 9642 A5 0B                    ..
-        sta     r0H                             ; 9644 85 03                    ..
-        lda     r4L                             ; 9646 A5 0A                    ..
-        sta     r0L                             ; 9648 85 02                    ..
-        pla                                     ; 964A 68                       h
-        tay                                     ; 964B A8                       .
-        jsr     DoRAMOp                         ; 964C 20 D4 C2                  ..
-        tax                                     ; 964F AA                       .
-        pla                                     ; 9650 68                       h
-        sta     r3L                             ; 9651 85 08                    ..
-        pla                                     ; 9653 68                       h
-        sta     r1L                             ; 9654 85 04                    ..
-        pla                                     ; 9656 68                       h
-        sta     r1H                             ; 9657 85 05                    ..
-        pla                                     ; 9659 68                       h
-        sta     r0L                             ; 965A 85 02                    ..
-        pla                                     ; 965C 68                       h
-        sta     r0H                             ; 965D 85 03                    ..
-        pla                                     ; 965F 68                       h
-        sta     r2L                             ; 9660 85 06                    ..
-        pla                                     ; 9662 68                       h
-        sta     r2H                             ; 9663 85 07                    ..
-        txa                                     ; 9665 8A                       .
-        ldx     #$00                            ; 9666 A2 00                    ..
-        rts                                     ; 9668 60                       `
-
-; ----------------------------------------------------------------------------
-L9669:  brk                                     ; 9669 00                       .
+L965F:  brk                                     ; 965F 00                       .
+L9660:  brk                                     ; 9660 00                       .
+L9661:  brk                                     ; 9661 00                       .
+        brk                                     ; 9662 00                       .
+L9663:  brk                                     ; 9663 00                       .
+        brk                                     ; 9664 00                       .
+        brk                                     ; 9665 00                       .
+        brk                                     ; 9666 00                       .
+        brk                                     ; 9667 00                       .
+        brk                                     ; 9668 00                       .
+        brk                                     ; 9669 00                       .
 L966A:  brk                                     ; 966A 00                       .
-L966B:  brk                                     ; 966B 00                       .
-L966C:  brk                                     ; 966C 00                       .
-L966D:  brk                                     ; 966D 00                       .
-        brk                                     ; 966E 00                       .
-        brk                                     ; 966F 00                       .
+        brk                                     ; 966B 00                       .
+        brk                                     ; 966C 00                       .
+        brk                                     ; 966D 00                       .
+L966E:  brk                                     ; 966E 00                       .
+L966F:  brk                                     ; 966F 00                       .
         brk                                     ; 9670 00                       .
         brk                                     ; 9671 00                       .
         brk                                     ; 9672 00                       .
         brk                                     ; 9673 00                       .
-L9674:  brk                                     ; 9674 00                       .
-        brk                                     ; 9675 00                       .
-        brk                                     ; 9676 00                       .
-        brk                                     ; 9677 00                       .
-L9678:  brk                                     ; 9678 00                       .
-L9679:  brk                                     ; 9679 00                       .
-        brk                                     ; 967A 00                       .
-        brk                                     ; 967B 00                       .
-        brk                                     ; 967C 00                       .
-        brk                                     ; 967D 00                       .
-        brk                                     ; 967E 00                       .
-        .byte   "RAM 1581 driver Copyright (C) 1"; 967F 52 41 4D 20 31 35 38 31 RAM 1581
-                                                ; 9687 20 64 72 69 76 65 72 20   driver 
-                                                ; 968F 43 6F 70 79 72 69 67 68  Copyrigh
-                                                ; 9697 74 20 28 43 29 20 31     t (C) 1
-        .byte   "990, Jim Collette & Berkeley So"; 969E 39 39 30 2C 20 4A 69 6D 990, Jim
-                                                ; 96A6 20 43 6F 6C 6C 65 74 74   Collett
-                                                ; 96AE 65 20 26 20 42 65 72 6B  e & Berk
-                                                ; 96B6 65 6C 65 79 20 53 6F     eley So
-        .byte   "ftworks.  Thanks to Matt Lovele"; 96BD 66 74 77 6F 72 6B 73 2E ftworks.
-                                                ; 96C5 20 20 54 68 61 6E 6B 73    Thanks
-                                                ; 96CD 20 74 6F 20 4D 61 74 74   to Matt
-                                                ; 96D5 20 4C 6F 76 65 6C 65      Lovele
-        .byte   "ss and Angie McKenna of BSW for"; 96DC 73 73 20 61 6E 64 20 41 ss and A
-                                                ; 96E4 6E 67 69 65 20 4D 63 4B  ngie McK
-                                                ; 96EC 65 6E 6E 61 20 6F 66 20  enna of 
-                                                ; 96F4 42 53 57 20 66 6F 72     BSW for
-        .byte   " their help and support.  (Q-Li"; 96FB 20 74 68 65 69 72 20 68  their h
-                                                ; 9703 65 6C 70 20 61 6E 64 20  elp and 
-                                                ; 970B 73 75 70 70 6F 72 74 2E  support.
-                                                ; 9713 20 20 28 51 2D 4C 69       (Q-Li
-        .byte   "nk: GEOREP JIM)"               ; 971A 6E 6B 3A 20 47 45 4F 52  nk: GEOR
-                                                ; 9722 45 50 20 4A 49 4D 29     EP JIM)
-        .byte   $00                             ; 9729 00                       .
-; ----------------------------------------------------------------------------
-        pla                                     ; 972A 68                       h
+        brk                                     ; 9674 00                       .
+        .byte   $52                             ; 9675 52                       R
+        eor     ($4D,x)                         ; 9676 41 4D                    AM
+        jsr     L3531                           ; 9678 20 31 35                  15
+        sec                                     ; 967B 38                       8
+        and     (r15L),y                        ; 967C 31 20                    1 
+        .byte   $64                             ; 967E 64                       d
+        .byte   "river Copyright (C) 1990, Jim C"; 967F 72 69 76 65 72 20 43 6F river Co
+                                                ; 9687 70 79 72 69 67 68 74 20  pyright 
+                                                ; 968F 28 43 29 20 31 39 39 30  (C) 1990
+                                                ; 9697 2C 20 4A 69 6D 20 43     , Jim C
+        .byte   "ollette & Berkeley Softworks.  "; 969E 6F 6C 6C 65 74 74 65 20 ollette 
+                                                ; 96A6 26 20 42 65 72 6B 65 6C  & Berkel
+                                                ; 96AE 65 79 20 53 6F 66 74 77  ey Softw
+                                                ; 96B6 6F 72 6B 73 2E 20 20     orks.  
+        .byte   "Thanks to Matt Loveless and Ang"; 96BD 54 68 61 6E 6B 73 20 74 Thanks t
+                                                ; 96C5 6F 20 4D 61 74 74 20 4C  o Matt L
+                                                ; 96CD 6F 76 65 6C 65 73 73 20  oveless 
+                                                ; 96D5 61 6E 64 20 41 6E 67     and Ang
+        .byte   "ie McKenna of BSW for their hel"; 96DC 69 65 20 4D 63 4B 65 6E ie McKen
+                                                ; 96E4 6E 61 20 6F 66 20 42 53  na of BS
+                                                ; 96EC 57 20 66 6F 72 20 74 68  W for th
+                                                ; 96F4 65 69 72 20 68 65 6C     eir hel
+        .byte   "p and support.  (Q-Link: GEOREP"; 96FB 70 20 61 6E 64 20 73 75 p and su
+                                                ; 9703 70 70 6F 72 74 2E 20 20  pport.  
+                                                ; 970B 28 51 2D 4C 69 6E 6B 3A  (Q-Link:
+                                                ; 9713 20 47 45 4F 52 45 50      GEOREP
+        .byte   " JIM)"                         ; 971A 20 4A 49 4D 29            JIM)
+        .byte   $00                             ; 971F 00                       .

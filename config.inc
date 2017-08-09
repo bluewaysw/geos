@@ -141,6 +141,8 @@ config_inc = 1
 	; additionally, there are ".ifdef mega65" checks
 	; throughout the code
 	.setcpu "4510"
+
+	config128 = 1
 .endif
 
 .ifdef custom

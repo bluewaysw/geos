@@ -870,8 +870,10 @@ __InitForIO:
         sei                                     ; 94F4 78                       x
         lda     CPU_DATA                        ; 94F5 A5 01                    ..
         sta     L9BF2                           ; 94F7 8D F2 9B                 ...
+.ifndef config128
         lda     #$36                            ; 94FA A9 36                    .6
         sta     CPU_DATA                        ; 94FC 85 01                    ..
+.endif
         lda     grirqen                         ; 94FE AD 1A D0                 ...
         sta     L9BF1                           ; 9501 8D F1 9B                 ...
         lda     clkreg                          ; 9504 AD 30 D0                 .0.
@@ -883,14 +885,17 @@ __InitForIO:
         sta     grirq                           ; 9514 8D 19 D0                 ...
         sta     $DC0D                           ; 9517 8D 0D DC                 ...
         sta     $DD0D                           ; 951A 8D 0D DD                 ...
-        lda     #$95                            ; 951D A9 95                    ..
-        sta     $0315                           ; 951F 8D 15 03                 ...
-        lda     #$8C                            ; 9522 A9 8C                    ..
-        sta     irqvec                          ; 9524 8D 14 03                 ...
-        lda     #$95                            ; 9527 A9 95                    ..
-        sta     $0319                           ; 9529 8D 19 03                 ...
-        lda     #$91                            ; 952C A9 91                    ..
-        sta     nmivec                          ; 952E 8D 18 03                 ...
+.ifdef config128
+        lda     #>D_IRQHandler
+        sta     $0315
+        sta     $0319
+        lda     #<D_IRQHandler
+        sta     $0314
+        sta     $0318
+.else
+        LoadW   $0314, D_IRQHandler
+        LoadW   $0318, D_NMIHandler
+.endif
         lda     #$3F                            ; 9531 A9 3F                    .?
         sta     $DD02                           ; 9533 8D 02 DD                 ...
         lda     mobenble                        ; 9536 AD 15 D0                 ...
@@ -933,6 +938,10 @@ L957E:  lda     L982E,y                         ; 957E B9 2E 98                 
 
 ; ----------------------------------------------------------------------------
 D_IRQHandler:
+.ifdef config128
+        pla
+        sta     $ff00
+.endif
         pla                                     ; 958C 68                       h
         tay                                     ; 958D A8                       .
         pla                                     ; 958E 68                       h
@@ -953,8 +962,10 @@ __DoneWithIO:
         lda     $DD0D                           ; 95A4 AD 0D DD                 ...
         lda     L9BF1                           ; 95A7 AD F1 9B                 ...
         sta     grirqen                         ; 95AA 8D 1A D0                 ...
+.ifndef config128
         lda     L9BF2                           ; 95AD AD F2 9B                 ...
         sta     CPU_DATA                        ; 95B0 85 01                    ..
+.endif
         lda     L9BF0                           ; 95B2 AD F0 9B                 ...
         pha                                     ; 95B5 48                       H
         plp                                     ; 95B6 28                       (
@@ -1004,8 +1015,8 @@ __EnterTurbo:
 L9604:  and     #$40                            ; 9604 29 40                    )@
         bne     L9634                           ; 9606 D0 2C                    .,
         jsr     InitForIO                       ; 9608 20 5C C2                  \.
-        ldx     #$96                            ; 960B A2 96                    ..
-        lda     #$3D                            ; 960D A9 3D                    .=
+        ldx     #>EnterCommand                            ; 960B A2 96                    ..
+        lda     #<EnterCommand                            ; 960D A9 3D                    .=
         jsr     SendDOSCmd                      ; 960F 20 B8 95                  ..
         txa                                     ; 9612 8A                       .
         bne     L9638                           ; 9613 D0 23                    .#
@@ -1063,8 +1074,8 @@ L9673:  rts                                     ; 9673 60                       
 ; ----------------------------------------------------------------------------
 InitHDCode:
         jsr     InitForIO                       ; 9674 20 5C C2                  \.
-        ldx     #$96                            ; 9677 A2 96                    ..
-        lda     #$89                            ; 9679 A9 89                    ..
+        ldx     #>HDCommand                            ; 9677 A2 96                    ..
+        lda     #<HDCommand                            ; 9679 A9 89                    ..
         jsr     SendDOSCmd                      ; 967B 20 B8 95                  ..
         txa                                     ; 967E 8A                       .
         bne     L9686                           ; 967F D0 05                    ..
@@ -1079,10 +1090,7 @@ HDCommand:
 ; ----------------------------------------------------------------------------
 Init1581Code:
         jsr     InitForIO                       ; 968E 20 5C C2                  \.
-        lda     #$9A                            ; 9691 A9 9A                    ..
-        sta     TURBO_DD00                      ; 9693 85 8E                    ..
-        lda     #$02                            ; 9695 A9 02                    ..
-        sta     $8D                             ; 9697 85 8D                    ..
+        LoadW   $8d, DriveCode2
         lda     #$03                            ; 9699 A9 03                    ..
         sta     L96F1+1                         ; 969B 8D F2 96                 ...
         lda     #$00                            ; 969E A9 00                    ..
@@ -1110,8 +1118,8 @@ L96CA:  jmp     DoneWithIO                      ; 96CA 4C 5F C2                 
 
 ; ----------------------------------------------------------------------------
 SendCHUNK:
-        ldx     #$96                            ; 96CD A2 96                    ..
-        lda     #$EE                            ; 96CF A9 EE                    ..
+        ldx     #>WriteCommand                            ; 96CD A2 96                    ..
+        lda     #<WriteCommand                            ; 96CF A9 EE                    ..
         jsr     SendDOSCmd                      ; 96D1 20 B8 95                  ..
         txa                                     ; 96D4 8A                       .
         bne     L96ED                           ; 96D5 D0 16                    ..
@@ -1210,8 +1218,8 @@ __ChangeDiskDevice:
         sta     ChngDskDev_Number               ; 9774 8D 9D 97                 ...
         jsr     PurgeTurbo                      ; 9777 20 35 C2                  5.
         jsr     InitForIO                       ; 977A 20 5C C2                  \.
-        ldx     #$97                            ; 977D A2 97                    ..
-        lda     #$9A                            ; 977F A9 9A                    ..
+        ldx     #>ChngDskDev_Command                            ; 977D A2 97                    ..
+        lda     #<ChngDskDev_Command                            ; 977F A9 9A                    ..
         jsr     SendDOSCmd                      ; 9781 20 B8 95                  ..
         txa                                     ; 9784 8A                       .
         bne     L9797                           ; 9785 D0 10                    ..
@@ -1247,9 +1255,9 @@ L97B7:  lda     $8C                             ; 97B7 A5 8C                    
         sta     L9BF6                           ; 97B9 8D F6 9B                 ...
         lda     $8B                             ; 97BC A5 8B                    ..
         sta     L9BF5                           ; 97BE 8D F5 9B                 ...
-        lda     #$9B                            ; 97C1 A9 9B                    ..
+        lda     #>L9BF5                            ; 97C1 A9 9B                    ..
         sta     $8C                             ; 97C3 85 8C                    ..
-        lda     #$F5                            ; 97C5 A9 F5                    ..
+        lda     #<L9BF5                            ; 97C5 A9 F5                    ..
         sta     $8B                             ; 97C7 85 8B                    ..
         jmp     L9886                           ; 97C9 4C 86 98                 L..
 
@@ -1471,10 +1479,7 @@ GetDOSError:
         ldx     #$03                            ; 996C A2 03                    ..
         lda     #$2B                            ; 996E A9 2B                    .+
         jsr     L979F                           ; 9970 20 9F 97                  ..
-L9973:  lda     #$9B                            ; 9973 A9 9B                    ..
-        sta     $8C                             ; 9975 85 8C                    ..
-        lda     #$FD                            ; 9977 A9 FD                    ..
-        sta     $8B                             ; 9979 85 8B                    ..
+L9973:  LoadW   $8b, L9BFD
         jsr     L97CC                           ; 997B 20 CC 97                  ..
         lda     L9BFD                           ; 997E AD FD 9B                 ...
         pha                                     ; 9981 48                       H
@@ -1496,10 +1501,7 @@ CheckReal1581:
         jsr     InitForIO                       ; 9995 20 5C C2                  \.
         lda     #$00                            ; 9998 A9 00                    ..
         sta     STATUS                          ; 999A 85 90                    ..
-        lda     #$9B                            ; 999C A9 9B                    ..
-        sta     TURBO_DD00                      ; 999E 85 8E                    ..
-        lda     #$FF                            ; 99A0 A9 FF                    ..
-        sta     $8D                             ; 99A2 85 8D                    ..
+        LoadW   $8d, L9BFF
         lda     #$FE                            ; 99A4 A9 FE                    ..
         sta     L9A00+1                         ; 99A6 8D 01 9A                 ...
         lda     #$A0                            ; 99A9 A9 A0                    ..
@@ -1524,8 +1526,8 @@ L99CA:  jsr     DoneWithIO                      ; 99CA 20 5F C2                 
 
 ; ----------------------------------------------------------------------------
 ReadDeviceWord:
-        ldx     #$99                            ; 99CE A2 99                    ..
-        lda     #$FD                            ; 99D0 A9 FD                    ..
+        ldx     #>MemReadCommand                            ; 99CE A2 99                    ..
+        lda     #<MemReadCommand                            ; 99D0 A9 FD                    ..
         jsr     SendDOSCmd                      ; 99D2 20 B8 95                  ..
         txa                                     ; 99D5 8A                       .
         bne     L99FC                           ; 99D6 D0 24                    .$
@@ -1547,10 +1549,12 @@ L99ED:  jsr     ACPTR                           ; 99ED 20 A5 FF                 
 L99FC:  rts                                     ; 99FC 60                       `
 
 ; ----------------------------------------------------------------------------
+MemReadCommand:
         eor     $522D                           ; 99FD 4D 2D 52                 M-R
 L9A00:  .byte   $00                             ; 9A00 00                       .
         .byte   $00                             ; 9A01 00                       .
 
+DriveCode2:
 ; End of "record4" segment
 ; ----------------------------------------------------------------------------
 .code

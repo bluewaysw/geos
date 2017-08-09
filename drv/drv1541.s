@@ -571,7 +571,9 @@ __InitForIO:
 	sei
 	lda CPU_DATA
 	sta tmpCPU_DATA
+.ifndef config128
 	LoadB CPU_DATA, KRNL_IO_IN
+.endif
 	lda grirqen
 	sta tmpgrirqen
 	lda clkreg
@@ -587,10 +589,17 @@ __InitForIO:
 	sta irqvec+1
 	lda #<D_IRQHandler
 	sta irqvec
+.ifdef config128
+	lda #>D_IRQHandler
+	sta nmivec+1
+	lda #<D_IRQHandler
+	sta nmivec
+.else
 	lda #>D_NMIHandler
 	sta nmivec+1
 	lda #<D_NMIHandler
 	sta nmivec
+.endif
 	lda #%00111111
 	sta cia2base+2
 	lda mobenble
@@ -621,6 +630,10 @@ IniForIO0:
 	rts
 
 D_IRQHandler:
+.ifdef config128
+    pla
+    sta $ff00
+.endif
 	pla
 	tay
 	pla
@@ -639,8 +652,10 @@ __DoneWithIO:
 	lda cia2base+13
 	lda tmpgrirqen
 	sta grirqen
+.ifndef config128
 	lda tmpCPU_DATA
 	sta CPU_DATA
+.endif
 	lda tmpPS
 	pha
 	plp
@@ -833,6 +848,9 @@ __EnterTurbo:
 EntTur0:
 	and #%01000000
 	bne EntTur3
+.ifdef config128
+	jsr DoClearCache2
+.endif
 	jsr InitForIO
 	ldx #>EnterCommand
 	lda #<EnterCommand
@@ -939,6 +957,9 @@ WriteAddy:
 __ExitTurbo:
 	txa
 	pha
+.ifdef config128
+	jsr DoClearCache2
+.endif
 	ldx curDrive
 	lda _turboFlags,x
 	and #%01000000
@@ -1015,10 +1036,15 @@ ChngDskDv0:
 __ReadBlock:
 _ReadLink:
 	jsr CheckParams_1
-	bcc RdBlock2
+	bcc RdBlock3
+.ifndef config128
 	bbrf 6, curType, RdBlock0
 	jsr DoCacheRead
 	bne RdBlock2
+.else
+    jsr DoCacheRead
+    bne RdBlock3
+.endif
 RdBlock0:
 	ldx #>Drv_ReadSec
 	lda #<Drv_ReadSec
@@ -1036,11 +1062,15 @@ RdBlock0:
 	beq RdBlock1
 	bcs RdBlock0
 RdBlock1:
-	bnex RdBlock2
+	bnex RdBlock3
 	bbrf 6, curType, RdBlock2
 	jsr DoCacheWrite
-	bra_ RdBlock2
+	bra_ RdBlock3
 RdBlock2:
+.ifdef config128
+    jsr L9C72
+.endif
+RdBlock3:
 	ldy #0
 	rts
 
@@ -1089,8 +1119,12 @@ VWrBlock1:
 	beqx VWrBlock0
 VWrBlock2:
 	bnex VWrBlock3
-	bbrf 6, curType, VWrBlock3
+	bbrf 6, curType, VWrBlock3_
 	jmp DoCacheWrite
+VWrBlock3_:
+.ifdef config128
+	jmp L9C72
+.endif
 VWrBlock3:
 	rts
 
@@ -1600,9 +1634,89 @@ DDatas:
 	;.word 0
 .segment "drv1541_b"
 
+
 ClrCacheDat:
 	.word 0
 
+;    .byte    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+;    .byte    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+;    .byte    0,0,0,0,0,0,0,0,0,0,0,0
+
+.ifdef config128
+ClearCache:
+	bbrf 6, curType, DoClearCache2
+    jsr DoClearCache
+DoClearCache2:
+    ldy #$ff
+    jmp AccessCache
+
+DoClearCache:
+	LoadW r0, ClrCacheDat
+	ldy #0
+	sty r1L
+	sty r1H
+	sty r2H
+	iny
+	iny
+	sty r2L
+	iny
+	sty r3H
+	ldy curDrive
+	lda driveData,y
+	sta r3L
+DoClrCache1:
+	jsr StashRAM
+	inc r1H
+	bne DoClrCache1
+	inc r3L
+	dec r3H
+	bne DoClrCache1
+	rts
+
+; ----------------------------------------------------------------------------
+DoCacheRead:  ldy     #$91                            ; 9C45 A0 91                    ..
+        bit     curType                         ; 9C47 2C C6 88                 ,..
+        bvc     L9C52                           ; 9C4A 50 06                    P.
+        jsr     DoCacheDisk                           ; 9C4C 20 86 9C                  ..
+        clv                                     ; 9C4F B8                       .
+        bvc     L9C5F                           ; 9C50 50 0D                    P.
+L9C52:  lda     r1L                             ; 9C52 A5 04                    ..
+        cmp     #$12                            ; 9C54 C9 12                    ..
+        bne     GiveNoError                           ; 9C56 D0 0F                    ..
+        lda     r1H                             ; 9C58 A5 05                    ..
+        beq     GiveNoError                           ; 9C5A F0 0B                    ..
+        jsr     AccessCache                     ; 9C5C 20 EF C2                  ..
+L9C5F:  ldy     #$00                            ; 9C5F A0 00                    ..
+        lda     (r4L),y                         ; 9C61 B1 0A                    ..
+        iny                                     ; 9C63 C8                       .
+        ora     (r4L),y                         ; 9C64 11 0A                    ..
+        rts                                     ; 9C66 60                       `
+
+GiveNoError:
+	ldx #0
+	rts
+
+DoCacheVerify:
+	ldy #%10010011
+	jsr DoCacheDisk
+	and #$20
+	rts
+
+; ----------------------------------------------------------------------------
+L9C72:  lda     r1L                             ; 9C72 A5 04                    ..
+        cmp     #$12                            ; 9C74 C9 12                    ..
+        bne     L9C81                           ; 9C76 D0 09                    ..
+        lda     r1H                             ; 9C78 A5 05                    ..
+        beq     L9C81                           ; 9C7A F0 05                    ..
+        ldy     #$90                            ; 9C7C A0 90                    ..
+        jmp     AccessCache                     ; 9C7E 4C EF C2                 L..
+
+; ----------------------------------------------------------------------------
+L9C81:  ldx     #$00                            ; 9C81 A2 00                    ..
+        rts                                     ; 9C83 60                       `
+
+
+.else
 ClearCache:
 	bbsf 6, curType, DoClearCache
 	rts
@@ -1647,6 +1761,8 @@ DoCacheVerify:
 	jsr DoCacheDisk
 	and #$20
 	rts
+
+.endif
 
 DoCacheWrite:
 	ldy #%10010000

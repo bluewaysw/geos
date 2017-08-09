@@ -783,10 +783,12 @@ __InitForIO:
         pla                                     ; 94E0 68                       h
         sta     L966A                           ; 94E1 8D 6A 96                 .j.
         sei                                     ; 94E4 78                       x
+.ifndef config128
         lda     CPU_DATA                        ; 94E5 A5 01                    ..
         sta     L966C                           ; 94E7 8D 6C 96                 .l.
         lda     #$36                            ; 94EA A9 36                    .6
         sta     CPU_DATA                        ; 94EC 85 01                    ..
+.endif
         lda     grirqen                         ; 94EE AD 1A D0                 ...
         sta     L966B                           ; 94F1 8D 6B 96                 .k.
         lda     clkreg                          ; 94F4 AD 30 D0                 .0.
@@ -798,14 +800,12 @@ __InitForIO:
         sta     grirq                           ; 9504 8D 19 D0                 ...
         sta     $DC0D                           ; 9507 8D 0D DC                 ...
         sta     $DD0D                           ; 950A 8D 0D DD                 ...
-        lda     #$95                            ; 950D A9 95                    ..
-        sta     $0315                           ; 950F 8D 15 03                 ...
-        lda     #$4F                            ; 9512 A9 4F                    .O
-        sta     irqvec                          ; 9514 8D 14 03                 ...
-        lda     #$95                            ; 9517 A9 95                    ..
-        sta     $0319                           ; 9519 8D 19 03                 ...
-        lda     #$54                            ; 951C A9 54                    .T
-        sta     nmivec                          ; 951E 8D 18 03                 ...
+        LoadW   $0314, Interrupt
+.ifdef config128
+        LoadW   $0318, Interrupt
+.else
+        LoadW   $0318, InterruptNMI
+.endif
         lda     #$3F                            ; 9521 A9 3F                    .?
         sta     $DD02                           ; 9523 8D 02 DD                 ...
         lda     mobenble                        ; 9526 AD 15 D0                 ...
@@ -828,11 +828,17 @@ L9542:  lda     rasreg                          ; 9542 AD 12 D0                 
         rts                                     ; 954E 60                       `
 
 ; ----------------------------------------------------------------------------
+Interrupt:
+.ifdef config128
+        pla
+        sta     $ff00
+.endif
         pla                                     ; 954F 68                       h
         tay                                     ; 9550 A8                       .
         pla                                     ; 9551 68                       h
         tax                                     ; 9552 AA                       .
         pla                                     ; 9553 68                       h
+InterruptNMI:
         rti                                     ; 9554 40                       @
 
 ; ----------------------------------------------------------------------------
@@ -847,8 +853,10 @@ __DoneWithIO:
         lda     $DD0D                           ; 9567 AD 0D DD                 ...
         lda     L966B                           ; 956A AD 6B 96                 .k.
         sta     grirqen                         ; 956D 8D 1A D0                 ...
+.ifndef config128
         lda     L966C                           ; 9570 AD 6C 96                 .l.
         sta     CPU_DATA                        ; 9573 85 01                    ..
+.endif
         lda     L966A                           ; 9575 AD 6A 96                 .j.
         pha                                     ; 9578 48                       H
         plp                                     ; 9579 28                       (

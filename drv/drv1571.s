@@ -94,7 +94,11 @@ __GetDirHead:
 	jsr SetDirHead_2
 	jsr __GetBlock
 	lda #6
+.ifdef config128
+    .byte   $2c
+.else
 	bne GDH_1
+.endif
 GDH_0:
 	lda #8
 GDH_1:
@@ -102,7 +106,11 @@ GDH_1:
 	rts
 
 _ReadBuff:
+.ifdef config128
+    jsr LoadDiskBlkBuf
+.else
 	LoadW r4, diskBlkBuf
+.endif
 __GetBlock:
 	jsr EnterTurbo
 	bne GetBlk0
@@ -111,6 +119,12 @@ __GetBlock:
 	jsr DoneWithIO
 GetBlk0:
 	rts
+
+.ifdef config128
+LoadDiskBlkBuf:
+	LoadW r4, diskBlkBuf
+    rts
+.endif
 
 __PutDirHead:
 	jsr EnterTurbo
@@ -137,7 +151,11 @@ PDH_1:
 	jmp DoneWithIO
 
 _WriteBuff:
+.ifdef config128
+    jsr LoadDiskBlkBuf
+.else
 	LoadW r4, diskBlkBuf
+.endif
 __PutBlock:
 	jsr EnterTurbo
 	bne PutBlk1
@@ -234,7 +252,11 @@ BlkAlc1:
 	MoveW r2, r5
 BlkAlc2:
 	jsr SetNextFree
+.ifdef config128
+	bne BlkAlc4
+.else
 	bnex BlkAlc4
+.endif
 	ldy #0
 	lda r3L
 	sta (r4),y
@@ -250,8 +272,12 @@ BlkAlc2_1:
 	lda r5L
 	ora r5H
 	bne BlkAlc2
+.ifdef config128
+    tay
+.else
 	ldy #0
 	tya
+.endif
 	sta (r4),y
 	iny
 	lda r8L
@@ -284,13 +310,21 @@ _GetNxtDirEntry:
 	AddVW $20, r5
 	CmpWI r5, diskBlkBuf+$ff
 	bcc GNDirEntry1
+.ifdef config128
+    dey
+.else
 	ldy #$ff
+.endif
 	MoveW diskBlkBuf, r1
 	bne GNDirEntry0
 	lda borderFlag
 	bne GNDirEntry1
+.ifdef config128
+	dec borderFlag
+.else
 	lda #$ff
 	sta borderFlag
+.endif
 	jsr GetBorder
 	bnex GNDirEntry1
 	tya
@@ -330,7 +364,11 @@ ChkDkG0:
 	inx
 	cpx #11
 	bne ChkDkG0
+.ifdef config128
+    dec isGEOS
+.else
 	LoadB isGEOS, $ff
+.endif
 ChkDkG1:
 	lda isGEOS
 	rts
@@ -644,10 +682,14 @@ __SetGEOSDisk:
 	LoadB r3H, 0
 	LoadB r3L, DIR_TRACK+1
 	jsr SetNextFree
+.ifdef config128
+    beq SetGDisk0
+.else
 	beqx SetGDisk0
 	LoadB r3L, 1
 	jsr SetNextFree
 	bnex SetGDisk2
+.endif
 SetGDisk0:
 	MoveW r3, r1
 	jsr ClearAndWrite
@@ -672,7 +714,9 @@ __InitForIO:
 	sei
 	lda CPU_DATA
 	sta tmpCPU_DATA
+.ifndef config128
 	LoadB CPU_DATA, KRNL_IO_IN
+.endif
 	lda grirqen
 	sta tmpgrirqen
 	lda clkreg
@@ -686,12 +730,20 @@ __InitForIO:
 	sta cia2base+13
 	lda #>D_IRQHandler
 	sta irqvec+1
+.ifdef config128
+	sta nmivec+1
+.endif
 	lda #<D_IRQHandler
 	sta irqvec
+.ifdef config128
+	sta nmivec
+.endif
+.ifndef config128
 	lda #>D_NMIHandler
 	sta nmivec+1
 	lda #<D_NMIHandler
 	sta nmivec
+.endif
 	lda #%00111111
 	sta cia2base+2
 	lda mobenble
@@ -729,6 +781,10 @@ IniForIO1:
 	rts
 
 D_IRQHandler:
+.ifdef config128
+    pla
+    sta $ff00
+.endif
 	pla
 	tay
 	pla
@@ -747,8 +803,10 @@ __DoneWithIO:
 	lda cia2base+13
 	lda tmpgrirqen
 	sta grirqen
+.ifndef config128
 	lda tmpCPU_DATA
 	sta CPU_DATA
+.endif
 	lda tmpPS
 	pha
 	plp
@@ -792,6 +850,9 @@ __EnterTurbo:
 EntTur0:
 	and #%01000000
 	bne EntTur3
+.ifdef config128
+	jsr DoClearCache2
+.endif
 	jsr InitForIO
 	ldx #>EnterCommand
 	lda #<EnterCommand
@@ -1108,6 +1169,11 @@ __NewDisk:
 	bne NewDsk2
 	sta errCount
 	sta r1L
+
+.ifdef config128
+	jsr DoClearCache2
+.endif
+
 	jsr InitForIO
 NewDsk0:
 	ldx #>Drv_NewDisk
@@ -1127,16 +1193,27 @@ NewDsk2:
 __ReadBlock:
 _ReadLink:
 	jsr CheckParams
-	bcc RdLink1
+	bcc RdLink1_
+.ifdef config128
+    jsr DoCacheWrite
+    bne RdLink1_
+.endif
 RdLink0:
 	jsr e990b
 	jsr Hst_RecvByte
 	jsr GetDError
-	beqx RdLink1
+	beqx RdLink1_
 	inc errCount
 	cpy errCount
-	beq RdLink1
+	beq RdLink1_
 	bcs RdLink0
+RdLink1_:
+.ifdef config128
+    txa
+    bne RdLink1
+    jsr DoCacheRead
+.endif
+
 RdLink1:
 	ldy #0
 	rts
@@ -1183,7 +1260,11 @@ VWrBlock1:
 	cpx #0
 	bne VWrBlock2
 	tax
+.ifdef config128
+	beq VWrBlock3_
+.else
 	beq VWrBlock3
+.endif
 	ldx #$25
 VWrBlock2:
 	dec tryCount
@@ -1199,6 +1280,11 @@ VWrBlock2:
 	beqx VWrBlock0
 VWrBlock3:
 	rts
+
+VWrBlock3_:
+.ifdef config128
+	jmp DoCacheRead
+.endif
 
 e990b:
 	ldx #>Drv_ReadSec
@@ -1795,6 +1881,38 @@ e06f9:
 	.word 0
 
 .segment "drv1571_b"
+
+.ifdef config128
+DoClearCache2:
+    ldy #$ff
+    jmp AccessCache
+
+DoCacheRead:
+	ldy #%10010000
+	bne DCW10
+DoCacheWrite:
+	ldy #%10010001
+DCW10:
+    lda r1L
+    cmp     #$12
+    bne DCW20
+    lda r1H
+    beq DCW20
+    jsr AccessCache
+
+    ldy     #$00                            ; 9C5F A0 00                    ..
+    lda     (r4L),y                         ; 9C61 B1 0A                    ..
+    iny                                     ; 9C63 C8                       .
+    ora     (r4L),y                         ; 9C64 11 0A                    ..
+
+    rts
+
+DCW20:
+    ldx     #$00                            ; 9C67 A2 00                    ..
+    rts                                     ; 9C69 60                       `
+.endif
+
+
 
 tmpclkreg:
 	.byte 0
