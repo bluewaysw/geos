@@ -776,9 +776,9 @@ _SetOperation:
 	CMP #$14		; c set if >= 20
 	LDA #$00
 	ROL
-	EOR #1
+	;EOR #1
 	STA $D086		; side
-	EOR #1
+	;EOR #1
 	BEQ @1
 	LDA #$14
 @1:
