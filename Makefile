@@ -337,7 +337,6 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo delete \"desk top\" | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
-
 		echo \*\*\* Created $@ based on $(D81_TEMPLATE).; \
 	else \
 		echo format geos,00 d81 $@ | $(C1541) >/dev/null; \
@@ -351,11 +350,6 @@ $(BUILD_DIR)/topdesk/topdesk.o:
 	@mkdir -p `dirname $@`
 	$(GRC) -s $(BUILD_DIR)/topdesk/topdesk.s -o $(BUILD_DIR)/topdesk/topdesk.c topdesk/topdesk.grc
 	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/topdesk/topdesk.s -o $@
-
-$(BUILD_DIR)/configure/configure.o:
-	@mkdir -p `dirname $@`
-	$(GRC) -s $(BUILD_DIR)/configure/configure.s -o $(BUILD_DIR)/configure/configure.c configure/configure.grc
-	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/configure/configure.s -o $@
 
 $(BUILD_DIR)/configure/configure.o:
 	@mkdir -p `dirname $@`
