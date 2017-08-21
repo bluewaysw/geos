@@ -142,8 +142,10 @@ config_inc = 1
 	; throughout the code
 	.setcpu "4510"
 
-	topdesk128 = 1
-	topdesk13 = 1
+	;topdesk128 = 1
+	;topdesk13 = 1
+
+	;config128 = 1
 .endif
 
 .ifdef custom
