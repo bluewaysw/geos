@@ -14,9 +14,11 @@
 .import BitMaskLeadingSet
 .import BitMaskLeadingClear
 .import _GetScanLine
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 .import _TempHideMouse
 .import _NormalizeX
+.endif
+.ifdef bsw128
 .import VDCFillr4LA
 .import LF4B7
 .import ShareTop
@@ -44,8 +46,10 @@
 .segment "graph2a"
 
 PrepareXCoord:
+.if .defined(bsw128) || .defined(mega65)
 .ifdef bsw128
 	jsr _TempHideMouse
+.endif
 	ldx #r3
 	jsr _NormalizeX
 	ldx #r4
@@ -693,10 +697,14 @@ Read80Help:
 ;---------------------------------------------------------------
 _VerticalLine:
 	sta r8L
+.if .defined(bsw128) || .defined(mega65)
 .ifdef bsw128
 	jsr _TempHideMouse
+.endif
 	ldx #r4
 	jsr _NormalizeX
+.endif
+.ifdef bsw128
 	bbsf 7, graphMode, VLin80
 .endif
 	PushB r4L

@@ -148,6 +148,10 @@ OrigResetHandle:
 	cld
 	ldx #$ff
 	jsr _DoFirstInitIO
+.ifdef mega65
+    lda #0
+	sta graphMode
+.endif
 	jsr InitGEOEnv
 .ifdef usePlus60K
 	jsr DetectPlus60K

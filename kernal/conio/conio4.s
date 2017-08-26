@@ -38,7 +38,7 @@ PutString = _PutString
 .segment "conio4"
 
 _GetString:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	ldx #r11
 	jsr NormalizeX
 .endif

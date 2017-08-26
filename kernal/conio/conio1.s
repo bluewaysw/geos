@@ -27,7 +27,7 @@
 .segment "conio1"
 
 _PutChar:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	pha
 	ldx #r11
 	jsr NormalizeX
@@ -53,13 +53,13 @@ _PutChar:
 	bcc @2
 	inc r13H
 @2:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	ldx #rightMargin
 	jsr NormalizeX
 .endif
 	CmpW rightMargin, r13
 	bcc @5
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	ldx #leftMargin
 	jsr NormalizeX
 .endif

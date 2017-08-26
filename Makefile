@@ -169,6 +169,12 @@ ifeq ($(VARIANT), bsw128)
 	kernal/memory/memory_128.s
 endif
 
+
+ifeq ($(VARIANT), mega65)
+	KERNAL_SOURCES += \
+	kernal/graph/normalize.s
+endif
+
 # code that is in C128 back bank
 KERNAL2_SOURCES= \
 	kernal/128k/bank_jmptab_back.s \
@@ -346,15 +352,33 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo \*\*\* Created fresh $@.; \
 	fi;
 
+
+ifeq ($(VARIANT), mega65)
+
+$(BUILD_DIR)/topdesk/topdesk.o:
+	@mkdir -p `dirname $@`
+	$(GRC) -s $(BUILD_DIR)/topdesk/topdesk.s -o $(BUILD_DIR)/topdesk/topdesk.c topdesk/topdesk65.grc
+	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/topdesk/topdesk.s -o $@
+else
+
 $(BUILD_DIR)/topdesk/topdesk.o:
 	@mkdir -p `dirname $@`
 	$(GRC) -s $(BUILD_DIR)/topdesk/topdesk.s -o $(BUILD_DIR)/topdesk/topdesk.c topdesk/topdesk.grc
 	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/topdesk/topdesk.s -o $@
+endif
 
+ifeq ($(VARIANT), mega65)
+$(BUILD_DIR)/configure/configure.o:
+	@mkdir -p `dirname $@`
+	$(GRC) -s $(BUILD_DIR)/configure/configure.s -o $(BUILD_DIR)/configure/configure.c configure/configure65.grc
+	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/configure/configure.s -o $@
+
+else
 $(BUILD_DIR)/configure/configure.o:
 	@mkdir -p `dirname $@`
 	$(GRC) -s $(BUILD_DIR)/configure/configure.s -o $(BUILD_DIR)/configure/configure.c configure/configure.grc
 	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/configure/configure.s -o $@
+endif
 
 $(BUILD_DIR)/config.cvt: $(BUILD_DIR)/configure/configure.o $(BUILD_DIR)/configure/r0.o $(BUILD_DIR)/configure/r2.o \
                                 $(BUILD_DIR)/configure/r3.o $(BUILD_DIR)/configure/r4.o $(BUILD_DIR)/configure/r5.o \
@@ -385,7 +409,7 @@ $(BUILD_DIR)/compressed.bin: $(BUILD_DIR)/kernal_combined.prg
 	$(EXOMIZER) mem $<,0x5000 -o $@
 
 $(BUILD_DIR)/compressed_mega65.prg: $(BUILD_DIR)/compressed.bin $(BUILD_DIR)/loader/uncrunch.o $(BUILD_DIR)/loader/loader.o
-	$(LD) -C loader/loader.cfg $(BUILD_DIR)/loader/loader.o $(BUILD_DIR)/loader/uncrunch.o -o $@
+	$(LD) -C loader/loader.cfg $(BUILD_DIR)/loader/loader.o -m $(BUILD_DIR)/kernel.map $(BUILD_DIR)/loader/uncrunch.o -o $@
 endif
 	
 ifeq ($(VARIANT), mega65)

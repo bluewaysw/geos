@@ -62,7 +62,7 @@ SprTabH:
 ; Destroyed: a, x, y, r6
 ;---------------------------------------------------------------
 _PosSprite:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(megat65)
 	ldx #r4
 	jsr NormalizeX
 .endif

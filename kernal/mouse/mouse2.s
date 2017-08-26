@@ -48,7 +48,7 @@ _StartMouseMode:
 	lda r11L
 	ora r11H
 	beq @1
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	ldx #r11
 	jsr NormalizeX
 .endif

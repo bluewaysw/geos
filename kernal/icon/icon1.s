@@ -38,6 +38,7 @@ _DoIcons:
 	MoveW r0, IconDescVec
 	jsr Icons_1
 	jsr ResetMseRegion
+
 	lda mouseOn
 .ifdef wheels_size_and_speed
 	bmi @1
@@ -65,4 +66,3 @@ _DoIcons:
 	tay
 	sec
 	jmp _StartMouseMode
-

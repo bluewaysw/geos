@@ -30,7 +30,7 @@
 .import FontGt2
 .import FontGt1
 
-.if (!.defined(bsw128)) & (!.defined(wheels))
+.if (!.defined(bsw128)) & (!.defined(wheels)) & (!.defined(mega65))
 .import FontTVar1
 .import FontTVar2
 .endif

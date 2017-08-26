@@ -365,11 +365,14 @@
 .global VerifyRAM
 .global DoRAMOp
 
+.if .defined(bsw128) || .defined(mega65)
+.global NormalizeX
+.endif
+
 .ifdef bsw128
 .global TempHideMouse
 .global SetMsePic
 .global SetNewMode
-.global NormalizeX
 .global MoveBData
 .global SwapBData
 .global VerifyBData
@@ -781,6 +784,42 @@ ColorCard:
 
 ColorRectangle:
 	jmp _ColorRectangle
+
+.elseif .defined(mega65)
+
+.macro UNIMPLEMENTED
+	rts
+	nop
+	nop
+.endmacro
+
+; C128 syscalls
+TempHideMouse:
+	UNIMPLEMENTED
+SetMsePic:
+	UNIMPLEMENTED
+SetNewMode:
+	UNIMPLEMENTED
+NormalizeX:
+	jmp _NormalizeX
+MoveBData:
+	UNIMPLEMENTED
+SwapBData:
+	UNIMPLEMENTED
+VerifyBData:
+	UNIMPLEMENTED
+DoBOp:
+	UNIMPLEMENTED
+AccessCache:
+	UNIMPLEMENTED
+HideOnlyMouse:
+	UNIMPLEMENTED
+SetColorMode:
+	UNIMPLEMENTED
+ColorCard:
+	UNIMPLEMENTED
+ColorRectangle:
+	UNIMPLEMENTED
 
 .elseif .defined(wheels)
 

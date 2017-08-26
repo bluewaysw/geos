@@ -64,8 +64,8 @@ next:	.WORD	0
 	STA	1
 	.IMPORT	uncruncher
 	JSR	uncruncher
-	STZ	53280
-	STZ	53281
+	;STZ	53280
+	;STZ	53281
 	JMP	$5000
 .ENDPROC
 

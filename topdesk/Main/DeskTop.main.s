@@ -196,7 +196,8 @@ Start:
 @01:	sta	MyName,y
 	iny
 	bne	@loop
-@02:	jmp	StartUp
+@02:
+    jmp	StartUp
 
 .ifdef topdesk13
  @t:	.byte	"SURE",$0d
@@ -339,7 +340,8 @@ PrintMap:	;j
 PrintX	= 3
 PrintY	= 21
 
-Start2:	lda	RamTopFlag
+Start2:
+    lda	RamTopFlag
 	bne	@10
 	lda	ramExpSize
 	beq	@09
@@ -1746,7 +1748,8 @@ GetStartPos: ldx	#00
 @y:	.byte	STARTA_Y,STARTB_Y,STARTC_Y,STARTD_Y
 .endif
 
-ReLoad2:	jsr	GetWinTabAdr
+ReLoad2:
+	jsr	GetWinTabAdr
 	pha
 	LoadWr0	FILE_ANZ*82
 	jsr	ClearRam
@@ -2215,7 +2218,7 @@ PrintDriveNames:	MoveB	numDrives,a7L
 	bpl	@loop
 	jsr	i_PutString
 .ifdef topdesk128
-	.word	5+DOUBLE_W
+	.word	5 +DOUBLE_W
 	.byte	198,0
 .else
 	.word	5
@@ -2223,6 +2226,7 @@ PrintDriveNames:	MoveB	numDrives,a7L
 .endif
 	LoadW___	r0,PrntFileName
 	jsr	NewPutString
+
 	jmp	UseSystemFont
 
 @data:	.byte	55,87,119,151

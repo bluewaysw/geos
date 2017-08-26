@@ -244,9 +244,14 @@ L050E:  jmp     EnterDeskTop                    ; 050E 4C 2C C2                 
 ; ----------------------------------------------------------------------------
 configFileClass:
 .ifdef config128
+.ifdef mega65
+        .byte   "65 Config   V2.1", 0
+.else
+
         .byte   "128 Config  V2.1"              ; 0511 43 6F 6E 66 69 67 75 72  Configur
                                                 ; 0519 65 20 20 20 56 32 2E 31  e   V2.1
         .byte   $00                             ; 0521 00                       .
+.endif
 .else
         .byte   "Configure   V2.1"              ; 0511 43 6F 6E 66 69 67 75 72  Configur
                                                 ; 0519 65 20 20 20 56 32 2E 31  e   V2.1

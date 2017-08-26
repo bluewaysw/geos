@@ -611,7 +611,8 @@ ShowClock:	LoadB	dispBufferOn,%10000000
 	ldx	MyMin
 	lda	#MinZehner-TagZehner
 	jsr	DivnSet
-@Ausg:	LoadW___	rightMargin,ClxR-1
+@Ausg:
+	LoadW___	rightMargin,ClxR-1
 	jsr	i_PutString
 	.word	ClxL+DateX
 	.byte	ClyO+DateY

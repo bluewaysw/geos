@@ -17,7 +17,7 @@
 .segment "mouse1"
 
 _IsMseInRegion:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	txa
 	pha
 	ldx #r3

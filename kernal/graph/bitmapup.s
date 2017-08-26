@@ -47,7 +47,7 @@ _BitmapUp:
 .ifndef wheels_size_and_speed
 	lda #0
 .endif
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	sta L888D
 .endif
 	sta r3L
@@ -66,14 +66,17 @@ BitmapUpHelp:
 	ldx r1H
 	jsr _GetScanLine
 	MoveB r2L, r3H
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	bpl @Y
 	bbsf 7, graphMode, @X
 	and #$7F
 	sta r3H
 	bne @Y
 @X:	asl r3H
-@Y:	bbsf 7, graphMode, @4
+@Y:
+.ifndef mega65
+	bbsf 7, graphMode, @4
+.endif
 	lda r1L
 	and #$7F
 	cmp #$20
@@ -129,7 +132,8 @@ BitmapUpHelp:
 .endif
 
 BitmapDecode:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
+   jmp  BitmapDecodeX
 	bbrf 7, graphMode, BitmapDecodeX
 	bbrf 7, r2L, BitmapDecodeX
 	bbrf 0, L888D, @1

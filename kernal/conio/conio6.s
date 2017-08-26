@@ -96,7 +96,7 @@ _PutDecimal:
 	lda r2L
 .endif
 	and #$3f
-.ifndef bsw128
+.if (!.defined(bsw128)) & (!.defined(mega65))
 	sub r3H
 .endif
 	add r11L
@@ -104,7 +104,7 @@ _PutDecimal:
 	bcc @X
 	inc r11H
 @X:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	ldx #r11
 	jsr NormalizeX
 	SubB r3H, r11L

@@ -12,11 +12,14 @@
 
 .import BitMaskPow2Rev
 .import _GetScanLine
+.if .defined(bsw128) || .defined(mega65)
+.import _TempHideMouse
+.import _HorizontalLine
+.endif
+
 .ifdef bsw128
 .import _Dabs
-.import _TempHideMouse
 .import _DShiftLeft
-.import _HorizontalLine
 .else
 .import Dabs
 .endif
@@ -51,7 +54,7 @@
 ;---------------------------------------------------------------
 _DrawLine:
 	php
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	bmi @Y
 	lda r11L
 	cmp r11H
@@ -312,8 +315,10 @@ _DrawLine:
 ;---------------------------------------------------------------
 _DrawPoint:
 	php
+.if .defined(bsw128) || .defined(mega65)
 .ifdef bsw128
 	jsr _TempHideMouse
+.endif
 	ldx #r3
 	jsr _NormalizeX
 .endif
@@ -389,8 +394,10 @@ DrwPointTemp:
 ; Destroyed: a, x, y, r5, r6
 ;---------------------------------------------------------------
 _TestPoint:
+.if .defined(bsw128) || .defined(mega65)
 .ifdef bsw128
 	jsr _TempHideMouse
+.endif
 	ldx #r3
 	jsr _NormalizeX
 .endif

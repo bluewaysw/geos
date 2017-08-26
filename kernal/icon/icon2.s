@@ -126,19 +126,19 @@ FindClkIcon:
 	iny
 	lda mouseXPos+1
 	lsr
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	sta L888F
 .endif
 	lda mouseXPos
 	ror
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	lsr L888F
 	ror
 .else
 	lsr
 .endif
 	lsr
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	pha
 	lda (IconDescVec),y
 	jsr LFCCC
@@ -146,7 +146,7 @@ FindClkIcon:
 	pla
 .endif
 	sec
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	sbc L888F
 .else
 	sbc (IconDescVec),y
@@ -154,7 +154,7 @@ FindClkIcon:
 	bcc @2
 	iny
 	iny
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	pha
 	lda (IconDescVec),y
 	jsr LFCCC
@@ -196,18 +196,18 @@ CalcIconCoords:
 	sta r2L
 	dey
 	lda (IconDescVec),y
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
         jsr LFCCC
 .endif
 	sta r3L
 	iny
 	iny
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	lda (IconDescVec),y
         jsr LFCCC
 .endif
 	clc
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	adc r3L
 .else
 	adc (IconDescVec),y
@@ -229,7 +229,7 @@ CalcIconCoords:
 	rts
 .endif
 
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 LFCCC:	pha
 	and #DOUBLE_B
 	bpl @1

@@ -46,7 +46,11 @@ RamStart:	LoadB	MyCurRec,0
 MyName:	.byte	"Dos",0,0,0,0,0,0,0,0,0,0,0,0,0
 .ifdef topdesk128
 .ifdef topdesk13
+.ifdef mega65
+MyClass:	.byte	"TopDesk65   V1.3",0
+.else
 MyClass:	.byte	"TopDesk128  V1.3",0
+.endif
 .else
 MyClass:	.byte	"TopDesk128  V1.2",0
 .endif
@@ -976,7 +980,8 @@ SendActivate:	lda	#WN_ACTIVATE
 	ldx	activeWindow
 	jmp	SendMessage2
 oldMsVec:	.word	0
-NewMouseService:	lda	mouseData	; Maus-Release?
+NewMouseService:
+    lda	mouseData	; Maus-Release?
 	bpl	@10	; >nein
 @05:	jmp	@35
 @10:	lda	menuNumber	; Men} downgepullt ?

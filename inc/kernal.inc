@@ -4,7 +4,7 @@
 .include "config.inc"
 
 ;addresses defined so-so
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 Z45             =       $46
 Z46             =       $47
 Z47             =       $48
@@ -21,7 +21,7 @@ z8e             =       $8e
 z8f             =       $8f
 
 ; GEOS Kernal internal zpage vectors (not for use by apps)
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 IconDescVec     =       $40
 IconDescVecH    =       $41
 CallRLo         =       $42
@@ -111,7 +111,7 @@ E8800           =       $8800
 .endif
 ;A8860           =       $8860 ; XXX unused
 
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 FontTVar1 = $880E
 FontTVar2 = $880F
 .elseif .defined(wheels)
