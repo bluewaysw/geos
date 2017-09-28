@@ -46,10 +46,6 @@ SetNewMode0:
 	jmp SetVDCRegister
 .else
 	START_IO
-	;lda #$a5
-	;sta $d02f
-	;lda #$96
-	;sta $d02f
     lda $d031
 	bbrf 7, graphMode, @1
 
