@@ -21,7 +21,7 @@ ResetMseRegion:
 	sta mouseLeft
 	sta mouseLeft+1
 	sta mouseTop
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	LoadB mouseBottom, SC_PIX_HEIGHT-1
 	bbsf 7, graphMode, @2
 	LoadW mouseRight, SC_PIX_WIDTH-1

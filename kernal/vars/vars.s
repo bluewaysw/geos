@@ -147,7 +147,7 @@ DBGFNameTable:	.word 0
 DBGFTableIndex:	.byte 0
 DBGFileSelected: .byte 0
 A885D:		.byte 0
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 L8871:		.byte 0
 .endif
 A885E:		.byte 0

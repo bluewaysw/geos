@@ -121,7 +121,7 @@ DrwDlgSpd1:
 	jsr SetPattern
 	sec
 	jsr CalcDialogCoords
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	lda r3H
 	and #$80
 	sta L8871
@@ -201,7 +201,7 @@ CalcDialogCoords:
 	rts
 
 DBDefinedPos:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 MSB = DOUBLE_W
 .else
 MSB = 0

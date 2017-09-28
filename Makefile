@@ -172,7 +172,9 @@ endif
 
 ifeq ($(VARIANT), mega65)
 	KERNAL_SOURCES += \
-	kernal/graph/normalize.s
+	kernal/graph/normalize.s \
+	kernal/graph/mode.s \
+	kernal/graph/graph2p.s
 endif
 
 # code that is in C128 back bank

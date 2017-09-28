@@ -202,7 +202,7 @@ SetupRAMOpCall:
 	bcc @1
 	inc r0H
 @1:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	lda r0H
 	ora L8871
 	sta r0H

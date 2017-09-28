@@ -62,7 +62,7 @@ SprTabH:
 ; Destroyed: a, x, y, r6
 ;---------------------------------------------------------------
 _PosSprite:
-.if .defined(bsw128) || .defined(megat65)
+.if .defined(bsw128) || .defined(mega65)
 	ldx #r4
 	jsr NormalizeX
 .endif
@@ -86,12 +86,22 @@ _PosSprite:
 	sta r4L
 @X:
 .endif
+.ifdef mega65
+    MoveW   r4, r6
+	lda graphMode
+	bpl @X
+    asr r6H
+    ror r6L
+@X:
+    AddVW    VIC_X_POS_OFF, r6
+.else
 	lda r4L
 	addv VIC_X_POS_OFF
 	sta r6L
 	lda r4H
 	adc #0
 	sta r6H
+.endif
 	lda r6L
 	sta mob0xpos,Y
 	ldx r3L

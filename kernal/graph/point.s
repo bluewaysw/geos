@@ -329,11 +329,24 @@ _DrawPoint:
 .endif
 	lda r3L
 	and #%11111000
+.ifdef mega65
+    ldy r3H
+@1c:
+    beq @1b
+    inc r5H
+    inc r6H
+    dey
+    bra @1c
+
+@1b:
+    tay
+.else
 	tay
 	lda r3H
 	beq @1
 	inc r5H
 	inc r6H
+.endif
 @1:	lda r3L
 	and #%00000111
 	tax

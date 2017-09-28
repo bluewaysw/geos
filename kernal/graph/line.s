@@ -33,6 +33,9 @@
 .import StaBackbuffer80
 .import GetLeftXAddress
 .endif
+.ifdef mega65
+.import GetLeftXAddress
+.endif
 
 .global ImprintLine
 .global _HorizontalLine
@@ -44,6 +47,13 @@
 .endif
 
 .segment "graph2a"
+;   params:
+;       r3  x1
+;       r4  x2
+;   return:
+;       r8L Begin positiv mask
+;       r8H End negative mask
+
 
 PrepareXCoord:
 .if .defined(bsw128) || .defined(mega65)
@@ -60,6 +70,7 @@ PrepareXCoord:
 	bne @1
 	cmp r3L
 @1:	bcs @2
+; swap coordintaes
 	ldy r3H
 	sty r4H
 	ldy r3L
@@ -80,7 +91,7 @@ PrepareXCoord:
 	tax
 	lda BitMaskLeadingSet,x
 	sta r8L
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	bbrf 7, graphMode, @3
 	jsr GetLeftXAddress
 @3:
@@ -91,7 +102,7 @@ PrepareXCoord:
 	lda r4L
 	and #%11111000
 	sta r4L
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	cmp r3L
 	bne @4
 	lda r4H
@@ -112,12 +123,26 @@ _InvertLine:
 	PushW r3
 	PushW r4
 	jsr PrepareXCoord
+.ifndef mega65
 	ldy r3L
 	lda r3H
 	beq @1
 	inc r5H
 	inc r6H
-@1:	lda r3H
+@1:
+.else
+	bbrf	7, graphMode, @11
+    ldy #0
+	bra	@12
+@11:
+	ldy r3L
+	lda r3H
+	beq @12
+	inc r5H
+	inc r6H
+@12:
+.endif
+	lda r3H
 	cmp r4H
 	bne @2
 	lda r3L
@@ -151,7 +176,16 @@ _InvertLine:
 @7:	lda r8L
 	ora r8H
 	bra @9
-@8:	lda r8H
+@8:
+.ifdef mega65
+    lda r4H
+    cmp #0
+    beq @9b
+    dec r4H
+    bra @4
+@9b:
+.endif
+    lda r8H
 @9:	bit WheelsTemp
 	bmi @A
 	jsr LineCommon
@@ -529,8 +563,15 @@ LineHelp2:
 	SubW r3, r4
 	lsr r4H
 	ror r4L
+.ifdef mega65
+	lsr r4H
+	ror r4L
+	lsr r4H
+	ror r4L
+.else
 	lsr r4L
 	lsr r4L
+.endif
 	rts
 .else
 	PushW r3

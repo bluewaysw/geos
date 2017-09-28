@@ -22,6 +22,9 @@
 ; used by EnterDesktop
 ;---------------------------------------------------------------
 ClrScr:
+.ifdef mega65
+	LoadB dispBufferOn, ST_WR_FORE
+.else
 .ifdef bsw128
 	LoadB dispBufferOn, ST_WR_FORE | ST_WR_BACK
 	bbsf 7, graphMode, @4
@@ -58,15 +61,19 @@ ClrScr:
 	dex
 	bne @1
 	rts
-
-.ifdef bsw128
+.endif
+.if .defined(bsw128) || .defined(mega65)
 @4:	lda #2
 	jsr SetPattern
 	jsr i_Rectangle
 	.byte 0   ; y1
 	.byte SC_PIX_HEIGHT-1 ; y2
 	.word 0   ; x1
+.ifdef mega65
+	.word 319 | DOUBLE_W | ADD1_W ; x2
+.else
 	.word SCREENPIXELWIDTH-1 ; x2
+.endif
 	rts
 .endif
 

@@ -295,9 +295,27 @@ Font_2:
 .ifdef bsw128
 	bbsf 7, graphMode, @LE319
 .endif
+.ifdef mega65
+    ldy #$00
+	sty r1L
+	clc
+	adc r5L
+	sta r5L
+	sta r6L
+    bcc @4
+    inx
+@4:
+    cpx #0
+    beq @5
+    dex
+	inc r5H
+	inc r6H
+	bra @4
+@5:
+.else
 	cpx #0
-	bne @4
-	cmp #$c0
+	bne @4      ; jump if above 255
+	cmp #$c0    ; below
 	bcc @6
 @4:	subv $80
 	pha
@@ -308,6 +326,7 @@ Font_2:
 	inc r6H
 @5:	pla
 @6:	sta r1L
+.endif
 .ifdef bsw128
 	bra @LE333
 @LE319:	ldy #$00
@@ -327,7 +346,7 @@ Font_2:
 	inc r6H
 .endif
 @LE333:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	lda FontTVar2+1
 	lsr a
 	sta r7L
@@ -424,7 +443,7 @@ Font_2:
 	add r12L
 	tax
 	lda Font_tab2,x
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	adc #<base
 .else
 	addv <base
@@ -437,7 +456,7 @@ Font_2:
 	ldy #<FontSH5
 @E:	sta r12H
 	sty r12L
-.ifndef bsw128
+.if !(.defined(bsw128) || .defined(mega65))
 clc_rts:
 	clc
 .endif
@@ -564,7 +583,7 @@ Font_3:
 @5:	CmpW rightMargin, FontTVar2
 	bcc @6
 	CmpW leftMargin, r11
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	bcc clc_rts
 .else
 	rts
@@ -572,7 +591,7 @@ Font_3:
 @6:
 	sec
 	rts
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 clc_rts:
 	clc
         rts
@@ -913,18 +932,47 @@ FontPutChar:
 	bcc @6
 	bne @7
 @6:	jsr Font_4
-@7:	inc r5L
+
+@7:	inc r5L         ; same byte next line
 	inc r6L
 	lda r5L
-	and #%00000111
-	bne @8
+.ifdef mega65
+	bne @89
 	inc r5H
 	inc r6H
+	bra @88
+@89:
+.endif
+	and #%00000111
+	bne @8
+.ifdef mega65
+@88:
+	inc r5H         ; end of block, we need to add a line
+	inc r6H
+	bbrf    7, graphMode, @99
+	inc r5H
+	inc r6H
+	AddVB $78, r5L
+	bra @98
+@99:
 	AddVB $38, r5L
+@98:
 	sta r6L
 	bcc @8
 	inc r5H
 	inc r6H
+
+.else
+	inc r5H         ; end of block, we need to add a line
+	inc r6H
+	AddVB $38, r5L  ; 64-8
+	sta r6L
+
+	bcc @8
+	inc r5H
+	inc r6H
+.endif
+
 @8:	inc r1H
 	dec r10H
 	bne @1

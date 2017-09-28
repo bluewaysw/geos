@@ -703,7 +703,11 @@ SetMyNewMode:
     wb  IconTab+38,STARTC_X*2
     wb  IconTab+46,STARTD_X*2
     ww  RightMax,639
+.ifdef mega65
+    wb  GraphIndex,8
+.else
     wb  GraphIndex,1
+.endif
 ;    ww  HauptMenu+4,237
     ww  HauptMenu+4,286
 ;    ww  DispMenuRight,237

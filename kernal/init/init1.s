@@ -24,7 +24,7 @@
 
 _InitMachine:
 	jsr _DoFirstInitIO
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 .import SetRightMargin
 .import SetNewMode0
 _InitMachine2:
@@ -33,7 +33,7 @@ _InitMachine2:
 .endif
 InitGEOEnv:
 	LoadW r0, InitRamTab
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	jsr _InitRam
 	jmp SetRightMargin
 .else

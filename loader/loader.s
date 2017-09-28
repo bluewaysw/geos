@@ -66,7 +66,10 @@ next:	.WORD	0
 	JSR	uncruncher
 	;STZ	53280
 	;STZ	53281
+
 	JMP	$5000
+
+;	========================
 .ENDPROC
 
 

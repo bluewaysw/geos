@@ -162,7 +162,7 @@ DBDoIcons:
 	adc #>DBDefIconsTab
 	sta r5H
 	jsr DBIconsHelp1
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	ldy #4
 	lda (r5),y
 	and #$FF
@@ -220,7 +220,7 @@ DBIconsHelp2:
 	cpy #2
 	bne @2
 	lda r3L
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	ora L8871
 .endif
 @2:	cpy #3

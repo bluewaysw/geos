@@ -76,19 +76,41 @@ BitmapUpHelp:
 @Y:
 .ifndef mega65
 	bbsf 7, graphMode, @4
-.endif
 	lda r1L
 	and #$7F
 	cmp #$20
 .else
+	bbrf 7, graphMode, @6
+
+	ldy #5  ; by 8
+	lda r1L
+	bpl @4
+	ldy #4  ; by 16
+@4:
+    and #$7F
+@5:
+	asl a
+	bcc @6
+	inc r5H
+	inc r6H
+@6:
+    dey
+    bne @5
+
+    tay
+.endif
+.else
 	CmpBI r1L, $20
 .endif
+.ifndef mega65
 	bcc @1
 	inc r5H
 	inc r6H
-@1:	asl
+@1:
+    asl
 	asl
 	asl
+.endif
 	tay
 @2:	sty r9L
 	jsr BitmapDecode

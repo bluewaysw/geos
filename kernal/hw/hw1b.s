@@ -98,8 +98,36 @@ ASSERT_NOT_BELOW_IO
 	lda #$96
 	sta $d02f
 
-	lda	#$40	; 3.5Mhz
+    ; enable bitplanes
+
+
+	lda	#$D0	; 3.5Mhz, H640, bitplanes
+	bbsf    7, graphMode, @11
+	lda #$50
+@11:
 	sta	$d031
+
+	lda	#$04	; 3.5Mhz, H640, bitplanes
+	sta	$d030
+
+    ; enable bitplace 1 (from 0-7)
+    lda #2
+    sta $d032
+
+    ;   bitplane data @$10000
+    lda #0
+    sta $d034
+
+    lda #$33
+    sta $d102
+    sta $d202
+    sta $d302
+    lda #$bb
+    sta $d100
+    sta $d200
+    sta $d300
+
+
 .endif
 
 .if .defined(wheels) || .defined(removeToBASIC)

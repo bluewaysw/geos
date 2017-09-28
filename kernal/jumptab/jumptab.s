@@ -799,7 +799,8 @@ TempHideMouse:
 SetMsePic:
 	UNIMPLEMENTED
 SetNewMode:
-	UNIMPLEMENTED
+.import _SetNewMode
+	jmp _SetNewMode
 NormalizeX:
 	jmp _NormalizeX
 MoveBData:

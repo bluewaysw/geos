@@ -146,12 +146,12 @@ ASSERT_NOT_BELOW_IO
 OrigResetHandle:
 	sei
 	cld
-	ldx #$ff
-	jsr _DoFirstInitIO
 .ifdef mega65
-    lda #0
+    lda #GR_40
 	sta graphMode
 .endif
+	ldx #$ff
+	jsr _DoFirstInitIO
 	jsr InitGEOEnv
 .ifdef usePlus60K
 	jsr DetectPlus60K

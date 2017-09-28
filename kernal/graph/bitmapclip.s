@@ -86,7 +86,7 @@ BitmClp1:
 	lda r11L
 	jsr BitmHelpClp
 	lda r2L
-.ifdef bsw128
+.if .defined(bsw128) ||.defined(mega65)
 	bpl @X
 	asl a
 @X:	bbsf 7, graphMode, @Y

@@ -23,12 +23,16 @@ GetLeftXAddress:
 	and #$07
 	pha
 	lda r3L
+.ifndef mega65
 	lsr r3H
 	ror a
 	lsr r3H
 	ror a
 	lsr r3H
 	ror a
+.else
+    and #$F8
+.endif
 	clc
 	adc r5L
 	sta r5L
