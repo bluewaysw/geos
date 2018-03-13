@@ -17,6 +17,9 @@
 .import _SwapDiskDriver
 .import CheckAppCompat
 .endif
+.ifdef mega65
+.import _SwapDiskDriver
+.endif
 
 .import GetBlock
 .import FetchRAM
@@ -183,13 +186,14 @@ IsDeviceValid:
 	tay
 	lda _driveType,y
 	sta curType
-.ifdef bsw128
+	;beq @7
+.if .defined(bsw128) || .defined(mega65)
 	ldx curDrive
 .endif
 	cpy curDrive
 	beq @3
 	sty curDrive
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	bbrf 6, sysRAMFlg, @4
 .else
 	bbrf 6, sysRAMFlg, @3
@@ -203,13 +207,15 @@ IsDeviceValid:
 	jsr PrepForFetch
 @3:	ldx #NULL
 	rts
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 @4:	txa
 	eor curDrive
 	and #1
 	beq @5
 	jsr _SwapDiskDriver
 @5:	ldx #$00
+	rts
+@7:	ldx #DEV_NOT_FOUND
 	rts
 .endif
 

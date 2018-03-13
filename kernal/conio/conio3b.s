@@ -12,6 +12,11 @@
 
 .global _LoadCharSet
 
+.ifdef mega65
+.import _MapLow
+.import _UnmapLow
+.import BSWFont80
+.endif
 .import BSWFont
 
 .if .defined(trap2) && (!.defined(trap2_alternate_location))
@@ -37,14 +42,22 @@ PrvCharWidth = $880D
 .segment "conio3b"
 
 _UseSystemFont:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	bbsf 7, graphMode, @X
 	LoadW r0, BSWFont
-	bra _LoadCharSet
+	bra _LoadCharSet2
 @X:	LoadW r0, BSWFont80
 .else
 	LoadW r0, BSWFont
 .endif
+_LoadCharSet2:
+.ifdef mega65
+    ldy #1
+    jsr _MapLow
+    jsr _LoadCharSet
+    jmp _UnmapLow
+.endif
+
 _LoadCharSet:
 	ldy #0
 @1:	lda (r0),y

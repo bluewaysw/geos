@@ -102,8 +102,10 @@ ASSERT_NOT_BELOW_IO
 
 
 	lda	#$D0	; 3.5Mhz, H640, bitplanes
+	;lda	#$90	; 3.5Mhz, H640, bitplanes
 	bbsf    7, graphMode, @11
 	lda #$50
+	;lda #$10
 @11:
 	sta	$d031
 
@@ -115,7 +117,11 @@ ASSERT_NOT_BELOW_IO
     sta $d032
 
     ;   bitplane data @$10000
-    lda #0
+;    lda #0
+;    sta $d034
+
+    ;   bitplane data @$14000
+    lda #$04
     sta $d034
 
     lda #$33

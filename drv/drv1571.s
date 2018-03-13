@@ -1,4 +1,4 @@
-; GEOS by Berkeley Softworks
+; GEOS by Brkeley Softworks
 ; reverse engineered by Maciej Witkowiak, Michael Steil
 ;
 ; Commodore 1571 disk driver
@@ -714,7 +714,7 @@ __InitForIO:
 	sei
 	lda CPU_DATA
 	sta tmpCPU_DATA
-.ifndef config128
+.if (!.defined(config128)) || .defined(mega65)
 	LoadB CPU_DATA, KRNL_IO_IN
 .endif
 	lda grirqen
@@ -730,15 +730,15 @@ __InitForIO:
 	sta cia2base+13
 	lda #>D_IRQHandler
 	sta irqvec+1
-.ifdef config128
+.if .defined(config128) & (!.defined(mega65))
 	sta nmivec+1
 .endif
 	lda #<D_IRQHandler
 	sta irqvec
-.ifdef config128
+.if .defined(config128) & (!.defined(mega65))
 	sta nmivec
 .endif
-.ifndef config128
+.if (!.defined(config128)) || .defined(mega65)
 	lda #>D_NMIHandler
 	sta nmivec+1
 	lda #<D_NMIHandler
@@ -781,7 +781,7 @@ IniForIO1:
 	rts
 
 D_IRQHandler:
-.ifdef config128
+.if .defined(config128) &(!.defined(mega65))
     pla
     sta $ff00
 .endif
@@ -803,7 +803,16 @@ __DoneWithIO:
 	lda cia2base+13
 	lda tmpgrirqen
 	sta grirqen
-.ifndef config128
+	
+	lda	#$a5
+	sta	$d02f
+	lda #$96
+	sta	$d02f
+	lda $d031
+	ora #$40
+	sta $d031
+	
+.if (!.defined(config128)) || .defined(mega65)
 	lda tmpCPU_DATA
 	sta CPU_DATA
 .endif
@@ -850,7 +859,7 @@ __EnterTurbo:
 EntTur0:
 	and #%01000000
 	bne EntTur3
-.ifdef config128
+.if .defined(config128) & (!.defined(mega65))
 	jsr DoClearCache2
 .endif
 	jsr InitForIO
@@ -1133,6 +1142,9 @@ DUNK5:
 
 GetSync:
 	sei
+	lda $d031
+	and #%10111111
+	sta $d031
 	MoveB TURBO_DD00, cia2base
 GetSync0:
 	bbrf 7, cia2base, GetSync0
@@ -1170,7 +1182,7 @@ __NewDisk:
 	sta errCount
 	sta r1L
 
-.ifdef config128
+.if .defined(config128) & (!.defined(mega65))
 	jsr DoClearCache2
 .endif
 
@@ -1194,7 +1206,7 @@ __ReadBlock:
 _ReadLink:
 	jsr CheckParams
 	bcc RdLink1_
-.ifdef config128
+.if .defined(config128) & (!.defined(mega65))
     jsr DoCacheWrite
     bne RdLink1_
 .endif
@@ -1208,7 +1220,7 @@ RdLink0:
 	beq RdLink1_
 	bcs RdLink0
 RdLink1_:
-.ifdef config128
+.if .defined(config128) & (!.defined(mega65))
     txa
     bne RdLink1
     jsr DoCacheRead
@@ -1282,7 +1294,7 @@ VWrBlock3:
 	rts
 
 VWrBlock3_:
-.ifdef config128
+.if .defined(config128) & (!.defined(mega65))
 	jmp DoCacheRead
 .endif
 
@@ -1882,7 +1894,8 @@ e06f9:
 
 .segment "drv1571_b"
 
-.ifdef config128
+; for now no cache support with GEOS65
+.if .defined(config128) & (!.defined(mega65))
 DoClearCache2:
     ldy #$ff
     jmp AccessCache

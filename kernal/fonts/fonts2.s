@@ -52,6 +52,14 @@ PrvCharWidth = $880D
 .global Font_9
 .global FontPutChar
 .global _GetRealSize
+.ifdef mega65
+.global _GetRealSizeMap
+.endif
+
+.ifdef mega65
+.import _MapLow
+.import _UnmapLow
+.endif
 
 .segment "fonts2"
 
@@ -68,6 +76,31 @@ PrvCharWidth = $880D
 ;            a   baseline offset
 ; Destroyed: nothing
 ;---------------------------------------------------------------
+.ifdef mega65
+_GetRealSizeMap:
+	pha
+	txa
+	pha
+	ldy	#1
+	jsr _MapLow
+	pla
+	tax
+	pla
+	jsr	_GetRealSize
+	pha
+	txa
+	pha
+	tya
+	pha
+	jsr _UnmapLow
+	pla
+	tay
+	pla
+	tax
+	pla
+	rts
+.endif
+
 .ifndef wheels ; moved
 _GetRealSize:
 	subv 32
@@ -127,7 +160,11 @@ Font_1:
 .else
 	ldx #0
 	addv 32
+.ifdef mega65
+	jsr _GetRealSize
+.else
 	jsr GetRealSize
+.endif
 	tya
 .endif
 	pha
@@ -208,7 +245,11 @@ Font_1:
 	jsr _GetRealSize2
 .else
 	addv 32
+.ifdef mega65
+	jsr _GetRealSize
+.else
 	jsr GetRealSize
+.endif
 .endif
 	sta r5H
 	SubB r5H, r1H
@@ -901,6 +942,20 @@ FontPutChar:
 .if (!.defined(wheels_size_and_speed)) && (!.defined(bsw128))
 	nop
 .endif
+;.ifdef mega65
+;    pha
+;    txa
+;    pha
+;    tza
+;    pha
+;    ldy #1
+;    jsr _MapLow
+;    pla
+;    taz
+;    pla
+;    tax
+;    pla
+;.endif
 	tay
 	PushB r1H
 	tya
@@ -977,6 +1032,20 @@ FontPutChar:
 	dec r10H
 	bne @1
 @9:	PopB r1H
+;.ifdef mega65
+;    pha
+;    txa
+;    pha
+;    tza
+;    pha
+;    ldy #1
+;    jsr _UnmapLow
+;    pla
+;    taz
+;    pla
+;    tax
+;    pla
+;.endif
 	rts
 
 .ifdef bsw128

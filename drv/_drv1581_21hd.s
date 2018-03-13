@@ -173,10 +173,17 @@ ReadLink:
 
 ; ----------------------------------------------------------------------------
         .byte   $03                             ; 904E 03                       .
-        .byte   "For Noelle & Dylan"            ; 904F 46 6F 72 20 4E 6F 65 6C  For Noel
+		
+; ==============================================================================
+.ifdef mega65
+evenFlag:		.byte 0
+.endif
+; ==============================================================================
+
+        ;.byte   "For Noelle & Dylan"            ; 904F 46 6F 72 20 4E 6F 65 6C  For Noel
                                                 ; 9057 6C 65 20 26 20 44 79 6C  le & Dyl
                                                 ; 905F 61 6E                    an
-        .byte   $00                             ; 9061 00                       .
+        ;.byte   $00                             ; 9061 00                       .
 ; ----------------------------------------------------------------------------
         bpl     __GetDirHead                    ; 9062 10 00                    ..
 __GetDirHead:	
@@ -965,6 +972,12 @@ __DoneWithIO:
         lda     $DD0D                           ; 95A4 AD 0D DD                 ...
         lda     L9BF1                           ; 95A7 AD F1 9B                 ...
         sta     grirqen                         ; 95AA 8D 1A D0                 ...
+
+		lda	#$a5
+		sta	$d02f
+		lda #$96
+		sta	$d02f
+		
 .if (!.defined(config128)) || .defined(mega65)
         lda     L9BF2                           ; 95AD AD F2 9B                 ...
         sta     CPU_DATA                        ; 95B0 85 01                    ..
@@ -1006,6 +1019,26 @@ L95E2:  jsr     UNLSN                           ; 95E2 20 AE FF                 
 __EnterTurbo:
         lda     curDrive                        ; 95E8 AD 89 84                 ...
         jsr     SetDevice                       ; 95EB 20 B0 C2                  ..
+.ifdef mega65
+		; strategy is that freshly initialized driveData is 0
+		; if now curDrive is 8 and f011 drive 0 is available we mark bit 7 1 und bit 5 0
+		; if now curDrive is 9 and f011 drive 1 is available we mark bit 7 1 und bit 5 1
+		; always after f011 init bit 6 is 1 to make driveData non zero signaling, we are initialized
+		ldy		curDrive
+		lda		driveData-8,y
+		bne		checkF011_
+		
+		jsr		CheckF011Drive
+
+		; init, check F011
+		;ldy		curDrive
+		sta		driveData-8, y
+		
+checkF011_:
+        bmi		L9634		; ok, it is F011, no serial code
+
+.endif		
+
         ldx     curDrive                        ; 95EE AE 89 84                 ...
         lda     diskOpenFlg,x                   ; 95F1 BD 8A 84                 ...
         bmi     L9604                           ; 95F4 30 0E                    0.
@@ -1017,7 +1050,7 @@ __EnterTurbo:
         sta     diskOpenFlg,x                   ; 9601 9D 8A 84                 ...
 L9604:  and     #$40                            ; 9604 29 40                    )@
         bne     L9634                           ; 9606 D0 2C                    .,
-        jsr     InitForIO                       ; 9608 20 5C C2                  \.
+		jsr     InitForIO                       ; 9608 20 5C C2                  \.
         ldx     #>EnterCommand                            ; 960B A2 96                    ..
         lda     #<EnterCommand                            ; 960D A9 3D                    .=
         jsr     SendDOSCmd                      ; 960F 20 B8 95                  ..
@@ -1066,12 +1099,27 @@ L9656:  lda     curDrive                        ; 9656 AD 89 84                 
         jmp     DoneWithIO                      ; 9666 4C 5F C2                 L_.
 
 ; ----------------------------------------------------------------------------
+.ifdef mega65
+CheckF011Drive:
+	; currently MEGA65 support one drive usually as drive 8, assume if we init
+	; device 8 we expect to use the f011 drive
+    lda	curDrive	
+	cmp	#8
+	bne	CheckF011Drive_noF011
+	lda	#$C0		
+	rts
+CheckF011Drive_noF011:
+	lda	#$40
+	rts
+.endif
+
+.ifndef mega65
 SendCODE:
         jsr     CheckReal1581                   ; 9669 20 95 99                  ..
         txa                                     ; 966C 8A                       .
         beq     InitHDCode                      ; 966D F0 05                    ..
         bpl     L9673                           ; 966F 10 02                    ..
-        bmi     Init1581Code                    ; 9671 30 1B                    0.
+        jmp     Init1581Code                    ; 9671 30 1B                    0.
 L9673:  rts                                     ; 9673 60                       `
 
 ; ----------------------------------------------------------------------------
@@ -1085,12 +1133,220 @@ InitHDCode:
         jsr     UNLSN                           ; 9681 20 AE FF                  ..
         ldx     #$00                            ; 9684 A2 00                    ..
 L9686:  jmp     DoneWithIO                      ; 9686 4C 5F C2                 L_.
+.endif
 
+.ifdef mega65
+_ReadLink_F011:					;98cf
+__ReadBlock_F011:					;98e4
+	JSR CheckParams_1
+	BCC _ReadBlockEnd
+
+_ReadBlockCont1:
+; Read sector from disk
+	JSR _SetOperation	; set 
+	BCS @1
+	LDA #$01
+	STA $D081
+	LDA #$40
+	STA $D081
+@3:
+	LDA $D082
+	AND #$10
+	BNE @2
+	LDA $D083
+	BPL @3
+@2:
+@1:
+	LDY #$00		;; read over 256 bytes if needed
+	LDA evenFlag
+	BEQ @4
+@5:
+	JSR _ReadByte		
+	INY
+	BNE @5
+@4:
+@6:
+	JSR _ReadByte		; read our 256 byte sector in the buffer?
+	STA (r4L),Y
+	INY
+	BNE @6
+	
+	LDX #0			; no error
+	
+ReadBlockDirBlock:
+	jmp 	L990B
+.if 0
+	CmpBI r1L, DIR_1581_TRACK                      ;9924
+	BNE _ReadBlockWriteCache
+	LDA r1H
+	BNE _ReadBlockWriteCache
+
+	LDY #4
+_ReadBlockMoveLoop:
+	LDA (r4),y                      ;9930
+	STA E9C63
+	TYA
+	addv $8c
+	TAY
+	LDA (r4),y
+	PHA
+	LDA E9C63
+	STA (r4),y
+	TYA
+	subv $8c
+	TAY
+	PLA
+	STA (r4),y
+	INY
+	CPY #$1d
+	BNE _ReadBlockMoveLoop
+
+_ReadBlockWriteCache:
+	txa
+.endif
+_ReadBlockEnd:
+	LDY #0
+
+	RTS
+
+_ReadByte:
+@1:
+	LDA $D082
+	AND #$20
+	BNE @1
+	LDA $D087
+	RTS
+	
+_WriteByte:
+	STA $D087
+	RTS
+	
+_SetOperation:
+
+	JSR _WaitReady
+	
+	LDA r1L		; track 1-80
+	DEC
+	STA $D084		; track
+	
+	LDA r1H		; 
+	CMP #$14		; c set if >= 20
+	LDA #$00
+	ROL
+	;EOR #1
+	STA $D086		; side
+	;EOR #1
+	BEQ @1
+	LDA #$14
+@1:
+	NEG
+	CLC
+	ADC r1H
+	LSR
+	INC
+	STA $D085		; sector
+	
+	LDA #$00
+	ROR
+	STA evenFlag
+	
+	CLC
+	RTS
+
+_ExecCommand:
+	STA $D081
+_WaitReady:
+@1:
+	BIT $D082
+	BMI @1
+	RTS
+
+_CheckResult:
+	JSR _WaitReady
+	LDA $D082
+	AND #$18
+	BNE _CheckResult_
+	CLC
+	RTS
+_CheckResult_:	
+	SEC
+	RTS
+
+_DriveReady:
+	JSR _WaitReady
+	LDA $D082
+	AND #$02
+	BNE _CheckResult_
+	CLC
+	RTS
+	
+__WriteBlock_F011:					;9960
+	JSR CheckParams_1
+	BCC _WriteBlockEnd
+
+	JSR ReadBlockDirBlock
+
+	; f011 block write here
+	JSR _SetOperation		; set track, side, sector
+	BCS _WriteBlockEnd
+	
+	JSR _DriveReady		; drive ready, not wrote protect
+	BCS _WriteBlockEnd
+	
+	LDA #$40
+	JSR _ExecCommand		; execute read	
+	JSR _CheckResult		; test if read succeeded
+	BCS _WriteBlockEnd
+	
+	LDY #$00		; skip first 256 bytes if needed
+	LDA evenFlag
+	BEQ @1
+@2:
+	JSR _ReadByte	; read byte without checking if available
+	INY	
+	BNE @2	
+@1:
+	LDA (r4),Y		; write our 256 byte buffer
+	JSR _WriteByte
+	INY
+	BNE @1
+@4:
+	LDA $D082		; read up rest of the buffer
+	AND #$20
+	BNE @3
+	JSR _ReadByte 	; read byte without checking if available
+	BRA @4
+@3:
+	LDA #$80
+	JSR _ExecCommand 		; write sector
+
+	; read back written sector
+	; here we use this not for checking but to ensure the 
+	; the next read will be alined, strange
+	; TODO: double check why this fails on mega65 if reading
+	; the next blick straigt after write command
+	LDA #$40	; read command
+	JSR _ExecCommand	; execute FDC command
+	JSR _CheckResult  	; Test wether read or write succeed?
+	
+	LDX	#0
+	
+_WriteBlockEnd:
+	JMP L990B			;998b
+
+.endif
+
+.ifndef mega65
 ; ----------------------------------------------------------------------------
 HDCommand:
         .byte   "GEOS"                          ; 9689 47 45 4F 53              GEOS
         .byte   $00                             ; 968D 00                       .
 ; ----------------------------------------------------------------------------
+.endif
+.ifdef mega65
+SendCODE:
+.endif
+
 Init1581Code:
         jsr     InitForIO                       ; 968E 20 5C C2                  \.
         LoadW   $8d, DriveCode2
@@ -1286,7 +1542,14 @@ L97DF:  bit     cia2base                        ; 97DF 2C 00 DD                 
 __NewDisk:
         jsr     EnterTurbo                      ; 97E5 20 14 C2                  ..
         bne     L980D                           ; 97E8 D0 23                    .#
-        lda     #$00                            ; 97EA A9 00                    ..
+        
+		ldx		curDrive
+		lda		driveData-8,x
+		bpl 	__NewDisk_
+		ldx		#0
+		rts
+__NewDisk_:
+		lda     #$00                            ; 97EA A9 00                    ..
         sta     L9BFC                           ; 97EC 8D FC 9B                 ...
         sta     r1L                             ; 97EF 85 04                    ..
         jsr     InitForIO                       ; 97F1 20 5C C2                  \.
@@ -1397,6 +1660,11 @@ L98A3:  lda     rasreg                          ; 98A3 AD 12 D0                 
         bne     L9895                           ; 98D2 D0 C1                    ..
         beq     L9880                           ; 98D4 F0 AA                    ..
 __ReadBlock:
+        ldx		curDrive
+		lda		driveData-8,x
+		bpl		__ReadBlock_
+		jmp		__ReadBlock_F011
+__ReadBlock_:
         jsr     CheckParams_1                   ; 98D6 20 03 91                  ..
         bcc     L9937                           ; 98D9 90 5C                    .\
 L98DB:  ldx     #$04                            ; 98DB A2 04                    ..
@@ -1451,7 +1719,13 @@ L9937:  ldy     #$00                            ; 9937 A0 00                    
 
 ; ----------------------------------------------------------------------------
 __WriteBlock:
-        jsr     CheckParams_1                   ; 993A 20 03 91                  ..
+        ldx		curDrive
+		lda		driveData-8,x
+		bpl		__WriteBlock_
+		jmp		__WriteBlock_F011
+		
+__WriteBlock_:
+		jsr     CheckParams_1                   ; 993A 20 03 91                  ..
         bcc     L9968                           ; 993D 90 29                    .)
         jsr     L990B                           ; 993F 20 0B 99                  ..
 L9942:  ldx     #$04                            ; 9942 A2 04                    ..
@@ -1479,6 +1753,9 @@ __VerWriteBlock:
 
 ; ----------------------------------------------------------------------------
 GetDOSError:
+		ldx		curDrive
+		lda		driveData-8,x
+		bmi		L9991
         ldx     #$03                            ; 996C A2 03                    ..
         lda     #$2B                            ; 996E A9 2B                    .+
         jsr     L979F                           ; 9970 20 9F 97                  ..
@@ -1834,6 +2111,7 @@ L9BE8:  rts                                     ; 9BE8 60                       
 ; End of "drv1581_drvcode" segment
 ; ----------------------------------------------------------------------------
 .code
+
 
 .segment        "drv1581_21hd_b": absolute
 

@@ -224,8 +224,10 @@ DRV_TYPE = 1 ; DRV_1541
 DRV_TYPE = 2; DRV_1571
 .elseif .defined(drv1581)
 DRV_TYPE = 3; DRV_1581
-.elseif .defined(drvf011)
+.elseif .defined(drv1581_21hd)
 DRV_TYPE = 3; DRV_1581
+.elseif .defined(drvf011)
+DRV_TYPE = 4; DRV_F011
 .else
 .error "Unknown drive type!"
 .endif

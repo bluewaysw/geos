@@ -44,6 +44,25 @@ next:	.WORD	0
 	TYS	; just to be sure: stack at $100
 	SEE	; just to be sure: 8 bit stack
 	EOM
+	
+	lda	#$10
+	sta $02
+	lda #$01
+	sta $03
+	lda #$01
+	sta $04
+	lda	#$00
+	sta $05
+	
+	lda	#$18
+	LDZ	#2
+	EOM
+	sta ($02), Z
+	lda #$19
+	INZ
+	EOM
+	sta ($02), Z
+	
 	; Just to be sure, enable newVic mode, to access eg VIC-3 register $30
 	; We don't need Mega65 fast mode here at any price, let's do that
 	; later maybe, in c65/start.s
@@ -58,6 +77,7 @@ next:	.WORD	0
 	STA	1
 	; Various VIC register stuffs
 	STZ	$D030	; turn ROM mappings / etc OFF
+	STZ $D031
 	STZ	$D019	; disable VIC interrupts
 	STZ	$D01A
 	LDA	#$30	; full RAM for uncrunching

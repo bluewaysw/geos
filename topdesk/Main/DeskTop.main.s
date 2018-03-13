@@ -670,29 +670,59 @@ SetMyNewMode:
     wb  IconTab+46,STARTD_X
     ww  RightMax, 319
     wb  GraphIndex, 8
-;    ww  HauptMenu+4,182
-;    ww  DispMenuRight,182
+.ifdef lang_de
     ww  HauptMenu+4,214
+.else
+    ww  HauptMenu+4,182
+.endif
+.ifdef lang_de
     ww  DispMenuRight,214
+.else
+    ww  DispMenuRight,182
+.endif
     ww  geosoben+4,80
     ww  Datei_Menue+2+3,28
     ww  Datei_Menue+4+3,112
-;    ww  Anzeige_Menue+2+3,48
+.ifdef lang_de
     ww  Anzeige_Menue+2+3,57
-;    ww  Anzeige_Menue+4+3,161
+.else
+    ww  Anzeige_Menue+2+3,48
+.endif
+.ifdef lang_de
     ww  Anzeige_Menue+4+3,170
-;    ww  Disk_Menue+2+3,79
+.else
+    ww  Anzeige_Menue+4+3,161
+.endif
+.ifdef lang_de
     ww  Disk_Menue+2+3,98
-;    ww  Disk_Menue+4+3,161
+.else
+    ww  Disk_Menue+2+3,79
+.endif
+.ifdef lang_de
     ww  Disk_Menue+4+3,180
-;    ww  WindowMenue+2+3,103
+.else
+    ww  Disk_Menue+4+3,161
+.endif
+.ifdef lang_de
     ww  WindowMenue+2+3,137
-;    ww  WindowMenue+4+3,222
+.else
+    ww  WindowMenue+2+3,103
+.endif
+.ifdef lang_de
     ww  WindowMenue+4+3,256
-;    ww  Speziell_Menue+2+15,145
+.else
+    ww  WindowMenue+4+3,222
+.endif
+.ifdef lang_de
     ww  Speziell_Menue+2+15,174
-;    ww  Speziell_Menue+4+15,238
+.else
+    ww  Speziell_Menue+2+15,145
+.endif
+.ifdef lang_de
     ww  Speziell_Menue+4+15,267
+.else
+    ww  Speziell_Menue+4+15,238
+.endif
     .word   0
 
 @tab2:
@@ -708,31 +738,67 @@ SetMyNewMode:
 .else
     wb  GraphIndex,1
 .endif
-;    ww  HauptMenu+4,237
+.ifdef lang_de
     ww  HauptMenu+4,286
-;    ww  DispMenuRight,237
+.else
+    ww  HauptMenu+4,237
+.endif
+.ifdef lang_de
     ww  DispMenuRight,286
+.else
+    ww  DispMenuRight,237
+.endif
     ww  geosoben+4,104
-;    ww  Datei_Menue+2+3,37
+.ifdef lang_de
     ww  Datei_Menue+2+3,36
-;    ww  Datei_Menue+4+3,149
+.else
+    ww  Datei_Menue+2+3,37
+.endif
+.ifdef lang_de
     ww  Datei_Menue+4+3,145
-;    ww  Anzeige_Menue+2+3,63
+.else
+    ww  Datei_Menue+4+3,149
+.endif
+.ifdef lang_de
     ww  Anzeige_Menue+2+3,73
-;    ww  Anzeige_Menue+4+3,214
+.else
+    ww  Anzeige_Menue+2+3,63
+.endif
+.ifdef lang_de
     ww  Anzeige_Menue+4+3,224
-;    ww  Disk_Menue+2+3,103
+.else
+    ww  Anzeige_Menue+4+3,214
+.endif
+.ifdef lang_de
     ww  Disk_Menue+2+3,127
-;    ww  Disk_Menue+4+3,213
+.else
+    ww  Disk_Menue+2+3,103
+.endif
+.ifdef lang_de
     ww  Disk_Menue+4+3,234
-;    ww  WindowMenue+2+3,134
+.else
+    ww  Disk_Menue+4+3,213
+.endif
+.ifdef lang_de
     ww  WindowMenue+2+3,177+7
-;    ww  WindowMenue+4+3,293
+.else
+    ww  WindowMenue+2+3,134
+.endif
+.ifdef lang_de
     ww  WindowMenue+4+3,332+7
-;    ww  Speziell_Menue+2+15,189
+.else
+    ww  WindowMenue+4+3,293
+.endif
+.ifdef lang_de
     ww  Speziell_Menue+2+15,226+8
-;    ww  Speziell_Menue+4+15,314
+.else
+    ww  Speziell_Menue+2+15,189
+.endif
+.ifdef lang_de
     ww  Speziell_Menue+4+15,346+8
+.else
+    ww  Speziell_Menue+4+15,314
+.endif
     .word   0
 .endif
 
@@ -944,11 +1010,31 @@ HauptMenu:	.byte	0,13
 	mpt	@t6,DYN_SUB_MENU,WindowMenue
 	mpt	@t5,DYN_SUB_MENU,Speziell_Menue
 @t1:	.byte	"geos",NULL
+.ifdef lang_de
 @t2:	.byte	"Datei",NULL
+.else
+@t2:	.byte	"file",NULL
+.endif
+.ifdef lang_de
 @t3:	.byte	"Anzeige",NULL
+.else
+@t3:	.byte	"show",NULL
+.endif
+.ifdef lang_de
 @t4:	.byte	"Diskette",NULL
+.else
+@t4:	.byte	"disk",NULL
+.endif
+.ifdef lang_de
 @t5:	.byte	"Speziell",NULL
+.else
+@t5:	.byte	"special",NULL
+.endif
+.ifdef lang_de
 @t6:	.byte	"Fenster",NULL
+.else
+@t6:	.byte	"window",NULL
+.endif
 
 DISKRIGHT	=	177
 Disk_Menue:	jsr	MySubMenu
@@ -960,19 +1046,39 @@ Disk_Menue:	jsr	MySubMenu
 	mpt	@t3,MENU_ACTION,DeskFormat
 	mpt	@t4,MENU_ACTION,DCopy
 	mpt	@t5,MENU_ACTION,DValidate
+.ifdef lang_de
 @t1:	.byte	"Umbenennen",GOTOX
+.else
+@t1:	.byte	"rename",GOTOX
+.endif
 	.word	DISKRIGHT-20
 	.byte	128,BOLDON,"N",PLAINTEXT,0
+.ifdef lang_de
 @t2:	.byte	"L|schen",GOTOX
+.else
+@t2:	.byte	"erase",GOTOX
+.endif
 	.word	DISKRIGHT-20
 	.byte	128,BOLDON,"E",PLAINTEXT,0
+.ifdef lang_de
 @t3:	.byte	"Formatieren",GOTOX
+.else
+@t3:	.byte	"format",GOTOX
+.endif
 	.word	DISKRIGHT-20
 	.byte	128,BOLDON,"F",PLAINTEXT,0
+.ifdef lang_de
 @t4:	.byte	"Kopieren",GOTOX
+.else
+@t4:	.byte	"copy",GOTOX
+.endif
 	.word	DISKRIGHT-20
 	.byte	128,BOLDON,"K",PLAINTEXT,0
+.ifdef lang_de
 @t5:	.byte	"Aufr{umen",GOTOX
+.else
+@t5:	.byte	"validate",GOTOX
+.endif
 	.word	DISKRIGHT-20
 	.byte	128,BOLDON,"V",PLAINTEXT,0
 DATEIRIGHT	= 112
@@ -987,25 +1093,53 @@ Datei_Menue:	jsr	MySubMenu
 	mpt	@t5,MENU_ACTION,DateiDrucken
 	mpt	@t6,MENU_ACTION,DeskDelete
 	mpt	@t7,MENU_ACTION,Ordnen
+.ifdef lang_de
 @t1:	.byte	"\ffnen",GOTOX
+.else
+@t1:	.byte	"open",GOTOX
+.endif
 	.word	DATEIRIGHT-22
 	.byte	128,BOLDON,"Z",PLAINTEXT,0
+.ifdef lang_de
 @t2:	.byte	"Duplizieren",GOTOX
+.else
+@t2:	.byte	"duplicate",GOTOX
+.endif
 	.word	DATEIRIGHT-22
 	.byte	128,BOLDON,"H",PLAINTEXT,0
+.ifdef lang_de
 @t3:	.byte	"Umbenennen",GOTOX
+.else
+@t3:	.byte	"rename",GOTOX
+.endif
 	.word	DATEIRIGHT-22
 	.byte	128,BOLDON,"M",PLAINTEXT,0
+.ifdef lang_de
 @t4:	.byte	"Info",GOTOX
+.else
+@t4:	.byte	"info",GOTOX
+.endif
 	.word	DATEIRIGHT-22
 	.byte	128,BOLDON,"Q",PLAINTEXT,0
+.ifdef lang_de
 @t5:	.byte	"Drucken",GOTOX
+.else
+@t5:	.byte	"print",GOTOX
+.endif
 	.word	DATEIRIGHT-22
 	.byte	128,BOLDON,"P",PLAINTEXT,0
+.ifdef lang_de
 @t6:	.byte	"L|schen",GOTOX
+.else
+@t6:	.byte	"delete",GOTOX
+.endif
 	.word	DATEIRIGHT-22
 	.byte	128,BOLDON,"D",PLAINTEXT,0
+.ifdef lang_de
 @t7:	.byte	"Vorsortieren",GOTOX
+.else
+@t7:	.byte	"presort",GOTOX
+.endif
 	.word	DATEIRIGHT-22
 	.byte	128,BOLDON,"T",PLAINTEXT,0
 Anzeige_Menue:	jsr	MySubMenu
@@ -1034,12 +1168,21 @@ Anzeige_Menue:	jsr	MySubMenu
 .ifdef topdesk128
 	mpt SchmalFlag,$00,SwapSchmal
 .endif
+.ifdef lang_de
 @t1:	.byte	"* Icons",0
 @t2:	.byte	"  nach Namen",0
 @t3:	.byte	"  nach Datum",0
 @t4:	.byte	"  nach Gr|~e",0
 @t5:	.byte	"  nach Typ",0
 @t7:	.byte	"* in KBytes",0
+.else
+@t1:	.byte	"* icons",0
+@t2:	.byte	"  by name",0
+@t3:	.byte	"  by date",0
+@t4:	.byte	"  by size",0
+@t5:	.byte	"  by types",0
+@t7:	.byte	"* in KBytes",0
+.endif
 @rout:	pha
 	lda	#' '
 	sta	@t1
@@ -1091,9 +1234,17 @@ SwapSchmal:
     jmp RedrawAll
 .endif
 
+.ifdef lang_de
 KBytesFlag:	.byte	"  in Bl|cken",0
+.else
+KBytesFlag:	.byte	"  in blocks",0
+.endif
 .ifdef topdesk128
+.ifdef lang_de
 SchmalFlag: .byte   "  schmale Anzeige",GOTOX
+.else
+SchmalFlag: .byte   "  smal display",GOTOX
+.endif
     .word   180-22
     .byte   128, BOLDON, "G", PLAINTEXT, 0
 
@@ -1117,16 +1268,32 @@ WindowMenue:	jsr	MySubMenu
 	mpt	@t2,MENU_ACTION,CloseAll
 	mpt	@t3,MENU_ACTION,SelectAll
 	mpt	@t4,MENU_ACTION,SelectPage
+.ifdef lang_de
 @t1:	.byte	"plazieren",GOTOX
+.else
+@t1:	.byte	"place",GOTOX
+.endif
 	.word	WINWDOWRIGHT-22
 	.byte	128,BOLDON,"S",PLAINTEXT,0
+.ifdef lang_de
 @t2:	.byte	"alle schlie~en",GOTOX
+.else
+@t2:	.byte	"close all",GOTOX
+.endif
 	.word	WINWDOWRIGHT-22
 	.byte	128,BOLDON,"C",PLAINTEXT,0
+.ifdef lang_de
 @t3:	.byte	"Inhalt anw{hlen",GOTOX
+.else
+@t3:	.byte	"select contents",GOTOX
+.endif
 	.word	WINWDOWRIGHT-22
 	.byte	128,BOLDON,"W",PLAINTEXT,0
+.ifdef lang_de
 @t4:	.byte	"Ausschnitt anw{hlen",GOTOX
+.else
+@t4:	.byte	"select certain files",GOTOX
+.endif
 	.word	WINWDOWRIGHT-22
 	.byte	128,BOLDON,"X",PLAINTEXT,0
 
@@ -1149,22 +1316,42 @@ Speziell_Menue:	lda	#PLAINTEXT
 	mpt	@t5,MENU_ACTION,GoToBasic
 ;	mpt	@t2,MENU_ACTION,EmptyAllDirs
 ;	mpt	@t4,MENU_ACTION,SaveWindowStat
+.ifdef lang_de
 @t1:	.byte	"Neuer Ordner",GOTOX
+.else
+@t1:	.byte	"new folder",GOTOX
+.endif
 	.word	SPCRIGHT-20
 	.byte	128,BOLDON,"O",PLAINTEXT,0
+.ifdef lang_de
 @t2:	.byte	"Uhr stellen",GOTOX
+.else
+@t2:	.byte	"set clock",GOTOX
+.endif
 	.word	SPCRIGHT-20
 	.byte	128,BOLDON,"A",PLAINTEXT,0
+.ifdef lang_de
 @t3:	.byte	PLAINTEXT,"RamDeskTop",GOTOX
+.else
+@t3:	.byte	PLAINTEXT,"RamDeskTop",GOTOX
+.endif
 	.word	SPCRIGHT-20
 	.byte	128,BOLDON,"L",PLAINTEXT,0
+.ifdef lang_de
 @t4:	.byte	"Reset",GOTOX
+.else
+@t4:	.byte	"reset",GOTOX
+.endif
 	.word	SPCRIGHT-20
 	.byte	128,BOLDON,"R",PLAINTEXT,0
 @t5:	.byte	"Basic",0
 ;@t2:	.byte	"Ordner entleeren",0
 ;@t4:	.byte	"Arbeit sichern",0
+.ifdef lang_de
 AutoSwapFlag:	.byte	"  autom. Tauschen",0
+.else
+AutoSwapFlag:	.byte	"  automatic swap",0
+.endif
 CloseAll:	jsr	GotoFirstMenu
 	lda	#0
 	ldx	#3
@@ -1328,8 +1515,13 @@ TestTopDesk:	lda	c128Flag
 	.byte	$0b,$10,$20
 	.word	@t2
 	.byte	OK,2,72,CANCEL,17,72,NULL
+.ifdef lang_de
 @t1:	.byte	"Kein DeskTop auf den",0
 @t2:	.byte	"RAM-Disks A und B!",0
+.else
+@t1:	.byte	"DeskTop not present on",0
+@t2:	.byte	"RAM-Disks A or B!",0
+.endif
 
 AskDiskFlag:	.byte	$ff
 ReLoadAll:	ldy	#3
@@ -1373,7 +1565,11 @@ RedrawHead:	lda	#2
 	jsr	SetPattern
 	jsr	i_Rectangle
 	.byte	0,15
+.ifdef topdesk128
+	.word	0+DOUBLE_W,319+DOUBLE_W+ADD1_W
+.else
 	.word	0,319
+.endif
 	jsr	MaxTextWin
 	jsr	DoHauptMenu
 	lda	#0

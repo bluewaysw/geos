@@ -13,7 +13,7 @@ D64_TEMPLATE = GEOS64.D64
 D64_RESULT   = geos.d64
 D81_TEMPLATE = GEOS64.D81
 D81_RESULT   = geos.d81
-GEOS_OUT     = geos65
+GEOS_OUT     = autoboot.c65
 DESKTOP_CVT  = desktop.cvt
 
 ASFLAGS      = -I inc -I .
@@ -174,7 +174,10 @@ ifeq ($(VARIANT), mega65)
 	KERNAL_SOURCES += \
 	kernal/graph/normalize.s \
 	kernal/graph/mode.s \
-	kernal/graph/graph2p.s
+	kernal/640/bswfont80.s \
+	kernal/graph/graph2p.s \
+	kernal/c65/map.s \
+	kernal/128k/swapdiskdriver.s
 endif
 
 # code that is in C128 back bank
@@ -243,7 +246,7 @@ DRIVER_SOURCES= \
 	drv/drv1541.bin \
 	drv/drv1571.bin \
 	drv/drv1581.bin \
-	drv/drv1581-21hd.bin \
+	drv/drv1581_21hd.bin \
 	drv/drv1571ram.bin \
 	drv/drv1581ram.bin \
 	input/joydrv.bin \
@@ -288,7 +291,7 @@ ALL_BINS= \
 	$(BUILD_DIR)/drv/drv1541.bin \
 	$(BUILD_DIR)/drv/drv1571.bin \
 	$(BUILD_DIR)/drv/drv1581.bin \
-	$(BUILD_DIR)/drv/drv1581-21hd.bin \
+	$(BUILD_DIR)/drv/drv1581_21hd.bin \
 	$(BUILD_DIR)/drv/drv1571ram.bin \
 	$(BUILD_DIR)/drv/drv1581ram.bin \
 	$(BUILD_DIR)/input/joydrv.bin \
@@ -343,8 +346,10 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo delete geos $(GEOS_OUT) configure geoboot | $(C1541) $@ >/dev/null; \
 		echo write $< $(GEOS_OUT) | $(C1541) $@ >/dev/null; \
 		echo delete \"desk top\"| $(C1541) $@ >/dev/null; \
+		echo delete \"geowrite\"| $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite GW64.cvt | $(C1541) $@ >/dev/null; \
 		echo \*\*\* Created $@ based on $(D81_TEMPLATE).; \
 	else \
 		echo format geos,00 d81 $@ | $(C1541) >/dev/null; \
@@ -469,8 +474,8 @@ $(BUILD_DIR)/drv/drv1571.bin: $(BUILD_DIR)/drv/drv1571.o drv/drv1571.cfg $(DEPS)
 $(BUILD_DIR)/drv/drv1581.bin: $(BUILD_DIR)/drv/drv1581.o drv/drv1581.cfg $(DEPS)
 	$(LD) -C drv/drv1581.cfg $(BUILD_DIR)/drv/drv1581.o -o $@
 
-$(BUILD_DIR)/drv/drv1581-21hd.bin: $(BUILD_DIR)/drv/drv1581-21hd.o drv/drv1581-21hd.cfg $(DEPS)
-	$(LD) -C drv/drv1581-21hd.cfg $(BUILD_DIR)/drv/drv1581-21hd.o -o $@
+$(BUILD_DIR)/drv/drv1581_21hd.bin: $(BUILD_DIR)/drv/drv1581_21hd.o drv/drv1581_21hd.cfg $(DEPS)
+	$(LD) -C drv/drv1581_21hd.cfg $(BUILD_DIR)/drv/drv1581_21hd.o -o $@
 
 $(BUILD_DIR)/drv/drv1571ram.bin: $(BUILD_DIR)/drv/drv1571ram.o drv/drv1571ram.cfg $(DEPS)
 	$(LD) -C drv/drv1571ram.cfg $(BUILD_DIR)/drv/drv1571ram.o -o $@

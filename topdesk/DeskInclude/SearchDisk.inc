@@ -144,7 +144,10 @@ MemSearchDisk:	ldx	#0
 @d05:	LoadB	r1L,18
 	bne	@d20
 @d10:	cmp	#3
+    beq @d11
+	cmp #4
 	bne	@d05	; bei unbek. Laufwerk wird von 1541 ausgegangen
+@d11:
 	LoadB	r1L,40
 @d20:	LoadW___	r4,$8000
 	jsr	GetBlock

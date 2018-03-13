@@ -556,7 +556,7 @@ ClxR	= 319
 ClyO	= 1
 ClyU	= ClyO+12
 TimeX	= 55
-TimeY	= 9
+TimeY	= 9 
 DateX	= 5
 DateY	= TimeY
 ; InitClock

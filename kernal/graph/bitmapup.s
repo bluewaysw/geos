@@ -80,11 +80,10 @@ BitmapUpHelp:
 	and #$7F
 	cmp #$20
 .else
-	bbrf 7, graphMode, @6
-
-	ldy #5  ; by 8
+	ldy #3  ; by 8
 	lda r1L
 	bpl @4
+	bbrf 7, graphMode, @4
 	ldy #4  ; by 16
 @4:
     and #$7F

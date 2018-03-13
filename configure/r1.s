@@ -28,7 +28,7 @@ vdcdata = $d601
 ;L0616           = $0616; fix!
 ;L0672           = $0672; fix!
 ;L0739           = $0739; fix!
-;L073E           = $073E; fix!
+;InitDrive           = $073E; fix!
 ;L0911           = $0911; fix!
 ;L0E19           = $0E19; fix!
 ;L0FA0           = $0FA0; fix!
@@ -38,7 +38,7 @@ vdcdata = $d601
 .import L0616
 .import L0672
 .import L0739
-.import L073E
+.import InitDrive
 .import	L0911 
 .import L0E19 
 .import L0FA0
@@ -53,6 +53,7 @@ vdcdata = $d601
 .import InitShadowed1581
 .import InitRAM1571
 .import InitRAM1581
+.import InitF011
 
 .export V20D9
 .export V2102
@@ -73,10 +74,11 @@ vdcdata = $d601
 .export V2150
 .export UIEntry
 .export L180C
-.export L1E05
+.export SetupDrive
 .export V20FA
 .export V20F2
 .export V20EA
+.export CheckDrive
 
 L6819           = $6819
 
@@ -415,7 +417,12 @@ L1518:  lda     #$01                            ; 1518 A9 01                    
         bne     L1541                           ; 1524 D0 1B                    ..
         lda     #$03                            ; 1526 A9 03                    ..
         jsr     L0672                           ; 1528 20 72 06                  r.
-        bne     L1541                           ; 152B D0 14                    ..
+        bne     L1541     						; 152B D0 14                    ..
+.ifdef mega65
+        lda     #$04                            ; 1526 A9 03                    ..
+        jsr     L0672                           ; 1528 20 72 06                  r.
+        bne     L1541     						; 152B D0 14                    ..
+.endif
         lda     ramExpSize                      ; 152D AD C3 88                 ...
         beq     L153E                           ; 1530 F0 0C                    ..
         lda     #$81                            ; 1532 A9 81                    ..
@@ -500,7 +507,7 @@ L15DF:  lda     V212E                           ; 15DF AD 2E 21                 
         ldy     #$00                            ; 15E9 A0 00                    ..
         lda     (r15L),y                        ; 15EB B1 20                    . 
         sta     V212B                           ; 15ED 8D 2B 21                 .+!
-        jsr     L073E                           ; 15F0 20 3E 07                  >.
+        jsr     InitDrive                           ; 15F0 20 3E 07                  >.
         ldy     V212B                           ; 15F3 AC 2B 21                 .+!
         lda     $8486,y                         ; 15F6 B9 86 84                 ...
         sta     V212C                           ; 15F9 8D 2C 21                 .,!
@@ -513,7 +520,7 @@ L15FF:  lda     V212E                           ; 15FF AD 2E 21                 
         ldy     #$00                            ; 1609 A0 00                    ..
         lda     (r15L),y                        ; 160B B1 20                    . 
         sta     V212B                           ; 160D 8D 2B 21                 .+!
-        jsr     L073E                           ; 1610 20 3E 07                  >.
+        jsr     InitDrive                           ; 1610 20 3E 07                  >.
         ldy     V212B                           ; 1613 AC 2B 21                 .+!
         lda     $8486,y                         ; 1616 B9 86 84                 ...
         sta     V212C                           ; 1619 8D 2C 21                 .,!
@@ -726,7 +733,8 @@ ConfigOtherPressVec:
         bpl     L17EA                           ; 17E7 10 01                    ..
         rts                                     ; 17E9 60                       `
 ; ----------------------------------------------------------------------------
-L17EA:  lda     #$00                            ; 17EA A9 00                    ..
+L17EA:  
+	lda     #$00                            ; 17EA A9 00                    ..
         sta     L180C                           ; 17EC 8D 0C 18                 ...
         jsr     L1837                           ; 17EF 20 37 18                  7.
         jsr     L180D                           ; 17F2 20 0D 18                  ..
@@ -907,7 +915,7 @@ L196C:
 MenuSaveConfig:
         jsr     DoPreviousMenu                  ; 1990 20 90 C1                  ..
         lda     V2104                           ; 1993 AD 04 21                 ..!
-        jsr     L073E                           ; 1996 20 3E 07                  >.
+        jsr     InitDrive                           ; 1996 20 3E 07                  >.
         LoadW   r0, V20D9
         jsr     OpenRecordFile                  ; 19A1 20 74 C2                  t.
         txa                                     ; 19A4 8A                       .
@@ -1061,6 +1069,8 @@ L1AA0:  lda     #$00                            ; 1AA0 A9 00                    
         jsr     L1B5B                           ; 1AD4 20 5B 1B                  [.
         jsr     L1CDC                           ; 1AD7 20 DC 1C                  ..
         jsr     L1B5B                           ; 1ADA 20 5B 1B                  [.
+        jsr     CheckF011                       ; 1AA7 20 39 1C                  9.
+        jsr     L1B5B                           ; 1AAA 20 5B 1B                  [.
         lda     V212E                           ; 1ADD AD 2E 21                 ..!
         sta     r15H                            ; 1AE0 85 21                    .!
         lda     V212D                           ; 1AE2 AD 2D 21                 .-!
@@ -1206,6 +1216,7 @@ L1BA9:
         .byte   <OptShadowed1581
         .byte   <OptRAM1571
         .byte   <OptRAM1581
+		.byte   <OptF011
 
 L1BB2:
         .byte   >OptNoDrive
@@ -1217,6 +1228,7 @@ L1BB2:
         .byte   >OptShadowed1581
         .byte   >OptRAM1571
         .byte   >OptRAM1581
+		.byte   >OptF011
 
 ; no drive
 OptNoDrive:
@@ -1304,7 +1316,16 @@ L1C30:
         .byte   "RAM 1581"                      ; 1C30 52 41 4D 20 31 35 38 31  RAM 1581
         .byte   0                                     ; 1C38 00                       .
 
+; F011
+OptF011:
+        .byte   $04
+        .word   F011Label
+        .word   InitF011
+F011Label:
+        .byte   "F011"                          ; 1BCE 31 35 34 31              1541
+        .byte   $00                             ; 1BD2 00                       .
 
+		
 L1C39:  ldy     V212C                           ; 1C39 AC 2C 21                 .,!
         beq     L1C40                           ; 1C3C F0 02                    ..
         ldy     #$01                            ; 1C3E A0 01                    ..
@@ -1363,6 +1384,19 @@ L1C93:  ldy     #$05                            ; 1C93 A0 05                    
 ; ----------------------------------------------------------------------------
 L1C96:  ldy     #$00                            ; 1C96 A0 00                    ..
         rts                                     ; 1C98 60                       `
+
+; ----------------------------------------------------------------------------
+CheckF011:  lda     V212C                           ; 1C88 AD 2C 21                 .,!
+        cmp     #$04                            ; 1C8B C9 02                    ..
+        beq     ShowF011                           ; 1C8D F0 04                    ..
+        cmp     #$00                            ; 1C8F C9 00                    ..
+        bne     NoF011                           ; 1C91 D0 03                    ..
+ShowF011:  ldy     #10                            ; 1C93 A0 05                    ..
+        rts                                     ; 1C95 60                       `
+; ----------------------------------------------------------------------------
+NoF011:  ldy     #$00                            ; 1C96 A0 00                    ..
+        rts                                     ; 1C98 60                       `
+		
 ; ----------------------------------------------------------------------------
 L1C99:  lda     V212C                           ; 1C99 AD 2C 21                 .,!
         cmp     #$03                            ; 1C9C C9 03                    ..
@@ -1391,6 +1425,24 @@ L1CBD:  ldy     #$07                            ; 1CBD A0 07                    
 L1CC0:  ldy     #$00                            ; 1CC0 A0 00                    ..
         rts                                     ; 1CC2 60                       `
 .endif
+
+.ifdef mega65
+L1CAA:  lda     V212C                           ; 1CAA AD 2C 21                 .,!
+        cmp     #$43                            ; 1CAD C9 43                    .C
+        beq     L1CBD                           ; 1CAF F0 0C                    ..
+        cmp     #$03                            ; 1CB1 C9 03                    ..
+        bne     L1CC0                           ; 1CB3 D0 0B                    ..
+        lda     #$43                            ; 1CB5 A9 43                    .C
+        jsr     L0911                           ; 1CB7 20 11 09                  ..
+        txa                                     ; 1CBA 8A                       .
+        bne     L1CC0                           ; 1CBB D0 03                    ..
+L1CBD:  ldy     #$07                            ; 1CBD A0 07                    ..
+        rts                                     ; 1CBF 60                       `
+; ----------------------------------------------------------------------------
+L1CC0:  ldy     #$00                            ; 1CC0 A0 00                    ..
+        rts                                     ; 1CC2 60                       `
+.endif
+
 ; ----------------------------------------------------------------------------
 L1CC3:  lda     V212C                           ; 1CC3 AD 2C 21                 .,!
         cmp     #$82                            ; 1CC6 C9 82                    ..
@@ -1441,7 +1493,7 @@ L1D08:  sta     L1D9A                           ; 1D08 8D 9A 1D                 
         jsr     L1D28                           ; 1D18 20 28 1D                  (.
 L1D1B:  lda     V212B                           ; 1D1B AD 2B 21                 .+!
         jsr     L1DF2                           ; 1D1E 20 F2 1D                  ..
-        jsr     L1DB0                           ; 1D21 20 B0 1D                  ..
+        jsr     CheckAllDrives                           ; 1D21 20 B0 1D                  ..
         dec     L180C                           ; 1D24 CE 0C 18                 ...
 L1D27:  rts                                     ; 1D27 60                       `
 ; ----------------------------------------------------------------------------
@@ -1506,24 +1558,24 @@ UnplugDlg:
 
 L1DAF:  brk                                     ; 1DAF 00                       .
 
-L1DB0:  lda     #$00                            ; 1DB0 A9 00                    ..
+CheckAllDrives:  lda     #$00                            ; 1DB0 A9 00                    ..
         sta     L1DAF                           ; 1DB2 8D AF 1D                 ...
         lda     #$08                            ; 1DB5 A9 08                    ..
-        jsr     L1DCB                           ; 1DB7 20 CB 1D                  ..
+        jsr     CheckDrive                           ; 1DB7 20 CB 1D                  ..
         lda     #$09                            ; 1DBA A9 09                    ..
-        jsr     L1DCB                           ; 1DBC 20 CB 1D                  ..
+        jsr     CheckDrive                           ; 1DBC 20 CB 1D                  ..
         lda     #$0A                            ; 1DBF A9 0A                    ..
-        jsr     L1DCB                           ; 1DC1 20 CB 1D                  ..
+        jsr     CheckDrive                           ; 1DC1 20 CB 1D                  ..
         lda     L1DAF                           ; 1DC4 AD AF 1D                 ...
         sta     NUMDRV                          ; 1DC7 8D 8D 84                 ...
         rts                                     ; 1DCA 60                       `
 ; ----------------------------------------------------------------------------
-L1DCB:  tay                                     ; 1DCB A8                       .
+CheckDrive:  tay                                     ; 1DCB A8                       .
         lda     $8486,y                         ; 1DCC B9 86 84                 ...
         beq     L1DE0                           ; 1DCF F0 0F                    ..
         bmi     L1DDD                           ; 1DD1 30 0A                    0.
         tya                                     ; 1DD3 98                       .
-        jsr     L1DE1                           ; 1DD4 20 E1 1D                  ..
+        jsr     InitAndCheckDrive                           ; 1DD4 20 E1 1D                  ..
         bne     L1DDD                           ; 1DD7 D0 04                    ..
         jsr     L1DF2                           ; 1DD9 20 F2 1D                  ..
         rts                                     ; 1DDC 60                       `
@@ -1531,7 +1583,7 @@ L1DCB:  tay                                     ; 1DCB A8                       
 L1DDD:  inc     L1DAF                           ; 1DDD EE AF 1D                 ...
 L1DE0:  rts                                     ; 1DE0 60                       `
 ; ----------------------------------------------------------------------------
-L1DE1:  jsr     L073E                           ; 1DE1 20 3E 07                  >.
+InitAndCheckDrive:  jsr     InitDrive                           ; 1DE1 20 3E 07                  >.
         lda     NUMDRV                          ; 1DE4 AD 8D 84                 ...
         bne     L1DEC                           ; 1DE7 D0 03                    ..
         inc     NUMDRV                          ; 1DE9 EE 8D 84                 ...
@@ -1548,29 +1600,35 @@ L1DF2:  ldy     curDrive                        ; 1DF2 AC 89 84                 
         rts                                     ; 1E03 60                       `
 ; ----------------------------------------------------------------------------
 L1E04:  brk                                     ; 1E04 00                       .
-L1E05:
+SetupDrive:
         lda     #$00                            ; 1E05 A9 00                    ..
         sta     L1E04                           ; 1E07 8D 04 1E                 ...
         lda     V212B                           ; 1E0A AD 2B 21                 .+!
         cmp     #$0A                            ; 1E0D C9 0A                    ..
-        bcc     L1E14                           ; 1E0F 90 03                    ..
-        jmp     L1EB4                           ; 1E11 4C B4 1E                 L..
+        bcc     SetupDriveAB                           ; 1E0F 90 03                    ..
+        jmp     SetupDriveC                           ; 1E11 4C B4 1E                 L..
 ; ----------------------------------------------------------------------------
-L1E14:  lda     #$00                            ; 1E14 A9 00                    ..
+SetupDriveAB:  lda     #$00                            ; 1E14 A9 00                    ..
         sta     L1E04                           ; 1E16 8D 04 1E                 ...
-        ldy     V212B                           ; 1E19 AC 2B 21                 .+!
+        
+		; set new drive type
+		ldy     V212B                           ; 1E19 AC 2B 21                 .+!
         lda     V212F                           ; 1E1C AD 2F 21                 ./!
         sta     $8486,y                         ; 1E1F 99 86 84                 ...
         inc     $848D
-        lda     V212B
-        jsr     L1DE1
-        bne     L1E48                           ; 1E2B D0 1B                    ..
-        lda     V212B                           ; 1E2D AD 2B 21                 .+!
+        
+		lda     V212B
+        jsr     InitAndCheckDrive
+		bne     L1E48                           ; 1E2B D0 1B                    ..
+        
+		; the other drive empty?
+		lda     V212B                           ; 1E2D AD 2B 21                 .+!
         eor     #$01                            ; 1E30 49 01                    I.
         tay                                     ; 1E32 A8                       .
         lda     $8486,y                         ; 1E33 B9 86 84                 ...
         beq     L1E59                           ; 1E36 F0 21                    .!
-        tya                                     ; 1E38 98                       .
+        
+		tya                                     ; 1E38 98                       .
         ldy     #$0B                            ; 1E39 A0 0B                    ..
         bit     sysRAMFlg                       ; 1E3B 2C C4 88                 ,..
         bvs     L1E43                           ; 1E3E 70 03                    p.
@@ -1590,10 +1648,13 @@ L1E59:  ldx     #>PluginDlg                            ; 1E59 A2 1F             
         lda     r0L                             ; 1E60 A5 02                    ..
         cmp     #$02                            ; 1E62 C9 02                    ..
         beq     L1E98                           ; 1E64 F0 32                    .2
-        lda     V212B                           ; 1E66 AD 2B 21                 .+!
-        jsr     L1DE1                           ; 1E69 20 E1 1D                  ..
+        
+		; not canceled
+		lda     V212B                           ; 1E66 AD 2B 21                 .+!
+        jsr     InitAndCheckDrive                           ; 1E69 20 E1 1D                  ..
         bne     L1E98                           ; 1E6C D0 2A                    .*
-        lda     V212B                           ; 1E6E AD 2B 21                 .+!
+        
+		lda     V212B                           ; 1E6E AD 2B 21                 .+!
         eor     #$01                            ; 1E71 49 01                    I.
         sta     curDevice                       ; 1E73 85 BA                    ..
         sta     curDrive                        ; 1E75 8D 89 84                 ...
@@ -1613,7 +1674,7 @@ L1E59:  ldx     #>PluginDlg                            ; 1E59 A2 1F             
         bne     L1E59                           ; 1E96 D0 C1                    ..
 L1E98:  lda     L1E04                           ; 1E98 AD 04 1E                 ...
         beq     L1EB0                           ; 1E9B F0 13                    ..
-        jsr     L1DE1                           ; 1E9D 20 E1 1D                  ..
+        jsr     InitAndCheckDrive                           ; 1E9D 20 E1 1D                  ..
         bne     L1EA8                           ; 1EA0 D0 06                    ..
         jsr     L1DF2                           ; 1EA2 20 F2 1D                  ..
         clv                                     ; 1EA5 B8                       .
@@ -1621,17 +1682,17 @@ L1E98:  lda     L1E04                           ; 1E98 AD 04 1E                 
 L1EA8:  lda     V212B                           ; 1EA8 AD 2B 21                 .+!
         eor     #$01                            ; 1EAB 49 01                    I.
         jsr     L1FC5                           ; 1EAD 20 C5 1F                  ..
-L1EB0:  jsr     L1DB0                           ; 1EB0 20 B0 1D                  ..
+L1EB0:  jsr     CheckAllDrives                           ; 1EB0 20 B0 1D                  ..
         rts                                     ; 1EB3 60                       `
 ; ----------------------------------------------------------------------------
-L1EB4:  lda     #$00                            ; 1EB4 A9 00                    ..
+SetupDriveC:  lda     #$00                            ; 1EB4 A9 00                    ..
         sta     L1E04                           ; 1EB6 8D 04 1E                 ...
         ldy     V212B                           ; 1EB9 AC 2B 21                 .+!
         lda     V212F                           ; 1EBC AD 2F 21                 ./!
         sta     $8486,y                         ; 1EBF 99 86 84                 ...
         inc     NUMDRV                          ; 1EC2 EE 8D 84                 ...
         lda     V212B                           ; 1EC5 AD 2B 21                 .+!
-        jsr     L1DE1                           ; 1EC8 20 E1 1D                  ..
+        jsr     InitAndCheckDrive                           ; 1EC8 20 E1 1D                  ..
         bne     L1EDB                           ; 1ECB D0 0E                    ..
         ldy     #$08                            ; 1ECD A0 08                    ..
         lda     $8486,y                         ; 1ECF B9 86 84                 ...
@@ -1642,7 +1703,7 @@ L1EB4:  lda     #$00                            ; 1EB4 A9 00                    
 L1EDB:  bne     L1F3E                           ; 1EDB D0 61                    .a
 L1EDD:  sty     L1E04                           ; 1EDD 8C 04 1E                 ...
         lda     #$08                            ; 1EE0 A9 08                    ..
-        jsr     L073E                           ; 1EE2 20 3E 07                  >.
+        jsr     InitDrive                           ; 1EE2 20 3E 07                  >.
         lda     L1E04                           ; 1EE5 AD 04 1E                 ...
         jsr     L1FC5                           ; 1EE8 20 C5 1F                  ..
         jsr     PurgeTurbo                      ; 1EEB 20 35 C2                  5.
@@ -1653,7 +1714,7 @@ L1EEE:  ldx     #>PluginDlg2                            ; 1EEE A2 1F            
         cmp     #$02                            ; 1EF7 C9 02                    ..
         beq     L1F29                           ; 1EF9 F0 2E                    ..
         lda     V212B                           ; 1EFB AD 2B 21                 .+!
-        jsr     L1DE1                           ; 1EFE 20 E1 1D                  ..
+        jsr     InitAndCheckDrive                           ; 1EFE 20 E1 1D                  ..
         bne     L1F29                           ; 1F01 D0 26                    .&
         lda     #$08                            ; 1F03 A9 08                    ..
         sta     curDevice                       ; 1F05 85 BA                    ..
@@ -1673,14 +1734,14 @@ L1EEE:  ldx     #>PluginDlg2                            ; 1EEE A2 1F            
         bne     L1EEE                           ; 1F27 D0 C5                    ..
 L1F29:  lda     L1E04                           ; 1F29 AD 04 1E                 ...
         beq     L1F3E                           ; 1F2C F0 10                    ..
-        jsr     L1DE1                           ; 1F2E 20 E1 1D                  ..
+        jsr     InitAndCheckDrive                           ; 1F2E 20 E1 1D                  ..
         bne     L1F39                           ; 1F31 D0 06                    ..
         jsr     L1DF2                           ; 1F33 20 F2 1D                  ..
         clv                                     ; 1F36 B8                       .
         bvc     L1F3E                           ; 1F37 50 05                    P.
 L1F39:  lda     #$08                            ; 1F39 A9 08                    ..
         jsr     L1FC5                           ; 1F3B 20 C5 1F                  ..
-L1F3E:  jsr     L1DB0                           ; 1F3E 20 B0 1D                  ..
+L1F3E:  jsr     CheckAllDrives                           ; 1F3E 20 B0 1D                  ..
         rts                                     ; 1F41 60                       `
 ; ----------------------------------------------------------------------------
 L1F42:
@@ -1770,7 +1831,7 @@ L1FEE:  sta     r0L                             ; 1FEE 85 02                    
         pha                                     ; 1FFC 48                       H
         bpl     L2007                           ; 1FFD 10 08                    ..
         lda     r0L                             ; 1FFF A5 02                    ..
-        jsr     L073E                           ; 2001 20 3E 07                  >.
+        jsr     InitDrive                           ; 2001 20 3E 07                  >.
         clv                                     ; 2004 B8                       .
         bvc     L200C                           ; 2005 50 05                    P.
 L2007:  lda     r0L                             ; 2007 A5 02                    ..
@@ -1819,7 +1880,7 @@ ConfigRecoverVector:
         beq     L20C6                           ; 20BC F0 08                    ..
         jsr     L20D4                           ; 20BE 20 D4 20                  .
 L20C1:  lda     #$FF                            ; 20C1 A9 FF                    ..
-        sta     $27EB                           ; 20C3 8D EB 27                 ..'
+        sta     V2550                           ; 20C3 8D EB 27                 ..'
 L20C6:
 .else
         jsr     L2060                           ; 2057 20 60 20                  `
@@ -1835,11 +1896,15 @@ L20C7:  jsr     L2241                           ; 20C7 20 41 22                 
         sta     (r7L),y                         ; 20D0 91 10                    ..
         beq     L20DC                           ; 20D2 F0 08                    ..
 
+; recover		
 L20D4:  jsr     L2241                           ; 20D4 20 41 22                  A"
         jsr     L2189                           ; 20D7 20 89 21                  .!
         lda     #$FF                            ; 20DA A9 FF                    ..
-L20DC:  bit     graphMode                       ; 20DC 24 3F                    $?
+L20DC:
+.ifndef mega65
+		bit     graphMode                       ; 20DC 24 3F                    $?
         bmi     L2115                           ; 20DE 30 35                    05
+.endif
         sta     r4H                             ; 20E0 85 0B                    ..
 .else
 
@@ -1888,6 +1953,7 @@ L2094:  tay                                     ; 2094 A8                       
 .ifdef config128
 
 ; ----------------------------------------------------------------------------
+.ifndef mega65
 L2115:  pha                                     ; 2115 48                       H
         txa                                     ; 2116 8A                       .
         pha                                     ; 2117 48                       H
@@ -1942,7 +2008,7 @@ L2173:  jsr     L22CF                           ; 2173 20 CF 22                 
 L2176:  ldy     #$00                            ; 2176 A0 00                    ..
         sta     (r1L),y                         ; 2178 91 04                    ..
         rts                                     ; 217A 60                       `
-
+.endif
 
 ;L22CF:
 ;L22E1:
@@ -1977,10 +2043,8 @@ L20AC:  tya                                     ; 20AC 98                       
         tya                                     ; 20B8 98                       .
         rts                                     ; 20B9 60                       `
 ; ----------------------------------------------------------------------------
-L20BA:  lda     #$25                            ; 20BA A9 25                    .%
-        sta     r1H                             ; 20BC 85 05                    ..
-        lda     #$51                            ; 20BE A9 51                    .Q
-        sta     r1L                             ; 20C0 85 04                    ..
+L20BA:  LoadW	r1, V2551
+
         ldy     #$00                            ; 20C2 A0 00                    ..
 L20C4:  lda     L20D1,x                         ; 20C4 BD D1 20                 .. 
         sta     r2L,y                           ; 20C7 99 06 00                 ...
@@ -2019,6 +2083,8 @@ L2189:  lda     r1H                             ; 2189 A5 05                    
 L2197:  rts                                     ; 2197 60                       `
 
 ; ----------------------------------------------------------------------------
+; uncompress for recovery
+
 L20A0:
 L2198:  tya                                     ; 2198 98                       .
         pha                                     ; 2199 48                       H
@@ -2077,6 +2143,8 @@ L21FB:  pla                                     ; 21FB 68                       
         rts                                     ; 21FC 60                       `
 
 ; ----------------------------------------------------------------------------
+; save foreground area with compress
+
 L20AC:
 L21FD:  tya                                     ; 21FD 98                       .
         pha                                     ; 21FE 48                       H
@@ -2122,6 +2190,7 @@ L223A:  pla                                     ; 223A 68                       
 ; ----------------------------------------------------------------------------
 L2241:  txa                                     ; 2241 8A                       .
         pha                                     ; 2242 48                       H
+.ifndef mega65
         bit     graphMode                       ; 2243 24 3F                    $?
         bpl     L2252                           ; 2245 10 0B                    ..
         lda     #$A0                            ; 2247 A9 A0                    ..
@@ -2130,10 +2199,9 @@ L2241:  txa                                     ; 2241 8A                       
         sta     r1L                             ; 224D 85 04                    ..
         clv                                     ; 224F B8                       .
         bvc     L225A                           ; 2250 50 08                    P.
-L2252:  lda     #$27                            ; 2252 A9 27                    .'
-        sta     r1H                             ; 2254 85 05                    ..
-        lda     #$EC                            ; 2256 A9 EC                    ..
-        sta     r1L                             ; 2258 85 04                    ..
+L2252:  
+.endif
+		LoadW	r1, V2551
 L225A:  ldy     #$00                            ; 225A A0 00                    ..
 L225C:  lda     L236C,x                         ; 225C BD 6C 23                 .l#
         sta     r2L,y                           ; 225F 99 06 00                 ...
@@ -2327,3 +2395,4 @@ V212F   = V212E + 1
 V2130   = V212F + 1
 V2150   = V2130 + 1  + 31
 V2550   = V2150 + $400
+V2551	= V2550 + 1

@@ -19,6 +19,92 @@
 
 .segment "reu"
 
+.ifdef mega65
+
+_StashRAM:
+	START_IO_X
+	MoveW r2, opLength
+	MoveW r0, opFromAddr
+	lda r1L
+	sta	opToAddr
+	lda r1H
+	and #$7f
+	sta opToAddr+1
+
+	lda #>opddmalist
+	ldy #<opddmalist
+	
+	jmp _DoRAMOp
+	
+_FetchRAM:
+	START_IO_X
+
+	LDA #$A5      ; C65: VIC-III enable sequence
+	STA $D02F
+	LDA #$96
+	STA $D02F     ; C65: VIC-III enabled
+
+	MoveW r2, opLength_fetch
+	MoveW r0, opToAddr_fetch
+	lda r1L
+	sta	opFromAddr_fetch
+	lda r1H
+	and #$7f
+	sta opFromAddr_fetch+1
+	
+	lda #>opddmalist_fetch
+	ldy #<opddmalist_fetch
+	
+_DoRAMOp:
+
+	sta $d701
+	lda #0
+	sta	$d702
+	sta $d704	;	enhanced bank
+	sty	$d705
+
+	END_IO_X
+
+_VerifyRAM:
+_SwapRAM:
+@3:	rts
+
+opddmalist:
+	; enchanced dma mode header
+	.byte	$0a
+	.byte	$80, $00
+	.byte	$81, $FF
+	.byte 	0
+	.byte	0	; swap
+opLength:
+	.word	DISK_DRV_LGH
+opFromAddr:
+	.word	DISK_BASE
+	.byte	0				; bank 0
+opToAddr:
+	.word	DISK_SWAPBASE+DISK_DRV_LGH
+	.byte	8				; bank 1
+	.word	0				; unsued mod
+
+opddmalist_fetch:
+	; enchanced dma mode header
+	.byte	$0a
+	.byte	$80, $ff
+	.byte	$81, $00
+	.byte	0
+	.byte	0	; swap
+opLength_fetch:
+	.word	DISK_DRV_LGH
+opFromAddr_fetch:
+	.word	DISK_BASE
+	.byte	8				; bank 0
+opToAddr_fetch:
+	.word	DISK_SWAPBASE+DISK_DRV_LGH
+	.byte	0				; bank 1
+	.word	0				; unsued mod
+
+.else
+
 .ifdef REUPresent
 _VerifyRAM:
 	ldy #$93
@@ -102,4 +188,5 @@ _DoRAMOp:
 .endif
 @3:	rts
 .endif ; REUPresent
+.endif
 

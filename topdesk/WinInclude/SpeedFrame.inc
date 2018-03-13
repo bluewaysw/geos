@@ -12,9 +12,11 @@ Schrw	=	15
 ;Des: r0 bis r13
 SpeedFrame:
 .ifdef topdesk128
+.ifndef mega65
     lda graphMode
     bpl @z40
     rts
+.endif
 @z40:
 .endif
 

@@ -81,6 +81,7 @@ ASSERT_NOT_BELOW_IO
 	LoadW IRQ_VECTOR, _IRQHandler
 
 	; draw background pattern
+.ifndef mega65
 	LoadW r0, SCREEN_BASE
 	ldx #$7D
 @2:	ldy #$3F
@@ -99,6 +100,7 @@ ASSERT_NOT_BELOW_IO
 	inc r0H
 @4:	dex
 	bne @2
+.endif
 
 	; set clock in CIA1
 	lda cia1base+15

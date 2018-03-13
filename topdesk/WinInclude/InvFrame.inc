@@ -26,7 +26,56 @@ InvFrame:
     rts
 @64n:
 .endif
+.ifdef mega65
+	lda r2L
+	pha
+@p87:
+	lda	r2H
+	pha
+	sub	r2L
+@p85:
+	cmp	#64
+	bcc	@p86
+	beq	@p86
+	clc
+	ror
+	and #$FE
+	jmp	@p85
+
+@p86:
+	add	r2L
+	sta r2H
+
+	pla	
+	cmp	r2H
+	pha
+	; above?
+	bcs @p89	; branch if a is above r2H
+	sta	r2H
+@p89:
 	jsr	VLine
+	pla
+	cmp	r2H
+	bcc	@p88
+	beq	@p88
+
+	ldx r2H
+	sta	r2H
+	inx
+	inx
+	txa
+	
+	sta r2L
+	jmp @p87
+
+
+
+@p88:
+	pla
+	sta	r2L
+.else
+	jsr	VLine
+.endif
 	lda	#%10101010
 
 InvHLine:	sta	r1L
@@ -53,6 +102,7 @@ InvHLine:	sta	r1L
 	bne	@10
 
 .ifdef topdesk128
+.ifndef mega65
     lda graphMode
     bpl @64e
     lsr r0H
@@ -61,6 +111,7 @@ InvHLine:	sta	r1L
     ror r0L
     lsr r0H
     ror r0L
+.endif
 @64e:
 .endif
 
@@ -86,6 +137,7 @@ InvHLine:	sta	r1L
 	sbc	#0
 	sta	r6H
 .ifdef topdesk128
+.ifndef mega65
     lda graphMode
     bpl @64f
     lda r6L
@@ -96,6 +148,7 @@ InvHLine:	sta	r1L
     adc #0
     sta r6H
 @64f:
+.endif
 .endif
 
 	ldx	r1H
@@ -182,6 +235,9 @@ InvHLine:	sta	r1L
 @maskTab:	.byte	%11111111,%01111111,%00111111,%00011111
 	.byte	%00001111,%00000011,%00000001,%00000000
 VLine:
+	; r2L	- vertical from
+	; r2H 	- vertical to
+
 	ldy	#1
 @05:	lda	r2L,y
 	and	#%11111000
@@ -202,8 +258,10 @@ VLine:
 
 @07:	tax
 .ifdef topdesk128
+.ifndef mega65
     bit graphMode
     bmi @g80
+.endif
 .endif
 	and	#%11111000
 .ifdef topdesk128
@@ -216,6 +274,7 @@ VLine:
 	adc	r5H
 	sta	r6H
 .ifdef topdesk128
+.ifndef mega65
     jmp @g40
 @g80:
     sty r6H
@@ -229,6 +288,7 @@ VLine:
     jmp @07a
 @g40:
 .endif
+.endif
 	txa
 	and	#7
 	tax
@@ -240,6 +300,7 @@ VLine:
 	lda	r2L
 	and	#7
 .ifdef topdesk128
+.ifndef mega65
     bit graphMode
     bpl @09
     pha
@@ -253,6 +314,7 @@ VLine:
 @08:
     pla
 @09:
+.endif
 .endif
 	tay
 @10:	jsr	@110
@@ -302,10 +364,12 @@ VLine:
 @128:	iny
 	iny
 .ifdef topdesk128
+.ifndef mega65
     lda graphMode
     bpl @g41
     AddVW__ 160,r6
 @g41:
+.endif
 .endif
 	rts
 @110:	jsr	@100
@@ -313,8 +377,17 @@ VLine:
 	
 	blt	@110
 .ifdef topdesk128
+.ifndef mega65
     lda graphMode
     bmi @g81
+.endif
+.endif
+.ifdef mega65
+    lda graphMode
+    bpl @g88
+
+	AddVW__	320,r6
+@g88:
 .endif
 	AddVW__	320,r6
 ;XXX	lda	r6H

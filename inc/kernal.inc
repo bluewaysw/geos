@@ -130,9 +130,16 @@ L8893 = $8893
 krnlSaveRcr = $8894
 krnlSaveConfig = $8895
 L8896 = $8896
+.ifdef bsw128
 bank0SaveRcr = $8897
 bank0SaveA = $8898
 bank0SavePS = $8899
+.endif
+.ifdef mega65
+lowMap = $8897
+highMap = $8898
+.endif
+
 L8A7F = $8A7F ; only written to once
 
 fileHeadMemBuff	= $d8c0		;$0100 len

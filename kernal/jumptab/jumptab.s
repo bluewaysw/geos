@@ -188,6 +188,9 @@
 .import _UseSystemFont
 .import _BldGDirEntry
 .import _GetRealSize
+.ifdef mega65
+.import _GetRealSizeMap
+.endif
 .import _ColorRectangle
 .import _ColorCard
 .import _SetColorMode
@@ -522,7 +525,11 @@ i_BitmapUp:
 i_PutString:
 	jmp _i_PutString
 GetRealSize:
+.ifdef mega65
+	jmp _GetRealSizeMap
+.else
 	jmp _GetRealSize
+.endif
 i_FillRam:
 	jmp _i_FillRam
 i_MoveData:

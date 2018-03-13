@@ -895,6 +895,11 @@ __ChangeDiskDevice:
 	STA curDevice
 
 __EnterTurbo:
+        ;lda     curDrive                        ; 957B AD 89 84                 ...
+        ;jsr     SetDevice                       ; 957E 20 B0 C2                  ..
+        ;ldx     #$00                            ; 9581 A2 00                    ..
+        ;rts                                     ; 9583 60                       `
+
 __NewDisk:
 __PurgeTurbo:
 __ExitTurbo:	

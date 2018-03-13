@@ -18,6 +18,8 @@
 ; C65/M65 bank 1 addresses
 SCREEN_BASE65           =       $0000
 BACK_SCR_BASE65         =       $9000
+
+.import _MapHigh
 .endif
 
 
@@ -65,7 +67,9 @@ _GetScanLine:
 	bbsf 6, dispBufferOn, @1 ; ST_WR_BACK
 .endif
 
-    ; foreground only
+;
+; 	foreground only
+;
 	lda LineTabL,x
 	ora r6H
 	sta r5L
@@ -92,17 +96,20 @@ _GetScanLine:
 
 	; a/x lower, y/z highter
 	lda r5H
-	sub	#$a0
+	bbsf 7, graphMode, @X1
+	and	#%11100000
+@X1:
+	sub	#$60
 	tay
 
-	ldz #$20	; map $a000-$c000 from bank 1
-	lda	#0	; don't map lower in this case
-	tax
+    jsr _MapHigh
 
-	map
-	eom
-
-	lda	#$a0
+	lda	r5H
+	and	#%00011111
+	bbrf 7, graphMode, @X2
+	lda	#0
+@X2:
+	add	#$a0
 	sta r5H
 	sta	r6H
 
@@ -117,18 +124,11 @@ _GetScanLine:
 	tax
 	rts
 .endif
-@1:	lda LineTabL,x
-	ora r6H
-	sta r5L
-	sta r6L
-	lda LineTabH,x
-	sta r5H
-	subv >(SCREEN_BASE-BACK_SCR_BASE)
-	sta r6H
-	pla
-	tax
-	rts
-@2:
+
+;
+; background only
+;
+@2:	
 .ifdef bsw128
 	bvc @3
 .else
@@ -162,6 +162,58 @@ _GetScanLine:
 	pla
 	tax
 	rts
+
+;
+;  background and foreground
+;
+
+@1:	lda LineTabL,x
+	ora r6H
+	sta r5L
+	sta r6L
+	lda LineTabH,x
+	sta r5H
+	subv >(SCREEN_BASE-BACK_SCR_BASE)
+	sta r6H
+
+.ifdef mega65
+	; map foregroud and translate ptrs
+	tya
+	pha
+	tza
+	pha
+
+	; a/x lower, y/z highter
+	lda r5H
+	bbsf 7, graphMode, @X1_
+	and	#%11100000
+@X1_:
+	sub	#$60
+	tay
+
+    jsr _MapHigh
+
+	lda	r5H
+	and	#%00011111
+	bbrf 7, graphMode, @X2_
+	lda	#0
+@X2_:
+	add	#$a0
+	sta r5H
+	sub #$40
+	sta	r6H
+
+	pla
+	taz
+	pla
+	tay
+
+.endif
+
+	pla
+	tax
+	rts
+
 
 .ifdef bsw128
 GSC80:
