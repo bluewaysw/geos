@@ -781,9 +781,15 @@ XErrorDial:
 	.byte	DBTXTSTR,$10,$30
 	.word	XErrZeile3
 	.byte	NULL
+.ifdef lang_de
 XErrZeile1:	.byte	BOLDON,"Die Datei",0
 XErrZeile2:	.byte	"kann von TopDesk aus ",0
 XErrZeile3:	.byte	"nicht ge|ffnet werden",PLAINTEXT,0
+.else
+XErrZeile1:	.byte	BOLDON,"The file",0
+XErrZeile2:	.byte	"cannot be accessed ",0
+XErrZeile3:	.byte	"from TopDesk.",PLAINTEXT,0
+.endif
 
 XDAcc:	jmp	DA0
 XAssembly:

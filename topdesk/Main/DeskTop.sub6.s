@@ -322,6 +322,7 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 	jmp	@num
 .ifndef topdesk128
 TypTab:	.word	@t0,@t1,@t2,@t3,@t4,@t5,@t6,@t7,@t8,@t9,@ta,@tb,@tc,@td,@te,@tf
+.ifdef lang_de
 @t0:	.byte	"Nicht-GEOS",0
 @t1:	.byte	"BASIC",0
 @t2:	.byte	"Assembler",0
@@ -338,6 +339,24 @@ TypTab:	.word	@t0,@t1,@t2,@t3,@t4,@t5,@t6,@t7,@t8,@t9,@ta,@tb,@tc,@td,@te,@tf
 @td:	.byte	"Tempor{r",0
 @te:	.byte	"selbstausf}hrend",0
 @tf:	.byte	"Eingabetreiber (128)",0
+.else
+@t0:	.byte	"Non-GEOS",0
+@t1:	.byte	"BASIC",0
+@t2:	.byte	"Assembler",0
+@t3:	.byte	"Data",0
+@t4:	.byte	"System file",0
+@t5:	.byte	"Desk Accessory",0
+@t6:	.byte	"Application",0
+@t7:	.byte	"Document",0
+@t8:	.byte	"Font file",0
+@t9:	.byte	"Printer driver",0
+@ta:	.byte	"Input driver (64)",0
+@tb:	.byte	"Directory",0
+@tc:	.byte	"Boot file",0
+@td:	.byte	"temporary",0
+@te:	.byte	"auto exec",0
+@tf:	.byte	"Input driver (128)",0
+.endif
 .endif
 __MyCheckFiles:	jsr	MyDCFilesSub
 __CheckFiles:	; Auswertung eines Mausklicks innerhalb des Textfenstern im Bezug

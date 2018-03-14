@@ -1835,6 +1835,7 @@ BackWindow2:	LoadB	messageBuffer,WN_HIDE
 
 .ifdef topdesk128
 TypTab:	.word	@t0,@t1,@t2,@t3,@t4,@t5,@t6,@t7,@t8,@t9,@ta,@tb,@tc,@td,@te,@tf
+.ifdef lang_de
 @t0:	.byte	"Nicht-GEOS",0
 @t1:	.byte	"BASIC",0
 @t2:	.byte	"Assembler",0
@@ -1851,7 +1852,24 @@ TypTab:	.word	@t0,@t1,@t2,@t3,@t4,@t5,@t6,@t7,@t8,@t9,@ta,@tb,@tc,@td,@te,@tf
 @td:	.byte	"Tempor{r",0
 @te:	.byte	"selbstausf}hrend",0
 @tf:	.byte	"Eingabetreiber (128)",0
-
+.else
+@t0:	.byte	"Non-GEOS",0
+@t1:	.byte	"BASIC",0
+@t2:	.byte	"Assembler",0
+@t3:	.byte	"Data",0
+@t4:	.byte	"System file",0
+@t5:	.byte	"Desk Accessory",0
+@t6:	.byte	"Application",0
+@t7:	.byte	"Document",0
+@t8:	.byte	"Font file",0
+@t9:	.byte	"Printer driver",0
+@ta:	.byte	"Input driver (64)",0
+@tb:	.byte	"Directory",0
+@tc:	.byte	"Boot file",0
+@td:	.byte	"temporary",0
+@te:	.byte	"auto exec",0
+@tf:	.byte	"Input driver (128)",0
+.endif
 .endif
 
 
@@ -2338,10 +2356,17 @@ PrintDiskInfo:	PushW	r0
 	jsr	NewPutDecimal
 	LoadWr0	@t2
 	jmp	NewPutString
+.ifdef lang_de
 @t1:	.byte	" Bl|cke",0
 @t2:	.byte	" KBytes",0
 @t3:	.byte	" belegt ",0
 @t4:	.byte	" frei    ",0
+.else
+@t1:	.byte	" blocks",0
+@t2:	.byte	" KBytes",0
+@t3:	.byte	" used ",0
+@t4:	.byte	" free    ",0
+.endif
 
 GetAkltDiskInfo:	lda	activeWindow
 GetDiskInfo:	pha
@@ -2749,9 +2774,15 @@ NoMultiFileBox:	.byte	$81
 	.word	@t3
 	.byte	OK,17,72
 	.byte	NULL
+.ifdef lang_de
 @t1:	.byte	BOLDON,"Diese Operation kann nicht",0
 @t2:	.byte	"mit Multi-File ausgef}hrt",0
 @t3:	.byte	"werden",0
+.else
+@t1:	.byte	BOLDON,"This function can not be",0
+@t2:	.byte	"carried out under",0
+@t3:	.byte	"Multi-File",0
+.endif
 
 ;SizeRectangle
 ;Par: r0  - Zahl, die der Maximalgr|~e entspricht
@@ -3078,16 +3109,26 @@ OpenFile:	jsr	ClearMultiFile2
 	.byte	$0b,$10,$20
 	.word	@t2
 	.byte	OK,17,72,NULL
+.ifdef lang_de
 @t1:	.byte	"Dieses Programm ist nur",0
 @t2:	.byte	"unter GEOS 64 lauff{hig.",0
+.else
+@t1:	.byte	"This programme only works",0
+@t2:	.byte	"together with  GEOS 64.",0
+.endif
 @db2:	.byte	$81
 	.byte	$0b,$10,$10
 	.word	@t1b
 	.byte	$0b,$10,$20
 	.word	@t2b
 	.byte	OK,17,72,NULL
+.ifdef lang_de
 @t1b:	.byte	"Programmstart von Laufwerk",0
 @t2b:	.byte	"C bzw. D nicht m|glich.",0
+.else
+@t1b:	.byte	"A Programme start from either drive",0
+@t2b:	.byte	"C or D is not possible.",0
+.endif
 activeFile:	.byte	$ff
 Multi_Select:	jsr	InvertRectangle
 	ldx	activeWindow

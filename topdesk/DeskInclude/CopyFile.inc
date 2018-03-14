@@ -414,9 +414,15 @@ UeberschreibenBox:	.byte	$81
 	.byte	YES,1,72
 	.byte	NO,17,72
 	.byte	NULL
+.ifdef lang_de
 @t1:	.byte	BOLDON,"ist bereits vorhanden.",0
 @t2:	.byte	"Soll die Datei }berschrieben",0
 @t3:	.byte	"werden ?",PLAINTEXT,0
+.else
+@t1:	.byte	BOLDON,"is already present.",0
+@t2:	.byte	"Replace file?",0
+@t3:	.byte	PLAINTEXT,0
+.endif
 
 nichtUeberschreibenbox:
 	.byte	$81
@@ -427,8 +433,13 @@ nichtUeberschreibenbox:
 	.word	@t2
 	.byte	OK,17,72
 	.byte	NULL
+.ifdef lang_de
 @t1:	.byte	BOLDON,"ist bereits vorhanden",0
 @t2:	.byte	"und schreibgesch}tzt.",PLAINTEXT,0
+.else
+@t1:	.byte	BOLDON,"is already present",0
+@t2:	.byte	"and write protected.",PLAINTEXT,0
+.endif
 
 Search_Turbo:	PushB	r2L
 	lda	$00,x

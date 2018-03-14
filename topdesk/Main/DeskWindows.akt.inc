@@ -121,8 +121,13 @@ SearchDeskTop2:	MoveB	curDrive,@a
 	.byte	$0b,$10,$20
 	.word	@t2
 	.byte	OK,2,72,CANCEL,14,72,NULL
+.ifdef lang_de
 @t1:	.byte	"Bitte eine Diskette mit",0
 @t2:	.byte	"TopDesk einlegen!",0
+.else
+@t1:	.byte	"Please insert a disk which",0
+@t2:	.byte	"contains TopDesk!",0
+.endif
 
 TestDisk:	txa
 	beq	@10

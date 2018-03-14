@@ -218,8 +218,13 @@ DosNew:
 	.byte	CANCEL
 	.byte	17,72
 	.byte	NULL
+.ifdef lang_de
 @t1:	.byte	"Inhalt von",NULL
 @t2:	.byte	"l|schen?",NULL
+.else
+@t1:	.byte	"Erase contents of",NULL
+@t2:	.byte	"?",NULL
+.endif
 
 .include "topdesk/DeskInclude/Validate+Undelet.inc"
 .if 0

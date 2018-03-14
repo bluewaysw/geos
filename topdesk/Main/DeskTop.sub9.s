@@ -159,7 +159,11 @@ NeuerOrdner:	jsr	GotoFirstMenu
 	.byte	$0d,$10,$20	; Texteingabe
 	.byte	a1,16
 	.byte	NULL
+.ifdef lang_de
 @t:	.byte	BOLDON,"Neuen Ordnernamen eingeben:",PLAINTEXT,0
+.else
+@t:	.byte	BOLDON,"Enter new name for folder:",PLAINTEXT,0
+.endif
 MyNewSubDir:	; Par: Filename in Name
 	;      Windownummer in x
 	txa

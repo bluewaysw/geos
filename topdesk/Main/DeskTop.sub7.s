@@ -191,10 +191,17 @@ InstallDriver:	lda	firstBoot
 	.byte	OK,1,76
 	.byte	CANCEL,16,76
 	.byte	NULL
+.ifdef lang_de
 @PrntZeile1:	.byte	BOLDON,"Neuen ",0
 @PrntZeile1_1:	.byte	"Druckertreiber",0
 @PrntZeile1_2:	.byte	"Eingabetreiber",0
 @PrntZeile2:	.byte	"installieren?",0
+.else
+@PrntZeile1:	.byte	BOLDON,"Install new ",0
+@PrntZeile1_1:	.byte	"Printer driver?",0
+@PrntZeile1_2:	.byte	"Input driver?",0
+@PrntZeile2:	.byte	" ",0
+.endif
 DA1:	MoveW_	r15,r6
 	lda	#$00
 	sta	r0L
@@ -296,9 +303,15 @@ StartUp:	lda	RamTopFlag
 	.byte	$0b,$10,$30
 	.word	@t3
 	.byte	OK,14,72,NULL
+.ifdef lang_de
 @t1:	.byte	BOLDON,"Bitte neu starten. Gleiche",0
 @t2:	.byte	"Systemdiskette verwenden wie",0
 @t3:	.byte	"bei Installation von TopDesk.",0
+.else
+@t1:	.byte	BOLDON,"Please start again. Use",0
+@t2:	.byte	"the same Bootdisk as",0
+@t3:	.byte	"with TopDesk installation.",0
+.endif
 @allesok:	LoadB	backPattern,2
 	LoadW___	keyVector,KeyHandler
 	jsr	SetNumDrives
@@ -479,10 +492,17 @@ DeskFormat:	MoveB	curDrive,Name+2	; nur Zwischenspeicher
 	.byte	$12,11,72
 	.word	@icon4
 	.byte	NULL
+.ifdef lang_de
 @t1:	.byte	"Diskette zum Formatieren",0
 @t2:	.byte	"in Laufwerk "
 @dr:	.byte	". einlegen ",0
 @t3:	.byte	"und Name eingeben:",0
+.else
+@t1:	.byte	"Insert disk to be formatted",0
+@t2:	.byte	"in drive "
+@dr:	.byte	". einlegen ",0
+@t3:	.byte	"and enter name:",0
+.endif
 @icontab:	.word	@icon1,@icon2,@icon3,@icon4
 @icon1:	.word	IconA,0
 	.byte	ICON_X,ICON_Y
@@ -519,9 +539,15 @@ DeskFormat:	MoveB	curDrive,Name+2	; nur Zwischenspeicher
 	.byte	YES,2,72
 	.byte	NO,9,72
 	.byte	NULL
+.ifdef lang_de
 @2t1:	.byte	BOLDON,"Soll die Diskette",0
 @2t2:	.byte	"doppelseitig formatiert ",0
 @2t3:	.byte	"werden?",PLAINTEXT,0
+.else
+@2t1:	.byte	BOLDON,"Format the disk",0
+@2t2:	.byte	"on both sides? ",0
+@2t3:	.byte	PLAINTEXT,0
+.endif
 IconA:
 .incbin "topdesk/IconA.map"
 IconB:
@@ -640,5 +666,10 @@ Relabel:
 	.byte	16,72
 	.byte	NULL
 
+.ifdef lang_de
 @rentext:	.byte	BOLDON,"Bitte geben Sie den neuen",0
 @rentxt2:	.byte	"Diskettennamen ein:",PLAINTEXT,0
+.else
+@rentext:	.byte	BOLDON,"Please enter the new",0
+@rentxt2:	.byte	"disk name:",PLAINTEXT,0
+.endif

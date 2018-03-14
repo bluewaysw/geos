@@ -277,9 +277,15 @@ Ordnen:	; alle selektierten Files nach vorne ins Inhaltsverzeichnis ordnen
 	.byte	$0b,$10,$30
 	.word	@t3
 	.byte	OK,17,72,NULL
+.ifdef lang_de
 @t1:	.byte	"Diese Operation darf nicht auf",0
 @t2:	.byte	"System- oder Hauptdisketten",0
 @t3:	.byte	"angewendet werden.",0
+.else
+@t1:	.byte	"This function can not be",0
+@t2:	.byte	"implemented on a System-",0
+@t3:	.byte	"or Bootdisk.",0
+.endif
 GetTime:	LoadB	ModDepth,1
 	jsr	StopClock
 	jsr	MouseOff

@@ -78,12 +78,21 @@ DispInfo:	LoadW___	r0,@db
 	.byte	$0b,$0a,$5e
 	.word	@t7
 	.byte	$0e,NULL
+.ifdef lang_de
 @t1:	.byte	BOLDON,"TopDesk",PLAINTEXT," Version 1.2",0
 @t2:	.byte	"geschrieben von",BOLDON,0
 @t3:	.byte	"Walter Knupe",0
 @t4:	.byte	"H.J. Ciprina",0
 @t5:	.byte	"Volker Goehrke",PLAINTEXT,0
 @t7:	.byte	"(C) 1991 by GEOS-USER-CLUB, GbR",0
+.else
+@t1:	.byte	BOLDON,"TopDesk",PLAINTEXT," Version 1.2",0
+@t2:	.byte	"written by",BOLDON,0
+@t3:	.byte	"Walter Knupe",0
+@t4:	.byte	"H.J. Ciprina",0
+@t5:	.byte	"Volker Goehrke",PLAINTEXT,0
+@t7:	.byte	"(C) 1991 by GEOS-USER-CLUB, GbR",0
+.endif
 
 EmptyAllDirs:	rts
 .if 0
@@ -215,8 +224,13 @@ MyRename:	lda	RenameFlag
 	.byte	$0d,$10,$35,a1,16
 	.byte	$02,17,72
 	.byte	NULL
+.ifdef lang_de
 @t1:	.byte	"Neuen Filenamen eingeben:",0
 @t2:	.byte	0,"Name schon vergeben!",PLAINTEXT,0
+.else
+@t1:	.byte	"Enter new file name:",0
+@t2:	.byte	0,"Name already in use!",PLAINTEXT,0
+.endif
 
 ModEnde:
 DuplCopyMem	= >(ModEnde+$100)

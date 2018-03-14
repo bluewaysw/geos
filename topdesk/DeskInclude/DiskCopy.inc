@@ -371,10 +371,17 @@ CopyDisk:
 	.byte	DBUSRICON,17,50
 @IDD_DIT:	.word	DrivesIconTab
 @IDD_RAM:	.byte	DISK,17,28,0
+.ifdef lang_de
 @IDD_t1:	.byte	BOLDON,"Zieldiskette ausw{hlen:",0
 @IDD_t2:	.byte	"Startdiskette",0
 @IDD_t3:	.byte	"Zieldiskette",PLAINTEXT,0
 @IDD_t4:	.byte	"Verify",0
+.else
+@IDD_t1:	.byte	BOLDON,"Select target disk:",0
+@IDD_t2:	.byte	"Source disk",0
+@IDD_t3:	.byte	"Target disk",PLAINTEXT,0
+@IDD_t4:	.byte	"Verify",0
+.endif
 @NoSystemBox:
 	.byte	$81
 	.byte	$0b,$10,$10
@@ -384,9 +391,15 @@ CopyDisk:
 	.byte	$0b,$10,$30
 	.word	@t3
 	.byte	OK,17,72,NULL
+.ifdef lang_de
 @t1:	.byte	"Die Zieldiskette darf keine ",0
 @t2:	.byte	"System- oder Hauptdiskette",0
 @t3:	.byte	"sein.",0
+.else
+@t1:	.byte	"The target disk cannot be ",0
+@t2:	.byte	"a System- or Bootdisk",0
+@t3:	.byte	" ",0
+.endif
 
 IDD_SDr:	.byte	"A:",0
 NextDrive:	ldy	CopyDrives+1
@@ -477,9 +490,15 @@ InsertNewDisk:	jsr	OpenDisk
 	.byte	DBTXTSTR,16,32
 	.word	@IZD_t2
 	.byte	0
+.ifdef lang_de
 @IZD_t1:	.byte	BOLDON,"Bitte Zieldisk in Laufwerk "
 @IZD_Dr:	.byte	"A",0
 @IZD_t2:	.byte	"einlegen.",PLAINTEXT,0
+.else
+@IZD_t1:	.byte	BOLDON,"Please insert target disk in drive "
+@IZD_Dr:	.byte	"A",0
+@IZD_t2:	.byte	PLAINTEXT,0
+.endif
 InitClickingOutSide:	LoadW___	r0,IDD_SDr
 .ifdef topdesk128
 	LoadW___	r11,74+$8000

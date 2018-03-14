@@ -765,8 +765,13 @@ DispMenuRight:
 @20:	jsr	PutString
 	PopB	dispBufferOn
 	rts
+.ifdef lang_de
 @t1:	.byte	PLAINTEXT," wird kopiert",0
 @t2:	.byte	PLAINTEXT," wird gel|scht",0
+.else
+@t1:	.byte	PLAINTEXT," beeing copied",0
+@t2:	.byte	PLAINTEXT," beeing deleted",0
+.endif
 
 TrashService:	
 DeskDelete:	jsr	GotoFirstMenu
@@ -872,10 +877,17 @@ DeleteSub:	; Par: a: File-Nummer
 	.byte	$0b,$10+40,$10
 	.word	Name
 	.byte	OK,17,72,NULL
+.ifdef lang_de
 @t1:	.byte	"Die Datei ",0
 @t2:	.byte	"ist schreibgesch}tzt",0
 @t3:	.byte	"und kann nicht gel|scht",0
 @t4:	.byte	"werden.",0
+.else
+@t1:	.byte	"The file ",0
+@t2:	.byte	"is write protected",0
+@t3:	.byte	"and cannot be deleted.",0
+@t4:	.byte	" ",0
+.endif
 
 BubbleSort:	; Sortieren von Byte-Werten in absteigender Reihenfolge
 	; Par:	r2: Zeiger auf zu sortierenden Bereich
@@ -1033,27 +1045,48 @@ FehlerAusgabe:	; Dialogbox-Anzeige f}r Diskettenfehlermeldungen
 	.byte	$0b,$10,70
 	.word	@t4
 	.byte	NULL
+.ifdef lang_de
 @t1:	.byte	BOLDON,"Achtung!",PLAINTEXT,0
 @t2:	.byte	"Operation abgebrochen aufgrund",0
 @t3:	.byte	"des Diskettenfehlers $"
 @nr:	.byte	"..",0
 @t4:	.byte	"auf Laufwerk "
 @dr:	.byte	".",0
+.else
+@t1:	.byte	BOLDON,"Attention!",PLAINTEXT,0
+@t2:	.byte	"function aborted due to",0
+@t3:	.byte	"disk error $"
+@nr:	.byte	"..",0
+@t4:	.byte	"auf Laufwerk "
+@dr:	.byte	".",0
+.endif
 @db2:	.byte	$81
 	.byte	$0b,$10,$10
 	.word	@t1b
 	.byte	$0b,$10,$20
 	.word	@t2b
 	.byte	OK,17,72,0
+.ifdef lang_de
 @t1b:	.byte	BOLDON,"Fehler!",0
 @t2b:	.byte	"Doppelseitige Disk in 1541.",0
+.else
+@t1b:	.byte	BOLDON,"Error!",0
+@t2b:	.byte	"Double sided disk in 1541.",0
+.endif
 
 @errtab:	.byte	$21,FILE_EXISTS,3,10
 @tab:	.word	@et1,@et2,@et3,@et4
+.ifdef lang_de
 @et1:	.byte	"keine formatierte Diskette",0
 @et2:	.byte	"Name bereits vergeben",0
 @et3:	.byte	"Diskette voll",0
 @et4:	.byte	"unpassende Dateistruktur",0
+.else
+@et1:	.byte	"No formatted disk",0
+@et2:	.byte	"Name already in use",0
+@et3:	.byte	"Disk full",0
+@et4:	.byte	"incorrect file structure",0
+.endif
 @notext:	.byte	0
 GenTab:	.byte	0,0,0,0
 .ifdef topdesk128

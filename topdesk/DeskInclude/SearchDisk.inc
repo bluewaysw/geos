@@ -115,8 +115,13 @@ MemSearchDisk:	ldx	#0
 	.byte	CANCEL
 	.byte	17,72
 	.byte	NULL
+.ifdef lang_de
 @t1:	.byte	$18,"Bitte legen Sie die Disk",$1b,NULL
 @t2:	.byte	$18,"ein.",$1b,NULL
+.else
+@t1:	.byte	$18,"Please insert disk",$1b,NULL
+@t2:	.byte	$18," ",$1b,NULL
+.endif
 
 @TestDisk:
 ;	cmp	curDrive
