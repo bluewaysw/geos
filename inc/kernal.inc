@@ -111,7 +111,7 @@ E8800           =       $8800
 .endif
 ;A8860           =       $8860 ; XXX unused
 
-.if .defined(bsw128) || .defined(mega65)
+.if .defined(bsw128)
 FontTVar1 = $880E
 FontTVar2 = $880F
 .elseif .defined(wheels)
@@ -138,6 +138,8 @@ bank0SavePS = $8899
 .ifdef mega65
 lowMap = $8897
 highMap = $8898
+lastHighMap = $8899
+countHighMap = $8894
 .endif
 
 L8A7F = $8A7F ; only written to once

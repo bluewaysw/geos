@@ -80,6 +80,9 @@ BitmapUpHelp:
 	and #$7F
 	cmp #$20
 .else
+	ldx	r5H
+	ldy #0
+	sty r5H
 	ldy #3  ; by 8
 	lda r1L
 	bpl @4
@@ -89,13 +92,20 @@ BitmapUpHelp:
     and #$7F
 @5:
 	asl a
-	bcc @6
-	inc r5H
-	inc r6H
-@6:
+	rol r5H
     dey
     bne @5
+	pha
+	lda	r5H
+	stx r5H
+	pha
+	add r5H
+	sta r5H
+	pla
+	add r6H
+	sta r6H
 
+	pla
     tay
 .endif
 .else
@@ -154,7 +164,7 @@ BitmapUpHelp:
 
 BitmapDecode:
 .if .defined(bsw128) || .defined(mega65)
-   jmp  BitmapDecodeX
+   ;jmp  BitmapDecodeX
 	bbrf 7, graphMode, BitmapDecodeX
 	bbrf 7, r2L, BitmapDecodeX
 	bbrf 0, L888D, @1

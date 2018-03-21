@@ -20,6 +20,7 @@ SCREEN_BASE65           =       $0000
 BACK_SCR_BASE65         =       $9000
 
 .import _MapHigh
+.import _MapLow
 .endif
 
 
@@ -100,14 +101,14 @@ _GetScanLine:
 	and	#%11100000
 @X1:
 	sub	#$60
-	tay
+	lsr
 
     jsr _MapHigh
 
 	lda	r5H
 	and	#%00011111
 	bbrf 7, graphMode, @X2
-	lda	#0
+	and #%00000001
 @X2:
 	add	#$a0
 	sta r5H
@@ -188,15 +189,23 @@ _GetScanLine:
 	bbsf 7, graphMode, @X1_
 	and	#%11100000
 @X1_:
+	pha
 	sub	#$60
-	tay
+	lsr
 
     jsr _MapHigh
+	;sub #$40
+	;lsr
+	pla
+	lsr
+	add #$90		; back buffer is at $18000
+
+    jsr _MapLow
 
 	lda	r5H
 	and	#%00011111
 	bbrf 7, graphMode, @X2_
-	lda	#0
+	and #%00000001
 @X2_:
 	add	#$a0
 	sta r5H

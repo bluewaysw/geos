@@ -87,20 +87,11 @@ _FirstInit:
 	sta r0L
 	sta r0H
 .endif
-.ifdef mega65
-.import _MapLow
-    ldy #1
-    jsr _MapLow
-.endif
 	ldx #24
 @3:	lda InitMsePic-1,x
 	sta mousePicData-1,x
 	dex
 	bne @3
-.ifdef mega65
-.import _UnmapLow
-    jsr _UnmapLow
-.endif
 .ifdef wheels
 .import sysMob0Clr
 .import sysExtClr

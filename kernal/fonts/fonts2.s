@@ -30,7 +30,7 @@
 .import FontGt2
 .import FontGt1
 
-.if (!.defined(bsw128)) & (!.defined(wheels)) & (!.defined(mega65))
+.if (!.defined(bsw128)) & (!.defined(wheels))
 .import FontTVar1
 .import FontTVar2
 .endif
@@ -52,14 +52,6 @@ PrvCharWidth = $880D
 .global Font_9
 .global FontPutChar
 .global _GetRealSize
-.ifdef mega65
-.global _GetRealSizeMap
-.endif
-
-.ifdef mega65
-.import _MapLow
-.import _UnmapLow
-.endif
 
 .segment "fonts2"
 
@@ -76,30 +68,6 @@ PrvCharWidth = $880D
 ;            a   baseline offset
 ; Destroyed: nothing
 ;---------------------------------------------------------------
-.ifdef mega65
-_GetRealSizeMap:
-	pha
-	txa
-	pha
-	ldy	#1
-	jsr _MapLow
-	pla
-	tax
-	pla
-	jsr	_GetRealSize
-	pha
-	txa
-	pha
-	tya
-	pha
-	jsr _UnmapLow
-	pla
-	tay
-	pla
-	tax
-	pla
-	rts
-.endif
 
 .ifndef wheels ; moved
 _GetRealSize:
@@ -1032,20 +1000,6 @@ FontPutChar:
 	dec r10H
 	bne @1
 @9:	PopB r1H
-;.ifdef mega65
-;    pha
-;    txa
-;    pha
-;    tza
-;    pha
-;    ldy #1
-;    jsr _UnmapLow
-;    pla
-;    taz
-;    pla
-;    tax
-;    pla
-;.endif
 	rts
 
 .ifdef bsw128

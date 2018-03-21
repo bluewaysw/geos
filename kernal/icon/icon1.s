@@ -14,9 +14,6 @@
 .import ResetMseRegion
 .import Icons_1
 
-.import _MapLow
-.import _UnmapLow
-
 .global _DoIcons
 
 .segment "icon1"
@@ -39,10 +36,7 @@
 ;---------------------------------------------------------------
 _DoIcons:
 	MoveW r0, IconDescVec
-	ldy #1
-	jsr	_MapLow
 	jsr Icons_1
-	jsr _UnmapLow
 	jsr ResetMseRegion
 
 	lda mouseOn

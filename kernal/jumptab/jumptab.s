@@ -65,38 +65,12 @@
 
 ; load.s
 .import _GetFile
-.import _LdApplic
-.import _LdDeskAcc
 .import _LdFile
-.import _RstrAppl
 
 ; filesys.s
-.import _AppendRecord
-.import _CloseRecordFile
-.import _DeleteFile
-.import _DeleteRecord
-.import _FastDelFile
-.import _FindFTypes
-.import _FindFile
-.import _FollowChain
-.import _FreeFile
-.import _GetFHdrInfo
 .import _GetPtrCurDkNm
-.import _InsertRecord
-.import _NextRecord
-.import _OpenRecordFile
-.import _PointRecord
-.import _PreviousRecord
-.import _ReadByte
 .import _ReadFile
-.import _ReadRecord
-.import _RenameFile
-.import _SaveFile
-.import _SetDevice
-.import _SetGDirEntry
-.import _UpdateRecordFile
 .import _WriteFile
-.import _WriteRecord
 
 ; memory.s
 .import _CmpFString
@@ -186,11 +160,7 @@
 .import _InitTextPrompt
 .import _GetString
 .import _UseSystemFont
-.import _BldGDirEntry
 .import _GetRealSize
-.ifdef mega65
-.import _GetRealSizeMap
-.endif
 .import _ColorRectangle
 .import _ColorCard
 .import _SetColorMode
@@ -203,7 +173,64 @@
 .import _SetMsePic
 .import _TempHideMouse
 .import _NormalizeX
+.ifdef mega65
+.import _map_FollowChain   
+.import _map_FindFTypes
+.import _map_FindFile
+.import _map_SetDevice   
+.import _map_GetFHdrInfo    
+.import _map_LdDeskAcc
+.import _map_RstrAppl    
+.import _map_LdApplic
+.import _map_SaveFile 
+.import _map_SetGDirEntry    
+.import _map_BldGDirEntry
+.import _map_DeleteFile    
+.import _map_FreeFile
+.import _map_FastDelFile   
+.import _map_RenameFile
+.import _map_OpenRecordFile    
+.import _map_CloseRecordFile
+.import _map_UpdateRecordFile    
+.import _map_NextRecord
+.import _map_PreviousRecord    
+.import _map_PointRecord
+.import _map_DeleteRecord    
+.import _map_InsertRecord
+.import _map_AppendRecord    
+.import _map_ReadRecord
+.import _map_WriteRecord    
+.import _map_ReadByte
+.else
+.import _InsertRecord
+.import _NextRecord
+.import _OpenRecordFile
+.import _PointRecord
+.import _PreviousRecord
+.import _ReadByte
+.import _AppendRecord
+.import _CloseRecordFile
+.import _DeleteFile
+.import _DeleteRecord
+.import _FastDelFile
+.import _FindFTypes
+.import _FindFile
+.import _FollowChain
+.import _FreeFile
+.import _GetFHdrInfo
+.import _LdApplic
+.import _LdDeskAcc
+.import _SetDevice
+.import _ReadRecord
+.import _RenameFile
+.import _SaveFile
+.import _SetGDirEntry
+.import _UpdateRecordFile
+.import _WriteRecord
+.import _RstrAppl
+.import _BldGDirEntry
 
+.endif
 
 .global InterruptMain
 .global InitProcesses
@@ -298,8 +325,8 @@
 .global CRC
 .global LdFile
 .global EnterTurbo
-.global LdDeskAcc
 .global ReadBlock
+.global LdDeskAcc
 .global LdApplic
 .global WriteBlock
 .global VerWriteBlock
@@ -525,11 +552,7 @@ i_BitmapUp:
 i_PutString:
 	jmp _i_PutString
 GetRealSize:
-.ifdef mega65
-	jmp _GetRealSizeMap
-.else
 	jmp _GetRealSize
-.endif
 i_FillRam:
 	jmp _i_FillRam
 i_MoveData:
@@ -573,11 +596,23 @@ PutBlock:
 SetGEOSDisk:
 	jmp (_SetGEOSDisk)
 SaveFile:
+.ifdef mega65
+	jmp _map_SaveFile
+.else
 	jmp _SaveFile
+.endif
 SetGDirEntry:
+.ifdef mega65
+	jmp _map_SetGDirEntry
+.else
 	jmp _SetGDirEntry
+.endif
 BldGDirEntry:
+.ifdef mega65
+	jmp _map_BldGDirEntry
+.else
 	jmp _BldGDirEntry
+.endif
 GetFreeDirBlk:
 	jmp (_GetFreeDirBlk)
 WriteFile:
@@ -589,11 +624,19 @@ ReadFile:
 SmallPutChar:
 	jmp _SmallPutChar
 FollowChain:
+.ifdef mega65
+	jmp _map_FollowChain
+.else
 	jmp _FollowChain
+.endif
 GetFile:
 	jmp _GetFile
 FindFile:
+.ifdef mega65
+	jmp _map_FindFile
+.else
 	jmp _FindFile
+.endif
 CRC:
 	jmp __CRC
 LdFile:
@@ -601,19 +644,35 @@ LdFile:
 EnterTurbo:
 	jmp (_EnterTurbo)
 LdDeskAcc:
+.ifdef mega65
+	jmp _map_LdDeskAcc
+.else
 	jmp _LdDeskAcc
+.endif
 ReadBlock:
 	jmp (_ReadBlock)
 LdApplic:
+.ifdef mega65
+	jmp _map_LdApplic
+.else
 	jmp _LdApplic
+.endif
 WriteBlock:
 	jmp (_WriteBlock)
 VerWriteBlock:
 	jmp (_VerWriteBlock)
 FreeFile:
+.ifdef mega65
+	jmp _map_FreeFile
+.else
 	jmp _FreeFile
+.endif
 GetFHdrInfo:
+.ifdef mega65
+	jmp _map_GetFHdrInfo
+.else
 	jmp _GetFHdrInfo
+.endif
 EnterDeskTop:
 	jmp _EnterDeskTop
 StartAppl:
@@ -623,15 +682,31 @@ ExitTurbo:
 PurgeTurbo:
 	jmp (_PurgeTurbo)
 DeleteFile:
+.ifdef mega65
+	jmp _map_DeleteFile
+.else
 	jmp _DeleteFile
+.endif
 FindFTypes:
+.ifdef mega65
+	jmp _map_FindFTypes
+.else
 	jmp _FindFTypes
+.endif
 RstrAppl:
+.ifdef mega65
+	jmp _map_RstrAppl
+.else
 	jmp _RstrAppl
+.endif
 ToBASIC:
 	jmp _ToBASIC
 FastDelFile:
+.ifdef mega65
+	jmp _map_FastDelFile
+.else
 	jmp _FastDelFile
+.endif
 GetDirHead:
 	jmp (_GetDirHead)
 PutDirHead:
@@ -645,7 +720,11 @@ i_ImprintRectangle:
 DoDlgBox:
 	jmp _DoDlgBox
 RenameFile:
+.ifdef mega65
+	jmp _map_RenameFile
+.else
 	jmp _RenameFile
+.endif
 InitForIO:
 	jmp (_InitForIO)
 DoneWithIO:
@@ -663,29 +742,73 @@ CmpFString:
 FirstInit:
 	jmp _FirstInit
 OpenRecordFile:
+.ifdef mega65
+	jmp _map_OpenRecordFile
+.else
 	jmp _OpenRecordFile
+.endif
 CloseRecordFile:
+.ifdef mega65
+	jmp _map_CloseRecordFile
+.else
 	jmp _CloseRecordFile
+.endif
 NextRecord:
+.ifdef mega65
+	jmp _map_NextRecord
+.else
 	jmp _NextRecord
+.endif
 PreviousRecord:
+.ifdef mega65
+	jmp _map_PreviousRecord
+.else
 	jmp _PreviousRecord
+.endif
 PointRecord:
+.ifdef mega65
+	jmp _map_PointRecord
+.else
 	jmp _PointRecord
+.endif
 DeleteRecord:
+.ifdef mega65
+	jmp _map_DeleteRecord
+.else
 	jmp _DeleteRecord
+.endif
 InsertRecord:
+.ifdef mega65
+	jmp _map_InsertRecord
+.else
 	jmp _InsertRecord
+.endif
 AppendRecord:
+.ifdef mega65
+	jmp _map_AppendRecord
+.else
 	jmp _AppendRecord
+.endif
 ReadRecord:
+.ifdef mega65
+	jmp _map_ReadRecord	
+.else
 	jmp _ReadRecord
+.endif
 WriteRecord:
+.ifdef mega65
+	jmp _map_WriteRecord
+.else
 	jmp _WriteRecord
+.endif
 SetNextFree:
 	jmp (_SetNextFree)
 UpdateRecordFile:
+.ifdef mega65
+	jmp _map_UpdateRecordFile
+.else
 	jmp _UpdateRecordFile
+.endif
 GetPtrCurDkNm:
 	jmp _GetPtrCurDkNm
 PromptOn:
@@ -703,11 +826,19 @@ BitmapClip:
 FindBAMBit:
 	jmp (_FindBAMBit)
 SetDevice:
+.ifdef mega65
+	jmp _map_SetDevice
+.else
 	jmp _SetDevice
+.endif
 IsMseInRegion:
 	jmp __IsMseInRegion
 ReadByte:
+.ifdef mega65
+	jmp _map_ReadByte
+.else
 	jmp _ReadByte
+.endif
 FreeBlock:
 	jmp (_FreeBlock)
 ChangeDiskDevice:
@@ -877,7 +1008,11 @@ DEFOptimize: ; $C304
 DoOptimize: ; $C307
 	jmp _DoOptimize
 NFindFTypes: ; $C30A
+.ifdef mega65
+	jmp _map_FindFTypes
+.else
 	jmp _FindFTypes
+.endif
 ReadXYPot: ; $C30D
 	jmp _ReadXYPot
 MainIRQ: ; $C310

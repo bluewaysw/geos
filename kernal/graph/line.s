@@ -520,12 +520,28 @@ ImprintLine:
 	ldy r6H
 	sta r6H
 	sty r5H
-@2:	ldy r3L
+@2:
+.ifndef mega65
+	ldy r3L
 	lda r3H
 	beq @3
 	inc r5H
 	inc r6H
-@3:	CmpW r3, r4
+@3:	
+.else
+	bbrf	7, graphMode, @11
+    ldy #0
+	bra	@12
+@11:
+	ldy r3L
+	lda r3H
+	beq @12
+	inc r5H
+	inc r6H
+@12:
+.endif
+
+	CmpW r3, r4
 	beq @6
 	jsr LineHelp2
 	lda r8L

@@ -11,9 +11,6 @@
 .include "c64.inc"
 
 .import _GetRealSize
-.ifdef mega65
-.import _GetRealSizeMap
-.endif
 .import FontPutChar
 .import DoESC_RULER
 .import _GraphicsString
@@ -22,9 +19,6 @@
 .import Ddec
 .import CallRoutine
 .import NormalizeX
-
-.import _MapLow
-.import _UnmapLow
 
 .global DoBACKSPC
 .global _PutChar
@@ -46,13 +40,6 @@ _PutChar:
 	ldx PutCharTabH-8,y
 	jmp CallRoutine
 @1:	pha
-.ifdef mega65
-	ldy #1
-	jsr _MapLow
-	pla
-	pha
-.endif
-
 	ldy r11H
 	sty r13H
 	ldy r11L
@@ -81,8 +68,7 @@ _PutChar:
 	bcs @4
 @3:	pla
 	subv $20
-	jsr FontPutChar
-	jmp _UnmapLow
+	jmp FontPutChar
 @4:	lda r13L
 	addv 1
 	sta r11L
@@ -90,7 +76,6 @@ _PutChar:
 	adc #0
 	sta r11H
 @5:	pla
-	jsr _UnmapLow
 	ldx StringFaultVec+1
 	lda StringFaultVec
 	jmp CallRoutine
@@ -110,13 +95,8 @@ PutCharTabH:
 ; Destroyed: same as PutChar
 ;---------------------------------------------------------------
 _SmallPutChar:
-    pha
-    ldy #1
-    jsr _MapLow
-    pla
 	subv $20
-	jsr FontPutChar
-	jmp _UnmapLow
+	jmp FontPutChar
 
 DoTAB:
 .ifndef wheels_size_and_speed ; no-op
@@ -214,11 +194,7 @@ DoPLAINTEXT:
 
 DoBACKSPC:
 	ldx currentMode
-.ifdef mega65
 	jsr _GetRealSize
-.else
-	jsr _GetRealSizeMap
-.endif
 	sty PrvCharWidth
 DoBACKSPACE:
 	SubB PrvCharWidth, r11L

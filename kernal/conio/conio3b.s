@@ -12,11 +12,6 @@
 
 .global _LoadCharSet
 
-.ifdef mega65
-.import _MapLow
-.import _UnmapLow
-.import BSWFont80
-.endif
 .import BSWFont
 
 .if .defined(trap2) && (!.defined(trap2_alternate_location))
@@ -25,6 +20,9 @@
 .endif
 
 .ifdef bsw128
+.import BSWFont80
+.endif
+.ifdef mega65
 .import BSWFont80
 .endif
 
@@ -45,17 +43,10 @@ _UseSystemFont:
 .if .defined(bsw128) || .defined(mega65)
 	bbsf 7, graphMode, @X
 	LoadW r0, BSWFont
-	bra _LoadCharSet2
+	bra _LoadCharSet
 @X:	LoadW r0, BSWFont80
 .else
 	LoadW r0, BSWFont
-.endif
-_LoadCharSet2:
-.ifdef mega65
-    ldy #1
-    jsr _MapLow
-    jsr _LoadCharSet
-    jmp _UnmapLow
 .endif
 
 _LoadCharSet:

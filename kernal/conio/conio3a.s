@@ -13,16 +13,9 @@
 .import _PutChar
 .global _PutString
 
-.ifdef mega65
-.import _MapLow
-.import _UnmapLow
-.endif
-
 .segment "conio3a"
 
 _PutString:
-;;    ldy #1
- ;   jsr _MapLow
 	ldy #0
 	lda (r0),y
 	beq @2
@@ -32,6 +25,5 @@ _PutString:
 	inc r0H
 @1:	bra _PutString
 @2:
-;	jsr _UnmapLow
 	rts
 
