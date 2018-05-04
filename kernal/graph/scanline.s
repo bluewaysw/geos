@@ -35,6 +35,10 @@ BACK_SCR_BASE65         =       $9000
 ; Destroyed: a
 ;---------------------------------------------------------------
 _GetScanLine:
+.ifdef mega65
+	PushB	CPU_DATA
+	LoadB	CPU_DATA, RAM_64K
+.endif
 .ifdef bsw128
 	bbrf 7, graphMode, @X
 	jmp GSC80
@@ -123,6 +127,9 @@ _GetScanLine:
 
 	pla
 	tax
+.ifdef mega65
+	PopB	CPU_DATA
+.endif
 	rts
 .endif
 
@@ -162,6 +169,9 @@ _GetScanLine:
 	sta r6H
 	pla
 	tax
+.ifdef mega65
+	PopB	CPU_DATA
+.endif
 	rts
 
 ;
@@ -221,6 +231,9 @@ _GetScanLine:
 
 	pla
 	tax
+.ifdef mega65
+	PopB	CPU_DATA
+.endif
 	rts
 
 

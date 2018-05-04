@@ -414,6 +414,21 @@
 .global ColorRectangle
 .endif
 
+.ifdef mega65
+.import __io_HorizontalLine
+.import __io_InvertLine
+.import __io_RecoverLine
+.import __io_VerticalLine
+.import __io_Rectangle
+.import __io_InvertRectangle
+.import __io_RecoverRectangle
+.import __io_ImprintRectangle
+.import __io_FrameRectangle
+.import __io_GraphicsString
+.import __io_SetPattern
+.import __io_GetRealSize
+.endif
+
 .ifdef wheels
 .global InitMachine
 .global GEOSOptimize
@@ -450,27 +465,63 @@ FreezeProcess:
 UnfreezeProcess:
 	jmp _UnfreezeProcess
 HorizontalLine:
+.ifdef mega65
+	jmp __io_HorizontalLine
+.else
 	jmp _HorizontalLine
+.endif
 InvertLine:
+.ifdef mega65
+	jmp __io_InvertLine
+.else
 	jmp _InvertLine
+.endif
 RecoverLine:
+.ifdef mega65
+	jmp __io_RecoverLine
+.else
 	jmp _RecoverLine
+.endif
 VerticalLine:
+.ifdef mega65
+	jmp __io_VerticalLine
+.else
 	jmp _VerticalLine
+.endif
 Rectangle:
+.ifdef mega65
+	jmp __io_Rectangle
+.else
 	jmp _Rectangle
+.endif
 FrameRectangle:
+.ifdef mega65
+	jmp __io_FrameRectangle
+.else
 	jmp _FrameRectangle
+.endif
 InvertRectangle:
+.ifdef mega65
+	jmp __io_InvertRectangle
+.else
 	jmp _InvertRectangle
+.endif
 RecoverRectangle:
+.ifdef mega65
+	jmp __io_RecoverRectangle
+.else
 	jmp _RecoverRectangle
+.endif
 DrawLine:
 	jmp _DrawLine
 DrawPoint:
 	jmp _DrawPoint
 GraphicsString:
+.ifdef mega65
+	jmp __io_GraphicsString
+.else
 	jmp _GraphicsString
+.endif
 SetPattern:
 	jmp _SetPattern
 GetScanLine:
@@ -552,7 +603,11 @@ i_BitmapUp:
 i_PutString:
 	jmp _i_PutString
 GetRealSize:
+.ifdef mega65
+	jmp __io_GetRealSize
+.else
 	jmp _GetRealSize
+.endif
 i_FillRam:
 	jmp _i_FillRam
 i_MoveData:

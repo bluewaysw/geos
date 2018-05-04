@@ -113,8 +113,10 @@ ASSERT_NOT_BELOW_IO
 	sta cia1base+9 ; seconds: 0
 	sta cia1base+8 ; 10ths: 0
 
+.ifndef mega65
 	lda #RAM_64K
 	sta CPU_DATA
+.endif
 ASSERT_NOT_BELOW_IO
 
 	jsr i_FillRam

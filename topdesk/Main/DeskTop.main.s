@@ -898,9 +898,15 @@ OpenDa:	pha
     sta $d01d
     jmp @gend
 @g80:
+.ifdef mega65
+    lda $d01d
+    and #%11111011
+    sta $d01d
+.else
     lda $d01d
     ora #%100
     sta $d01d
+.endif
 @gend:
 .endif
 	jsr	DoneWithIO
@@ -1532,7 +1538,9 @@ ReLoadAll:	ldy	#3
 	bmi	ReLoadAll2
 Reset:	jsr	GotoFirstMenu
 Reset2:	jsr	ClearScreen
-ReLoadAll2:	ldx	#03
+ReLoadAll2:
+	
+	ldx	#03
 @10:	txa
 	pha
 	lda	activeWindow,x
@@ -1571,6 +1579,7 @@ RedrawHead:	lda	#2
 	.word	0,319
 .endif
 	jsr	MaxTextWin
+
 	jsr	DoHauptMenu
 	lda	#0
 	jsr	SetPattern
@@ -2982,12 +2991,18 @@ File_Selected:	; Auswertung einer File-Selection
     sta $d01d
     jmp @qend
 @q80:
+.ifdef mega65
+    lda $d01d
+    and #%11111011
+    sta $d01d
+.else
     lda SchmalFlag
     cmp #'*'
     beq @q40
     lda $d01d
     ora #%100
     sta $d01d
+.endif
 @qend:
 .endif
 	jsr	DoneWithIO

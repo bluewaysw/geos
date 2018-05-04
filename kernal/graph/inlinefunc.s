@@ -35,7 +35,13 @@
 ;---------------------------------------------------------------
 _i_Rectangle:
 	jsr __GetInlineDrwParms
+.ifdef mega65
+	LoadB	CPU_DATA, RAM_64K
 	jsr _Rectangle
+	LoadB	CPU_DATA, IO_IN
+.else
+	jsr _Rectangle
+.endif
 .ifdef wheels_size
 .global DoInlineReturn7
 DoInlineReturn7:
@@ -53,7 +59,13 @@ DoInlineReturn7:
 ;---------------------------------------------------------------
 _i_RecoverRectangle:
 	jsr __GetInlineDrwParms
+.ifdef mega65
+	LoadB	CPU_DATA, RAM_64K
 	jsr _RecoverRectangle
+	LoadB	CPU_DATA, IO_IN
+.else
+	jsr _RecoverRectangle
+.endif
 .ifdef wheels_size
 	jmp DoInlineReturn7
 .else
@@ -92,7 +104,13 @@ _i_FrameRectangle:
 	jsr __GetInlineDrwParms
 	iny
 	lda (returnAddress),Y
+.ifdef mega65
+	LoadB	CPU_DATA, RAM_64K
 	jsr _FrameRectangle
+	LoadB	CPU_DATA, IO_IN
+.else
+	jsr _FrameRectangle
+.endif
 	php
 	lda #8
 	jmp DoInlineReturn
@@ -111,7 +129,14 @@ _i_GraphicsString:
 	bne @1
 	addv 1
 @1:	sta r0H
+.ifdef mega65
+	PushB	CPU_DATA
+	LoadB	CPU_DATA, RAM_64K
+.endif
 	jsr _GraphicsString
+.ifdef mega65
+	PopB	CPU_DATA
+.endif
 	jmp (r0)
 
 .segment "graph3b"

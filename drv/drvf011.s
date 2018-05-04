@@ -286,7 +286,8 @@ SetCurDHVec:
 	LoadW r5, curDirHead		;9230
 	RTS
 
-_Get1stDirEntry:					;9239
+_Get1stDirEntry:			
+		;9239
 	JSR SetDirHead_3
 	INC r1H
 	LoadB borderFlag, 0
@@ -620,9 +621,16 @@ __InitForIO:					;95c6
 	PLA
 	STA tmpPS
 	SEI
+
+.ifdef mega65
+	LoadB CPU_DATA, IO_IN
+.endif
+
+.ifndef mega65
 	LDA CPU_DATA
 	STA tmpCPU_DATA
 	LoadB CPU_DATA, KRNL_IO_IN
+.endif
 	LDA grirqen
 	STA tmpgrirqen
 	LDA clkreg
@@ -667,8 +675,10 @@ __DoneWithIO:
 	LDA cia2base+13
 	LDA tmpgrirqen
 	STA grirqen
+.ifndef mega65
 	LDA tmpCPU_DATA
 	STA CPU_DATA
+.endif
 	LDA tmpPS
 	PHA
 	PLP

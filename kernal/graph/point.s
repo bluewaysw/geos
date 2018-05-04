@@ -15,6 +15,7 @@
 .if .defined(bsw128) || .defined(mega65)
 .import _TempHideMouse
 .import _HorizontalLine
+.import __io_HorizontalLine
 .endif
 
 .ifdef bsw128
@@ -63,7 +64,12 @@ _DrawLine:
 	plp
 	bcs @X
 	lda #0
-@X:	jmp _HorizontalLine
+@X:	
+.ifdef mega65
+	jmp __io_HorizontalLine
+.else
+	jmp _HorizontalLine
+.endif
 @Y:	ldx #r3
 	jsr _NormalizeX
 	ldx #r4

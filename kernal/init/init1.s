@@ -34,7 +34,9 @@ _InitMachine2:
 InitGEOEnv:
 	LoadW r0, InitRamTab
 .if .defined(bsw128) || .defined(mega65)
+	LoadB	CPU_DATA, RAM_64K
 	jsr _InitRam
+	LoadB	CPU_DATA, IO_IN
 	jmp SetRightMargin
 .else
 .ifdef wheels

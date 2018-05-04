@@ -11,6 +11,10 @@
 .include "c64.inc"
 
 .import _PutChar
+.ifdef mega65
+.import _PutChar2
+.endif
+
 .import _GetRealSize
 
 .import NormalizeX
@@ -87,6 +91,12 @@ DecTabH:
 ;Destroyed: a, x, y, r0, r2 - r10, r12, r13
 ;---------------------------------------------------------------
 _PutDecimal:
+.ifdef mega65
+	tay
+	PushB	CPU_DATA
+	LoadB	CPU_DATA, RAM_64K
+	tya
+.endif
 	jsr CalcDecimal
 .ifdef wheels_size_and_speed ; duplicate load
 	lda r2L
@@ -118,7 +128,14 @@ _PutDecimal:
 	dex
 	bne @2
 @3:	pla
+.ifdef mega65
+	jsr _PutChar2
+.else
 	jsr _PutChar
+.endif
 	dec r0L
 	bne @3
+.ifdef mega65
+	PopB	CPU_DATA
+.endif
 	rts

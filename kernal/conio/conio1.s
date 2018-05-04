@@ -22,11 +22,27 @@
 
 .global DoBACKSPC
 .global _PutChar
+.ifdef mega65
+.global _PutChar2
+.endif
 .global _SmallPutChar
 
 .segment "conio1"
 
+.ifdef mega65
 _PutChar:
+	tay
+	PushB	CPU_DATA
+	LoadB	CPU_DATA, RAM_64K
+	tya
+	jsr	_PutChar2
+	PopB	CPU_DATA
+	rts
+
+_PutChar2:
+.else
+_PutChar:
+.endif
 .if .defined(bsw128) || .defined(mega65)
 	pha
 	ldx #r11

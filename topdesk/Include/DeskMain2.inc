@@ -583,11 +583,13 @@ InitClock:
 	ldx	#$00
 	jsr	RestartProcess
 	jsr	EnableProcess
+	
 	rts
 ProzessTab:	.word	ShowClock
 	.word	500
 year	= $8516
-ShowClock:	LoadB	dispBufferOn,%10000000
+ShowClock:	
+	LoadB	dispBufferOn,%10000000
 	php
 	sei	
 	ldy	#4

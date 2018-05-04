@@ -23,7 +23,7 @@
 ;---------------------------------------------------------------
 ClrScr:
 .ifdef mega65
-	LoadB dispBufferOn, ST_WR_FORE
+	LoadB dispBufferOn, ST_WR_FORE | ST_WR_BACK
 .else
 .ifdef bsw128
 	LoadB dispBufferOn, ST_WR_FORE | ST_WR_BACK

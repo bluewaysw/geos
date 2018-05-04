@@ -34,7 +34,11 @@ _DoFirstInitIO:
 	LoadB config, CIOIN
 .else
 ASSERT_NOT_BELOW_IO
+.ifdef mega65
+	LoadB CPU_DATA, IO_IN
+.else
 	LoadB CPU_DATA, KRNL_IO_IN
+.endif
 .ifdef wheels
 	sta scpu_turbo
 .endif
@@ -148,7 +152,9 @@ ASSERT_NOT_BELOW_IO
 	jsr Init_KRNLVec
 .endif
 .ifndef bsw128
+.ifndef mega65
 	LoadB CPU_DATA, RAM_64K
+.endif
 .endif
 ASSERT_NOT_BELOW_IO
 	jmp ResetMseRegion

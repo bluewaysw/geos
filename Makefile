@@ -177,6 +177,7 @@ ifeq ($(VARIANT), mega65)
 	kernal/640/bswfont80.s \
 	kernal/graph/graph2p.s \
 	kernal/c65/map.s \
+	kernal/c65/iojmp.s \
 	kernal/128k/swapdiskdriver.s
 endif
 
@@ -346,10 +347,12 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo delete geos $(GEOS_OUT) configure geoboot | $(C1541) $@ >/dev/null; \
 		echo write $< $(GEOS_OUT) | $(C1541) $@ >/dev/null; \
 		echo delete \"desk top\"| $(C1541) $@ >/dev/null; \
-		echo delete \"geowrite\"| $(C1541) $@ >/dev/null; \
+		echo delete \"65 desktop\"| $(C1541) $@ >/dev/null; \
+		echo delete \"65 configure\"| $(C1541) $@ >/dev/null; \
+		echo delete \"geopaint\"| $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
-		echo geoswrite GW64.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite gpt64.cvt | $(C1541) $@ >/dev/null; \
 		echo \*\*\* Created $@ based on $(D81_TEMPLATE).; \
 	else \
 		echo format geos,00 d81 $@ | $(C1541) >/dev/null; \

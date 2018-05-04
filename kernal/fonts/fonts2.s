@@ -910,21 +910,11 @@ FontPutChar:
 .if (!.defined(wheels_size_and_speed)) && (!.defined(bsw128))
 	nop
 .endif
-;.ifdef mega65
-;    pha
-;    txa
-;    pha
-;    tza
-;    pha
-;    ldy #1
-;    jsr _MapLow
-;    pla
-;    taz
-;    pla
-;    tax
-;    pla
-;.endif
 	tay
+.ifdef mega65
+	PushB	CPU_DATA
+	LoadB	CPU_DATA, RAM_64K
+.endif
 	PushB r1H
 	tya
 	jsr Font_1 ; put pointer in r13
@@ -1000,6 +990,9 @@ FontPutChar:
 	dec r10H
 	bne @1
 @9:	PopB r1H
+.ifdef mega65
+	PopB	CPU_DATA
+.endif
 	rts
 
 .ifdef bsw128

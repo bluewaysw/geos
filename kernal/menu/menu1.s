@@ -98,6 +98,10 @@ DoMenu1:
 	jsr GetMenuDesc
 	sec
 DoMenu1_1:
+.ifdef mega65
+	PushB	CPU_DATA
+	LoadB	CPU_DATA, RAM_64K
+.endif
 	php
 	PushB dispBufferOn
 	LoadB dispBufferOn, ST_WR_FORE
@@ -187,6 +191,10 @@ DoMenu1_1:
 	smbf ICONSON_BIT, mouseOn
 .endif
 @5:	smbf MENUON_BIT, mouseOn
+	
+.ifdef mega65
+	PopB	CPU_DATA
+.endif
 	jmp _StartMouseMode
 
 ;---------------------------------------------------------------
