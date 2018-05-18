@@ -714,7 +714,7 @@ __InitForIO:
 	sei
 	lda CPU_DATA
 	sta tmpCPU_DATA
-.if (!.defined(config128)) || .defined(mega65)
+.if (!.defined(config128)) || (!.defined(mega65))
 	LoadB CPU_DATA, KRNL_IO_IN
 .endif
 	lda grirqen
@@ -812,7 +812,7 @@ __DoneWithIO:
 	ora #$40
 	sta $d031
 	
-.if (!.defined(config128)) || .defined(mega65)
+.if (!.defined(config128)) || (!.defined(mega65))
 	lda tmpCPU_DATA
 	sta CPU_DATA
 .endif

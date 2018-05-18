@@ -14,7 +14,11 @@
 .import _Panic
 .import _InterruptMain
 .import clkBoxTemp
+.ifdef mega65
+.import __io_RecoverRectangle
+.else
 .import _RecoverRectangle
+.endif
 
 .global InitRamTab
 
@@ -46,7 +50,11 @@ InitRamTab:
 	.word 0                       ; StringFaultVec
 	.word 0                       ; alarmTmtVector
 	.word _Panic                  ; BRKVector
+.ifdef mega65
+	.word __io_RecoverRectangle       ; RecoverVector
+.else
 	.word _RecoverRectangle       ; RecoverVector
+.endif
 	.byte SelectFlashDelay        ; selectionFlash
 	.byte 0                       ; alphaFlag
 	.byte ST_FLASH                ; iconSelFlg

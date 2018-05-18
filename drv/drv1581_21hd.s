@@ -871,7 +871,7 @@ __InitForIO:
         sei                                     ; 94F4 78                       x
         lda     CPU_DATA                        ; 94F5 A5 01                    ..
         sta     L9BF2                           ; 94F7 8D F2 9B                 ...
-.if (!.defined(config128)) || .defined(mega65)
+.if (!.defined(config128)) || (!.defined(mega65))
         lda     #$36                            ; 94FA A9 36                    .6
         sta     CPU_DATA                        ; 94FC 85 01                    ..
 .endif
@@ -971,9 +971,11 @@ __DoneWithIO:
 		lda #$96
 		sta	$d02f
 		
-.if (!.defined(config128)) || .defined(mega65)
+.if (!.defined(mega65))
+.if (!.defined(config128)) || (!.defined(mega65))
         lda     L9BF2                           ; 95AD AD F2 9B                 ...
         sta     CPU_DATA                        ; 95B0 85 01                    ..
+.endif
 .endif
         lda     L9BF0                           ; 95B2 AD F0 9B                 ...
         pha                                     ; 95B5 48                       H
