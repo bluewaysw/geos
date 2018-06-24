@@ -30,6 +30,9 @@
 .ifndef bsw128
 .import EnablSprite
 .endif
+.ifdef mega65
+.import UncompactXY
+.endif
 
 .global _MouseOff
 .global _StartMouseMode
@@ -78,6 +81,12 @@ _MouseUp:
 	rts
 
 ProcessMouse:
+	; uncompact mouse position first
+	lda mouseXPos+1
+	jsr	UncompactXY
+	sty r3H
+	sta	mouseXPos+1
+
 .ifdef wheels_bad_ideas
 	; While the mouse pointer is not showing,
 	; Wheels doesn't call the mouse driver.
@@ -91,10 +100,14 @@ ProcessMouse:
 	bbrf MOUSEON_BIT, mouseOn, @1
 	jsr UpdateMouse
 .else
+
 	jsr UpdateMouse
+
 	bbrf MOUSEON_BIT, mouseOn, @1
 .endif
 	jsr CheckMsePos
+	jsr	@1
+
 	LoadB r3L, 0
 .ifdef bsw128
 	bbsf 7, graphMode, @X
@@ -107,11 +120,36 @@ ProcessMouse:
 .ifndef bsw128
 	jsr EnablSprite
 .endif
-@1:	rts
+	rts
+@1:
+	; compact mouse position
+	lda mouseXPos+1
+	and	#$0F
+	sta mouseXPos+1
+	lda r3H
+	asl
+	asl
+	asl
+	asl
+	ora mouseXPos+1
+	sta mouseXPos+1
+	rts
 
 CheckMsePos:
+.ifdef mega65
+	lda mouseLeft+1
+	jsr	UncompactXY
+	sta r4L
+	sty	r4H
+
+	lda mouseRight+1
+	jsr	UncompactXY
+	sta r5L
+	sty	r5H
+.endif	
+
 	ldy mouseLeft
-	ldx mouseLeft+1
+	ldx r4L	;mouseLeft+1
 	lda mouseXPos+1
 	bmi @2
 	cpx mouseXPos+1
@@ -123,7 +161,7 @@ CheckMsePos:
 	sty mouseXPos
 	stx mouseXPos+1
 @3:	ldy mouseRight
-	ldx mouseRight+1
+	ldx r5L	;mouseRight+1
 	cpx mouseXPos+1
 	bne @4
 	cpy mouseXPos
@@ -132,18 +170,30 @@ CheckMsePos:
 	sty mouseXPos
 	stx mouseXPos+1
 @5:	ldy mouseTop
-	CmpBI mouseYPos, 228
-	bcs @6
+	ldx r4H
+	lda r3H
+	bmi @6
+	;CmpBI mouseYPos, 228
+	;bcs @6
+	cpx r3H
+	bne @11
 	cpy mouseYPos
+@11:
 	bcc @7
 	beq @7
 @6:	smbf OFFTOP_BIT, faultData
 	sty mouseYPos
+	stx r3H
 @7:	ldy mouseBottom
+	ldx r5H
+	cpx r3H
+	bne @12
 	cpy mouseYPos
+@12:
 	bcs @8
 	smbf OFFBOTTOM_BIT, faultData
 	sty mouseYPos
+	stx r3H
 @8:	bbrf MENUON_BIT, mouseOn, @B
 	lda mouseYPos
 	cmp menuTop
@@ -157,7 +207,8 @@ CheckMsePos:
 	bcc @B
 	beq @B
 @A:	smbf OFFMENU_BIT, faultData
-@B:	rts
+@B:	
+	rts
 
 .ifdef wheels ; this got moved :(
 .import ScreenDimensions

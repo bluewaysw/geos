@@ -93,10 +93,65 @@ ASSERT_NOT_BELOW_IO
 	jsr SetColorMode
 .endif
 .ifdef mega65
+.if 1
 	; Enable C65GS IO
 	; 47, 53 = enable VIC IV
 	; a5, 96 = enable VIC III
 	
+	lda #$47
+	sta $d02f
+	lda #$53
+	sta $d02f
+
+	; enable 800x600 mode
+	; 1. Set horizontal border width
+	LDA #$00
+	STA $D05C
+	STA $D05D
+	
+	; Set bitmap mode (makes horizontal borders take effect)
+	LDA   #$3B
+	STA   $D011
+
+	; Set 640H, 400V
+	LDA   $D031
+	ORA   #$C8
+	STA   $D031
+
+	lda	#$04	; 3.5Mhz, H640, bitplanes
+	sta	$d030
+	
+	 ; Set to 100 characters per row
+	 LDA   #100
+	 STA   $D058
+	 
+	 ; Disable/Enable 16-colour sprite mode for each sprite?
+	 LDA	  #$00
+	 STA	  $D06B
+
+	; Bit 10 of sprite X position for positions >511
+	 LDA	#$00
+	 STA	$D05F
+	
+	 LDA #<$4000
+	 STA $D068
+	 LDA #>$4000
+	 STA $D069
+	 LDA #1
+	 STA $D06A
+
+	 LDA #<$2000
+	 STA $D060
+	 LDA #>$2000
+	 STA $D061
+	 LDA #<1
+	 STA $D062
+	 LDA #>1
+	 STA $D063
+
+	LDA	#$8F
+	 STA $d06D
+.else
 	lda #$a5
 	sta $d02f
 	lda #$96
@@ -136,7 +191,7 @@ ASSERT_NOT_BELOW_IO
     sta $d100
     sta $d200
     sta $d300
-
+.endif
 
 .endif
 

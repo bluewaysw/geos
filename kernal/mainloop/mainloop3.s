@@ -10,7 +10,7 @@
 .include "kernal.inc"
 .include "c64.inc"
 
-.import __GetRandom
+.import _map__GetRandom
 .import ProcessCursor
 .import __ProcessDelays
 .import __ProcessTimers
@@ -30,4 +30,4 @@ _InterruptMain:
 	jsr __ProcessTimers
 	jsr __ProcessDelays
 	jsr ProcessCursor
-	jmp __GetRandom
+	jmp _map__GetRandom

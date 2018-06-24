@@ -11,6 +11,9 @@
 .include "c64.inc"
 
 .global _NormalizeX
+.ifdef mega65
+.global UncompactXY
+.endif
 
 .segment "graph5"
 
@@ -38,3 +41,24 @@ _NormalizeX:
 @3:	ora #$E0
 	sta zpage+1,x
 @4:	rts
+
+.ifdef mega65
+UncompactXY:
+	tax
+	lsr
+	lsr
+	lsr
+	lsr
+	bit #$08
+	beq @3
+	ora #$F0
+@3:
+	tay
+	txa
+	and	#$0F
+	bit #$08
+	beq @2
+	ora	#$F0
+@2:
+	rts
+.endif

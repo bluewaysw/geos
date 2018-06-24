@@ -50,6 +50,8 @@ _SlowMouse:
 SlowMse0:
 	rts
 
+; starting GEOS 6.0 the high byte of Y positiokn is passed and update in r3H
+; after uncompacting mouseXPos/mouseYPos
 _UpdateMouse:
 	jsr JoyProc3
 	bbrf MOUSEON_BIT, mouseOn, SlowMse0
@@ -72,6 +74,9 @@ UpdMse0:
 	lda r1H
 	adc mouseYPos
 	sta mouseYPos
+	tya
+	adc r3H
+	sta r3H
 	rts
 
 JoyProc1:
@@ -115,7 +120,6 @@ JoyProc2:
 	iny
 JProc2_1:
 	sty r11H
-	sty r12L
 	asl
 	rol r11H
 	asl
@@ -127,7 +131,7 @@ JProc2_1:
 	lda r11H
 	adc mouseXPos
 	sta mouseXPos
-	lda r12L
+	tya
 	adc mouseXPos+1
 	sta mouseXPos+1
 	rts

@@ -17,6 +17,8 @@
 
 .import NormalizeX
 
+.import UncompactXY
+
 ; syscalls
 .global _DisablSprite
 .global _DrawSprite
@@ -67,11 +69,23 @@ _PosSprite:
 	jsr NormalizeX
 .endif
 	START_IO
+
+	lda	r4H
+	jsr	UncompactXY
+	sta r4H
+	tya
+	tax
+
 	lda r3L
-	asl
+	rol
 	tay
+	
+	txa
+	lsr
 	lda r5L
+	ror
 	addv VIC_Y_POS_OFF
+
 	sta mob0ypos,Y
 .ifdef bsw128
 	lda graphMode
@@ -104,19 +118,31 @@ _PosSprite:
 .endif
 	lda r6L
 	sta mob0xpos,Y
-	ldx r3L
-	lda BitMaskPow2,x
-	eor #$FF
-	and msbxpos
-	tay
-	lda #1
-	and r6H
-	beq @1
+
+	lda	#1
+	ldy	msbxpos
+	jsr	@2_
+	sta msbxpos
+	lda #2
+	ldy	$d05f
+	jsr	@2_
+	sta $d05f
+
+	END_IO
+	rts
+@2_:
+	ldx	r3L
+	and	r6H
+	beq	@2_clear
 	tya
 	ora BitMaskPow2,x
-	tay
-@1:	sty msbxpos
-	END_IO
+	rts
+
+@2_clear:
+	tya 
+	eor #$ff
+	ora BitMaskPow2,x
+	eor	#$ff
 	rts
 
 ;---------------------------------------------------------------

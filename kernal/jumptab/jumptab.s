@@ -128,8 +128,6 @@
 
 ; ...
 .import __IsMseInRegion
-.import __CRC
-.import __GetRandom
 .import __DSdiv
 .import __Ddiv
 .import __DMult
@@ -201,6 +199,8 @@
 .import _map_ReadRecord
 .import _map_WriteRecord    
 .import _map_ReadByte
+.import _map__CRC
+.import _map__GetRandom
 .else
 .import _InsertRecord
 .import _NextRecord
@@ -229,6 +229,8 @@
 .import _WriteRecord
 .import _RstrAppl
 .import _BldGDirEntry
+.import __CRC
+.import __GetRandom
 
 .endif
 
@@ -575,7 +577,11 @@ InitRam:
 PutDecimal:
 	jmp _PutDecimal
 GetRandom:
+.ifdef mega65
+	jmp _map__GetRandom
+.else
 	jmp __GetRandom
+.endif
 MouseUp:
 	jmp _MouseUp
 MouseOff:
@@ -693,7 +699,11 @@ FindFile:
 	jmp _FindFile
 .endif
 CRC:
+.ifdef mega65
+	jmp _map__CRC
+.else
 	jmp __CRC
+.endif
 LdFile:
 	jmp _LdFile
 EnterTurbo:

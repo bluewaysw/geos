@@ -4,6 +4,9 @@
 
 ;.INCLUDE "c65.inc"
 
+.include "const.inc"
+.include "geossym.inc"
+
 .SETCPU "4510"
 
 .SEGMENT "LOADADDR"
@@ -80,6 +83,70 @@ next:	.WORD	0
 	STZ $D031
 	STZ	$D019	; disable VIC interrupts
 	STZ	$D01A
+
+	lda	#$80
+	sta	$d06f
+
+	LDA   $D054
+	ORA   #$50
+	STA   $D054
+	lda   #$40
+	sta	  $d031
+
+	 ; Set screen ram that has 100x60 cells x 2 bytes per cell = 12,000 bytes of colour
+	 ; information for bitmap mode.
+	 ; First byte is foreground colour (8-bit) and second byte is background colour (also 8-bit),
+	 ; so each 8x8 cell can still have only 2 colours, but they can be chosen from the whole
+	 ; palette.
+	 LDA #<$2000
+	 STA $D060
+	 LDA #>$2000
+	 STA $D061
+	 LDA #<1
+	 STA $D062
+	 LDA #>1
+	 STA $D063
+	 ; Set bitmap data to somewhere that has 100x60 x 8 = 48,000 bytes of RAM.
+	 ; (We are using 2nd bank of 64KB for this)
+	 ; NOTE: This can't actually be set freely (yet), but will be on 16KB boundaries.
+	 LDA #<$4000
+	 STA $D068
+	 LDA #>$4000
+	 STA $D069
+	 LDA #1
+	 STA $D06A
+
+
+	 ; Setup foreground/background colours
+.if 1
+	 LDA #<$2000
+	 STA $FB
+	 LDA #>$2000
+	 STA $FC
+	 LDA #<1
+	 STA $FD
+	 LDA #>1
+	 STA $FE
+
+	 LDX #100
+	 LDZ #$00
+	 LDA #(DKGREY << 4)+LTGREY
+colloop:
+
+	 NOP
+	 STA ($FB),Z
+	 INZ
+	 DEX
+	 BNE cc1
+	 LDX #100
+cc1:
+	 CPZ #$00
+	 bne colloop
+	 inc $fc
+	 ldy $fc
+	 cpy #$40
+	 bne colloop
+.endif
 	LDA	#$30	; full RAM for uncrunching
 	STA	1
 	.IMPORT	uncruncher

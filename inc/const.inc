@@ -88,11 +88,11 @@ GRBANK2                 =       %01
 GRBANK3                 =       %00
 
 ; screen
-VIC_X_POS_OFF           =       24
+VIC_X_POS_OFF           =       7
 VIC_Y_POS_OFF           =       50
 SC_BYTE_WIDTH           =       40
 SC_PIX_HEIGHT           =       200
-SC_PIX_WIDTH            =       320
+SC_PIX_WIDTH            =       800
 SC_SIZE                 =       8000
 ; 128 screen size constants
 SCREENBYTEWIDTH         =       80
@@ -437,3 +437,6 @@ ARROW = 0 ; pass this to SetMsePic
 
 GR_40 = 0   ; use these two to test
 GR_80 = $80 ; graphMode
+
+; high resolution
+HIGH_Y_MASK             = %00011111

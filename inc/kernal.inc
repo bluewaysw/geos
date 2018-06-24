@@ -137,9 +137,16 @@ bank0SavePS = $8899
 .endif
 .ifdef mega65
 lowMap = $8897
+lowMapBnk = $8892
 highMap = $8898
+highMapBnk = $8893
 lastHighMap = $8899
 countHighMap = $8894
+
+uncompactedY0 = $888D
+uncompactedY1 = $888E
+uncompactedY2 = $888F
+
 .endif
 
 L8A7F = $8A7F ; only written to once

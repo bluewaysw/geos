@@ -62,6 +62,8 @@
 .import _ReadRecord
 .import _WriteRecord    
 .import _ReadByte
+.import __CRC
+.import __GetRandom
 
 .global _map_FollowChain   
 .global _map_FindFTypes
@@ -90,6 +92,8 @@
 .global _map_ReadRecord
 .global _map_WriteRecord    
 .global _map_ReadByte
+.global _map__CRC
+.global _map__GetRandom
 
 
 
@@ -99,14 +103,18 @@
 ; Maps area from $a000 to $c000
 ;
 ; Pass:      a  page offset from $a000
+;            x  bank offset
 ;               
 ; Return:    nothing
 ; Destroyed: a x y z
 ;---------------------------------------------------------------
 _MapHigh:
     cmp highMap
+    bne @not_done
+    cpx highMapBnk
     beq @done
 
+@not_done:
     cmp #0
     beq @0
     pha
@@ -119,6 +127,7 @@ _MapHigh:
 
 @0:
     sta highMap
+    stx highMapBnk
     lda countHighMap
     sta $8895
     jsr ApplyMapping
@@ -132,15 +141,21 @@ _MapHigh:
 ; Maps area from $6000 to $8000
 ;
 ; Pass:      a  page offset from $6000
+;            x  bank offset
 ;               
 ; Return:    nothing
 ; Destroyed: a x y z
 ;---------------------------------------------------------------
 _MapLow:
     cmp lowMap
+    bne @not_done
+    cpx lowMapBnk
+    beq @done
+@not_done:
     beq @done
 
     sta lowMap
+    stx lowMapBnk
     jsr ApplyMapping
 
 @done:
@@ -155,20 +170,24 @@ ApplyMapping:
     ; Z high map/offset hight
 
     ; config High
-	ldz #$20	; map $a000-$c000
+    lda highMapBnk
+    ora #$20
+    taz
     lda highMap
     asl
     bcc @2
-    ldz #$21
+    inz
 @2:
     tay
 
     ; config Low
-    ldx #$80
+    lda lowMapBnk
+    ora #$80
+    tax
     lda lowMap    
     asl
     bcc @1
-    ldx #$81
+    inx
 @1:
 
 	map
@@ -234,67 +253,77 @@ _map_BldGDirEntry:
 _map_DeleteFile:    
     jsr MapUnterlay
     jsr _DeleteFile
-    jmp UnmapUnderlay
+    bra __unmap
 _map_FreeFile:
     jsr MapUnterlay
     jsr _FreeFile
-    jmp UnmapUnderlay
+    bra __unmap
 _map_FastDelFile:   
     jsr MapUnterlay
     jsr _FastDelFile
-    jmp UnmapUnderlay
+    bra __unmap
 _map_RenameFile:
     jsr MapUnterlay
     jsr _RenameFile
-    jmp UnmapUnderlay
+    bra __unmap
 _map_OpenRecordFile:    
     jsr MapUnterlay
     jsr _OpenRecordFile
-    jmp UnmapUnderlay
+    bra __unmap
 _map_CloseRecordFile:
     jsr MapUnterlay
     jsr _CloseRecordFile
-    jmp UnmapUnderlay
+    bra __unmap
 _map_UpdateRecordFile:    
     jsr MapUnterlay
     jsr _UpdateRecordFile
-    jmp UnmapUnderlay
+    bra __unmap
 _map_NextRecord:
     jsr MapUnterlay
     jsr _NextRecord
-    jmp UnmapUnderlay
+    bra __unmap
 _map_PreviousRecord:    
     jsr MapUnterlay
     jsr _PreviousRecord
-    jmp UnmapUnderlay
+    bra __unmap
 _map_PointRecord:
     jsr MapUnterlay
     jsr _PointRecord
-    jmp UnmapUnderlay
+    bra __unmap
 _map_DeleteRecord:    
     jsr MapUnterlay
     jsr _DeleteRecord
-    jmp UnmapUnderlay
+    bra __unmap
 _map_InsertRecord:
     jsr MapUnterlay
     jsr _InsertRecord
-    jmp UnmapUnderlay
+    bra __unmap
 _map_AppendRecord:    
     jsr MapUnterlay
     jsr _AppendRecord
-    jmp UnmapUnderlay
+    bra __unmap
 _map_ReadRecord:
     jsr MapUnterlay
     jsr _ReadRecord
-    jmp UnmapUnderlay
+    bra __unmap
 _map_WriteRecord:    
     jsr MapUnterlay
     jsr _WriteRecord
-    jmp UnmapUnderlay
+    bra __unmap
 _map_ReadByte:
     jsr MapUnterlay
     jsr _ReadByte
+    bra __unmap
+_map__CRC:
+    jsr MapUnterlay
+    jsr __CRC
+__unmap:
     jmp UnmapUnderlay
+_map__GetRandom:
+    jsr MapUnterlay
+    jsr __GetRandom
+    bra __unmap
+
 
 MapUnterlay:
     pha
@@ -309,6 +338,7 @@ MapUnterlay:
     lda highMap
     sta lastHighMap
     lda #0
+    ldx #0
     jsr _MapHigh
     jmp @2
 @1: lda highMap
@@ -340,6 +370,7 @@ UnmapUnderlay:
     cmp #0
     bne @1
     lda lastHighMap
+    ldx #0
     jsr _MapHigh
     lda #0
     sta lastHighMap

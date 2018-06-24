@@ -968,7 +968,12 @@ FontPutChar:
 	AddVB $78, r5L
 	bra @98
 @99:
-	AddVB $38, r5L
+	inc r5H
+	inc r6H
+	inc r5H
+	inc r6H
+	;AddVB $38, r5L
+	AddVB $18, r5L
 @98:
 	sta r6L
 	bcc @8

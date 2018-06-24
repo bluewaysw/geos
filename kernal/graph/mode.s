@@ -51,13 +51,13 @@ SetNewMode0:
 
     ; 80 column mode
     ora #%10000000
-    sta $d031
+    ;sta $d031
     END_IO
     rts
 @1:
     ; 40 column mode
     and #%01111111
-    sta $d031
+    ;sta $d031
 
     END_IO
     rts
