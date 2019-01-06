@@ -1,10 +1,10 @@
 ; Systemvariablen f}r den C128
 ; Version 13.07.89
 
-ADD1_W	= $2000
+ADD1_W	= $0000
 DoBOp	= $c2ec
 DOUBLE_B	= $80
-DOUBLE_W	= $8000
+DOUBLE_W	= $0000
 graphMode	= $3f
 HideOnlyMouse	= $c2f2
 MoveBData	= $c2e3
@@ -14,3 +14,5 @@ SetNewMode	= $c2dd
 SwapBData	= $c2e6
 TempHideMouse	= $c2d7
 VerifyBData	= $c2e9
+
+NormalizeY	= $c2fe

@@ -124,7 +124,7 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	jmp	@010
 @05a:	lda	(a2),y	; Bitmap vorhanden?
 	cmp	#$bf
-	beq	@004	; >ja   
+	beq	@004	; >ja
 	jsr	@geticon
 	txa
 	beq	@004
@@ -183,7 +183,9 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 @sc20:
 .endif
 
+  lda #0
 	ldx	a3H
+	ldy #0
 	jsr	DrawMap
 	; Darstellung des Filenames, auf dessen Text a1 zeigt, zentriert
 	; an der Position a4+12, a3H+27
@@ -467,6 +469,5 @@ _GetFileRect:	; Ermittlung des Iconrechtecks eines Files einer DispFile-Darstell
 @err:	pla
 	sec		; Rechteck ung}ltig
 	rts
-C64Icon:	;j 
+C64Icon:	;j
 .incbin "topdesk/C64Icon.bf"
-

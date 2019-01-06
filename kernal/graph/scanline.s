@@ -11,6 +11,9 @@
 .include "c64.inc"
 
 .global _GetScanLine
+.ifdef mega65
+.global InitScanLineTab
+.endif
 
 .segment "graph2n"
 
@@ -30,6 +33,9 @@ BACK_SCR_BASE65         =       $9000
 ; Function:  Returns the address of the beginning of a scanline
 
 ; Pass:      x   scanline nbr
+;                 highres mode: %11111xyz, while xyz is the lower
+;                 3 bits
+;            y   scanline, div by 8 (if highres mode)
 ; Return:    r5  add of 1st byte of foreground scr
 ;            r6  add of 1st byte of background scr
 ; Destroyed: a
@@ -49,6 +55,21 @@ _GetScanLine:
 .ifndef wheels_size_and_speed
 	pha
 .endif
+.ifdef mega65
+	and #%11111000
+	cmp #%11111000
+	bne	@_1
+
+	; we are in high res mode
+	txa
+	and #%00000111
+	sta r6H
+
+	tya
+	bra	@_2
+@_1:
+	txa
+.endif
 	and #%00000111
 	sta r6H
 .ifdef wheels_size_and_speed
@@ -60,11 +81,15 @@ _GetScanLine:
 	lsr
 	lsr
 .ifdef mega65
+@_2:
+.endif
+.ifdef mega65
 	bbrf 7, graphMode, @X
 ;;	ora #$20
 @X:
 .endif
-	tax
+	tax		; scan line in x now
+
 	bbrf 7, dispBufferOn, @2 ; ST_WR_FORE
 .ifdef bsw128
 	bvs @1
@@ -104,8 +129,8 @@ _GetScanLine:
 	bbsf 7, graphMode, @X1
 	;;and	#%11100000
 @X1:
-	sub	#$60
-	lsr
+	add	#$a0
+	ror
 
 	ldx	#0
     jsr _MapHigh
@@ -217,7 +242,7 @@ _GetScanLine:
 
 	lda	r5H
 	and	#%00011111
-	;;bbrf 7, graphMode, @X2_
+	;bbrf 7, graphMode, @X2_
 	and #%00000001
 @X2_:
 	add	#$a0
@@ -298,6 +323,44 @@ GSC80_6:
 	rts
 .endif
 
+.ifdef mega65
+
+;---------------------------------------------------------------
+; InitScanLineTab                                             
+;
+; Function:  Inits the scan line tab for given scan line 
+;            size.
+;
+; Pass:      r5  scanline size
+; Destroyed: a, x
+;---------------------------------------------------------------
+InitScanLineTab:
+
+	PushB	CPU_DATA
+	LoadB	CPU_DATA, RAM_64K
+
+	ldx	#0
+	txa
+	sta LineTabL, X
+	sta LineTabH, x
+@1:
+	clc
+	lda	LineTabL,X
+	add r5L
+	sta LineTabL+1,X
+	lda	LineTabH,X
+	adc r5H
+	sta LineTabH+1,X
+	inx
+	cpx		#127
+	bne		@1
+
+	PopB	CPU_DATA
+
+	rts
+.endif
+
+
 .segment "graph2o"
 
 .ifdef mega65
@@ -307,9 +370,15 @@ GSC80_6:
 .define LineTab SCREEN_BASE65+0*800, SCREEN_BASE65+1*800, SCREEN_BASE65+2*800, SCREEN_BASE65+3*800, SCREEN_BASE65+4*800, SCREEN_BASE65+5*800, SCREEN_BASE65+6*800, SCREEN_BASE65+7*800, SCREEN_BASE65+8*800, SCREEN_BASE65+9*800, SCREEN_BASE65+10*800, SCREEN_BASE65+11*800, SCREEN_BASE65+12*800, SCREEN_BASE65+13*800, SCREEN_BASE65+14*800, SCREEN_BASE65+15*800, SCREEN_BASE65+16*800, SCREEN_BASE65+17*800, SCREEN_BASE65+18*800, SCREEN_BASE65+19*800, SCREEN_BASE65+20*800, SCREEN_BASE65+21*800, SCREEN_BASE65+22*800, SCREEN_BASE65+23*800, SCREEN_BASE65+24*800, SCREEN_BASE65+0*800,SCREEN_BASE65+0*800,SCREEN_BASE65+0*800,SCREEN_BASE65+0*800,SCREEN_BASE65+0*800,SCREEN_BASE65+0*800,SCREEN_BASE65+0*800, SCREEN_BASE65+0*800, SCREEN_BASE65+1*800, SCREEN_BASE65+2*800, SCREEN_BASE65+3*800, SCREEN_BASE65+4*800, SCREEN_BASE65+5*800, SCREEN_BASE65+6*800, SCREEN_BASE65+7*800, SCREEN_BASE65+8*800, SCREEN_BASE65+9*800, SCREEN_BASE65+10*800, SCREEN_BASE65+11*800, SCREEN_BASE65+12*800, SCREEN_BASE65+13*800, SCREEN_BASE65+14*800, SCREEN_BASE65+15*800, SCREEN_BASE65+16*800, SCREEN_BASE65+17*800, SCREEN_BASE65+18*800, SCREEN_BASE65+19*800, SCREEN_BASE65+20*800, SCREEN_BASE65+21*800, SCREEN_BASE65+22*800, SCREEN_BASE65+23*800, SCREEN_BASE65+24*800, SCREEN_BASE65+0*800,SCREEN_BASE65+0*800,SCREEN_BASE65+0*800,SCREEN_BASE65+0*800,SCREEN_BASE65+0*800,SCREEN_BASE65+0*800,SCREEN_BASE65+0*800
 
 LineTabL:
-	.lobytes LineTab
+	;.lobytes LineTab
+	.repeat	128
+		.byte 0	
+	.endrep
 LineTabH:
-	.hibytes LineTab
+	;.hibytes LineTab
+	.repeat	128
+		.byte 0	
+	.endrep
 
 
 
@@ -322,3 +391,4 @@ LineTabH:
 	.hibytes LineTab
 
 .endif
+

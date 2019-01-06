@@ -13,11 +13,81 @@
 .global _NormalizeX
 .ifdef mega65
 .global UncompactXY
+.global _NormalizeY
 .endif
 
 .segment "graph5"
 
+.ifdef mega65
+_NormalizeY:
+	lda zpage+1,x
+	and #%11000000
+	cmp	#%10000000
+	bne	@4
+	lda zpage,x
+	pha
+
+	lda zpage+1,x
+	lsr
+	lsr
+	lsr
+	lsr
+	and #$03
+	sta	zpage,x
+
+	lda zpage+1,x
+	and #$0F
+	sta zpage+1,x
+
+	lda #<479
+	clc
+	sbc zpage,y
+	sta zpage,y	
+	lda #>479
+	sbc zpage,x
+
+	asl
+	asl
+	asl
+	asl
+	and #$30
+	ora zpage+1,x
+	sta zpage+1,x
+
+	pla
+	sta zpage,x
+@4:
+	rts
+
+.endif
+
 _NormalizeX:
+.ifdef scalable_coords
+	lda zpage+1,x
+	and #%00001100
+	cmp	#%00001000
+	bne	@4
+	lda zpage+1,x
+	pha
+	and #$03
+	sta zpage+1,x
+	lda	#<789
+	clc
+	sbc zpage, x
+	sta zpage, x
+	lda #>789
+	sbc zpage+1,x
+	sta zpage+1,x
+	pla
+	and #$F0
+	ora zpage+1,x
+	sta zpage+1,x
+	rts
+@4:
+	lda zpage+1,x
+	and #$F3
+	sta zpage+1,x
+.else
 	lda zpage+1,x
 	bpl @2
 	rol
@@ -40,7 +110,9 @@ _NormalizeX:
 	rol
 @3:	ora #$E0
 	sta zpage+1,x
-@4:	rts
+@4:
+.endif
+	rts
 
 .ifdef mega65
 UncompactXY:

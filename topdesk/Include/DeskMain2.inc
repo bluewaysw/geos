@@ -547,8 +547,13 @@ GetEqualWindows:	; Ermittlung der Fensternummern, deren Pfadname genau mit dem
 	rts
 
 .ifdef topdesk128
+.ifdef scalable_coords
+ClxL	= SC_FROM_END |  79
+ClxR	= SC_FROM_END |  0
+.else
 ClxL	= 240 + DOUBLE_W
 ClxR	= 319 + DOUBLE_W
+.endif
 .else
 ClxL	= 240
 ClxR	= 319
@@ -616,7 +621,7 @@ ShowClock:
 @Ausg:
 	LoadW___	rightMargin,ClxR-1
 	jsr	i_PutString
-	.word	ClxL+DateX
+	.word	ClxL-DateX
 	.byte	ClyO+DateY
 	.byte	PLAINTEXT
 TagZehner:	.byte	"0"
@@ -637,7 +642,7 @@ JahEiner:	.byte	"0"
 	.byte	PLAINTEXT
 	.byte	"  "
 	.byte	GOTOXY
-	.word	ClxL+TimeX
+	.word	ClxL-TimeX
 	.byte	ClyO+TimeY
 	.byte	PLAINTEXT
 StdZehner:	.byte	"0"

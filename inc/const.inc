@@ -89,7 +89,7 @@ GRBANK3                 =       %00
 
 ; screen
 VIC_X_POS_OFF           =       7
-VIC_Y_POS_OFF           =       50
+VIC_Y_POS_OFF           =       24
 SC_BYTE_WIDTH           =       40
 SC_PIX_HEIGHT           =       200
 SC_PIX_WIDTH            =       800
@@ -426,9 +426,9 @@ USELAST                 =       127
 SHORTCUT                =       128
 
 ; C128 640 support
-ADD1_W                  =       $2000
+ADD1_W                  =       $0000
 ADD1_B                  =       $20
-DOUBLE_W                =       $8000
+DOUBLE_W                =       $0000
 DOUBLE_B                =       $80
 
 ; C128 bsw128
@@ -439,4 +439,4 @@ GR_40 = 0   ; use these two to test
 GR_80 = $80 ; graphMode
 
 ; high resolution
-HIGH_Y_MASK             = %00011111
+HIGH_Y_MASK             =   %00011111

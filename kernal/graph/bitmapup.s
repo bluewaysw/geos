@@ -63,7 +63,18 @@ _BitmapUp:
 	rts
 
 BitmapUpHelp:
-	ldx r1H
+  ldx r1H
+	bit r1L
+	bpl @scanLine
+	txa
+	;and #$7F
+	;lsr a
+	;lsr a
+	;lsr a
+	;tay
+@scanLine:
+ldy #0
+ldx #$F8
 	jsr _GetScanLine
 	MoveB r2L, r3H
 .if .defined(bsw128) || .defined(mega65)
@@ -85,6 +96,7 @@ BitmapUpHelp:
 	sty r5H
 	ldy #3  ; by 8
 	lda r1L
+	and #$7f
 	bpl @4
 	bbrf 7, graphMode, @4
 	ldy #4  ; by 16
@@ -289,4 +301,3 @@ IndirectR13:
 IndirectR14:
 	jmp (r14)
 .endif
-

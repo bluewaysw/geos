@@ -149,7 +149,7 @@ TestDisk:	txa
 
 ; Systemvariablen
 activeWindow:	.byte	0,2,3,1
-messageBuffer:		
+messageBuffer:
 	.repeat	10
 	.byte 0
 	.endrep
@@ -649,11 +649,26 @@ ClearScreen:	; L|schen des ganzen Bildschirms (mit Ausnahme von Zeile 0-14)
 	lda	#0
 	sta	r3L
 	sta	r3H
+.ifdef scalable_coords
+	LoadB	r2H,<(SC_FROM_END|0)
+	LoadW___	r4,(SC_FROM_END | 0) + (((SC_FROM_END|0) >> 8) << 12)
+.else
 	LoadB	r2H,199
 	LoadW___	r4,319
 .ifdef topdesk128
     MoveW_   RightMax, r4
 .endif
+.endif
+	ldx #r3
+	jsr NormalizeX
+	ldx #r4
+	jsr NormalizeX
+	ldx #r3
+	ldy #r2L
+	jsr NormalizeY
+	ldx #r4
+	ldy #r2H
+	jsr NormalizeY
 	jmp	BackgroundRectangle
 
 RedrawAll:	; Redraw des ganzen Bildschirms (mit Ausnahme von Zeile 0-14)
@@ -824,7 +839,7 @@ AppMoveFrame:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinate
 	jmp	AppRubberFrame
 @mx:	.word	0
 @my:	.byte	0
-DoRubber:	; Gr|~enver{nderung eines Rahmens an Abh{ngigkeit der 
+DoRubber:	; Gr|~enver{nderung eines Rahmens an Abh{ngigkeit der
 	; Mauszeiger-Koordinaten
 	; (Initialisierung)
 	MoveW_	r0,moveVector
@@ -891,7 +906,7 @@ AppRubberFrame:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordina
 	jsr	InvFrame
 	MoveW_	$3a,r4
 	MoveB	$3c,r2H
-	
+
 	ldy	#05	; Neues Rechteck zeichnen
 @27:	lda	r2,y
 	sta	moveKoords,y
@@ -1051,7 +1066,7 @@ CheckUser:	ldx	activeWindow
 	jsr	IsMseInRegion
 	bne	@20	; >ja, also otherPress u. {. umgehen
 	rts		; >otherPress u. {. bearbeiten
-@10:	lda	$3a	; Mauskoordinaten relativ zum 
+@10:	lda	$3a	; Mauskoordinaten relativ zum
 	sec		; Arbeitsrechteck ermitteln
 	sbc	r3L
 	sta	r3L
@@ -1118,7 +1133,7 @@ CheckHide:	jsr	GetWinRec
 	pla
 	ldx	activeWindow
 	jmp	BackWindow
-	
+
 CheckSize:	jsr	GetWinRec
 	lda	r2H
 	sec
@@ -1286,7 +1301,7 @@ FrontWindow2:
 	lda	windowsOpen,x
 	beq	@11
 	jsr	GetWinAdrRec
-	jsr	CutRec	; Schneidet anderes Window? 
+	jsr	CutRec	; Schneidet anderes Window?
 	bcs	@11	; > nein
 	ldy	r0H
 	lda	#1
@@ -1295,9 +1310,9 @@ FrontWindow2:
 @11:	dec	r0H
 	ldy	r0H
 	bpl	@10
-@20:	; jetzt ist in r0L die Anzahl der offenen Windows, die hinter (unter) dem 
-	; nach vorne zu holenden Fenster liegen, und in r1H die Anzahl der 
-	; offenen Windows, die vor (}ber) dem nach vorne zu holenden 
+@20:	; jetzt ist in r0L die Anzahl der offenen Windows, die hinter (unter) dem
+	; nach vorne zu holenden Fenster liegen, und in r1H die Anzahl der
+	; offenen Windows, die vor (}ber) dem nach vorne zu holenden
 	; Window liegen.
 	; in r1L steht die Nummer des neuen Front-Windows, in :y dessen
 	; alter (noch aktueller) Platz in activeWindow
@@ -1317,7 +1332,7 @@ FrontWindow2:
 @25a:	jsr	DrawShadow
 	rts
 @y:	.byte	0
-@sub:	; alle vor (y) liegenden Pl{tze in activeWindows r}cken um eins nach 
+@sub:	; alle vor (y) liegenden Pl{tze in activeWindows r}cken um eins nach
 	; hinten
 	cpx	activeWindow
 	beq	@s20
@@ -1586,7 +1601,7 @@ MapBreite:  .byte   0
 
 DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	; Par:
-	; x	y-Koordinate
+	; xy	y-Koordinate (x low, y high)
 	; r10	x-Koordinate
 	; r13L	BitmapBreite
 	; r13H	BitmapH|he
@@ -1595,6 +1610,8 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 .ifdef topdesk128
     txa
     pha
+		tya
+		pha
     ldx #r10
     jsr NormalizeX
     LoadB   @off80, 0
@@ -1614,6 +1631,8 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
     asl
 @schmal:
     sta r13L
+		pla
+		tay
     pla
     tax
 .endif
@@ -1647,7 +1666,7 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	eor	#%111
 	sta	r14H
 
-	; jetzt steht in r14L die Anzahl der zu }berspringenden Bytes +1, und in 
+	; jetzt steht in r14L die Anzahl der zu }berspringenden Bytes +1, und in
 	; r14H die Nummer des Bits, ab dem einmaskiert werden soll
 @c0:	lda	rightMargin	; r15 = rightMargin-r10
 	ora	#%111
@@ -1673,7 +1692,7 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	and	#%111
 	eor	#%111
 	sta	r15H
-	; jetzt steht in r15L die max. Anzahl der darzustellen Bytes+1, und 
+	; jetzt steht in r15L die max. Anzahl der darzustellen Bytes+1, und
 	; in r15H die Nummer des Bits, ab dem ausmaskiert werden soll
 
 	LoadB	r9H,0
@@ -1685,36 +1704,72 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	sta	r3L
 	sta	r4L
 .endif
+	PushW r2
+
 	inc	windowBottom
 @01:	LoadB	winOutFlag,0	; Zeile unter windowTop?
+	tya
+	pha
+	sta r2H
 	txa
 	pha
+	sta r2L
+	cmp #($F8-1)
+	bcc @norm
+
+	; if larger than, high rest y
+	and #7
+	sty r2L
+
+	asl r2L
+	rol r2H
+	asl r2L
+	rol r2H
+	asl r2L
+	rol r2H
+
+	ora r2L
+	sta r2L
+	lda r2H
+	and #7
+	sta r2H
+
+@norm:
 	sec
+	lda r2L
 	sbc	windowTop
-	lda	#00
+	lda	r2H
 	sbc	#00
 	bmi	@02	; >nein
-	pla
-	pha
 	sec		; Zeile }ber windowBottom
+	lda r2L
 	sbc	windowBottom
-	lda	#00
+	lda	r2H
 	sbc	#00
 	bmi	@03	; >ja
-	LoadB	r13H,1	; Anzeige anbrechen 
-@02:	LoadB	winOutFlag,1	; Zeile nicht anzeigen
+;	LoadB	r13H,1	; Anzeige anbrechen
+@02:	LoadB	winOutFlag,0	; Zeile nicht anzeigen
 @03:	PushW	r13
 	PushB	r14L
 	PushB	r15L
-	jsr	@sub	; Zeile ggf. darstellen 
+	jsr	@sub	; Zeile ggf. darstellen
 	PopB	r15L
 	PopB	r14L
 	PopW	r13
 	pla
 	tax
+	pla
+	tay
 	inx		; n{chste Zeile
+	bne @04
+	iny
+	txa
+	ora #$F8
+	tax
+@04:
 	dec	r13H
 	bne	@01
+	PopW	r2
 	dec	windowBottom
 	rts
 @sub:
@@ -1819,7 +1874,7 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	ldy	r11L
 	jsr	StoreBits	; und Datenbyte schreiben
 	dec	r13L	; Breite verringern
-	bne	@20	
+	bne	@20
 	tya		; y auf n{chstes Byte einstellen
 	clc
 .ifdef topdesk128
@@ -1860,7 +1915,7 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	pla
 	ora	r11L	; mit Hintergrund verkn}pfen
 	jsr	StoreBits	; und das letztes Byte der Zeile schreiben
-	sty	r11L	
+	sty	r11L
 	rts
 
 .ifdef topdesk128
@@ -2098,7 +2153,7 @@ Sub80:	lda	$00,x
 	sta	$00,x
 	ldy	ScanMode
 	beq	@store
-	
+
 
 	pla
 	sta	$01,x
@@ -2183,6 +2238,20 @@ BackgroundRectangle:	; Wiederherstellung des Hintergrundes im Rechteck r2-r4
 	lda	#00
 	adc	a0H
 	sta	a0H
+
+	ldy #0
+	bit r10L
+	bpl @21
+
+	txa
+	tay
+  ldx #$f8
+
+	lda r10L
+	and #$7F
+	sta r10L
+
+@21:
 	LoadB	r10H,0	; xk:=xk*8
 	asl	r10L
 	rol	r10H

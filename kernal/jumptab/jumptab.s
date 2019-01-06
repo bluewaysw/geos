@@ -172,6 +172,7 @@
 .import _TempHideMouse
 .import _NormalizeX
 .ifdef mega65
+.import _NormalizeY
 .import _map_FollowChain   
 .import _map_FindFTypes
 .import _map_FindFile
@@ -399,6 +400,7 @@
 
 .if .defined(bsw128) || .defined(mega65)
 .global NormalizeX
+.global NormalizeY
 .endif
 
 .ifdef bsw128
@@ -1024,6 +1026,8 @@ ColorCard:
 	UNIMPLEMENTED
 ColorRectangle:
 	UNIMPLEMENTED
+NormalizeY:		 ;$C2FE
+	jmp _NormalizeY
 
 .elseif .defined(wheels)
 

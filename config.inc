@@ -146,6 +146,8 @@ config_inc = 1
 	topdesk13 = 1
 
 	config128 = 1
+
+	scalable_coords = 1
 .endif
 
 .ifdef custom

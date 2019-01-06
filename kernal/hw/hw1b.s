@@ -151,6 +151,20 @@ ASSERT_NOT_BELOW_IO
 
 	LDA	#$8F
 	 STA $d06D
+
+	lda #<74
+	sta $d048
+	lda #>74
+	sta $d049
+	lda #<553
+	sta $D04A
+	lda #>553
+	sta $d04b
+
+	lda #<74
+	sta $d04e
+	lda #>74
+	sta $d04f
 .else
 	lda #$a5
 	sta $d02f

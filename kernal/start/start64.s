@@ -43,6 +43,11 @@
 .import LoadDeskTop
 .endif
 
+.ifdef mega65
+.import InitScanLineTab
+.import MapUnderlay
+.import UnmapUnderlay
+.endif
 
 .segment "start"
 
@@ -153,9 +158,17 @@ OrigResetHandle:
 .ifdef mega65
     lda #GR_40
 	sta graphMode
+	LoadW	r5, 800
+	jsr InitScanLineTab
 .endif
 	ldx #$ff
+.ifdef mega65
+    jsr MapUnderlay
+.endif
 	jsr _DoFirstInitIO
+.ifdef mega65
+    jsr UnmapUnderlay
+.endif
 	jsr InitGEOEnv
 .ifdef usePlus60K
 	jsr DetectPlus60K

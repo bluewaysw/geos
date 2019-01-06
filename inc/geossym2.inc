@@ -180,6 +180,7 @@ HideOnlyMouse   = $C2F2
 SetColorMode    = $C2F5
 ColorCard       = $C2F8
 ColorRectangle  = $C2FB
+NormalizeY      = $C2FE
 
 CINT		= $FF81
 IOINIT		= $FF84

@@ -206,7 +206,7 @@ Start:
 Loadr0AX:	sta	r0L
 	stx	r0H
 	rts
-	
+
 MoveWr0r1:	MoveW_	r0,r1
 	rts
 MoveWr1r0:	MoveW_	r1,r0
@@ -449,7 +449,7 @@ RamTopFlag:	.byte	0
 SureFlag:	.byte	0
 .endif
 
-GetTextService:	ldx	#6	; im Akku Nr. des Anzeigemodus 
+GetTextService:	ldx	#6	; im Akku Nr. des Anzeigemodus
 	.byte	$2c	; }bergeben
 GetIconService:	ldx	#5	; im Akku 0 }bergeben
 	pha
@@ -471,7 +471,7 @@ DispMode:	.byte	0
 	ldx	#para1
 	lda	#para2
 	jmp	JmpSub
-.endmacro 
+.endmacro
 
 .macro JmpMod2	para1, para2	; 7 Bytes
 	ldx	#para1
@@ -662,7 +662,7 @@ SetMyNewMode:
     rts
 
 @tab1:
-    wb  IconTab+6,(39-TrashX)
+    wb  IconTab+6,(68-TrashX)|128
     wb  IconTab+14,2
     wb  IconTab+22,STARTA_X
     wb  IconTab+30,STARTB_X
@@ -726,7 +726,7 @@ SetMyNewMode:
     .word   0
 
 @tab2:
-    wb  IconTab+6,(39-TrashX)*2
+    wb  IconTab+6,((39-TrashX)*2)|128
     wb  IconTab+14,2*2
     wb  IconTab+22,STARTA_X*2
     wb  IconTab+30,STARTB_X*2
@@ -804,20 +804,20 @@ SetMyNewMode:
 
 
 
-STARTA_X	=	(39-BitX)
+STARTA_X	=	(98-BitX)
 STARTA_Y	=	32
-STARTB_X	=	(39-BitX)
+STARTB_X	=	(98-BitX)
 STARTB_Y	=	64
-STARTC_X	=	(39-BitX)
+STARTC_X	=	(98-BitX)
 STARTC_Y	=	96
-STARTD_X	=	(39-BitX)
+STARTD_X	=	(98-BitX)
 STARTD_Y	=	128
 
 IconTab:
 .ifdef topdesk128
 	.byte	0,0,0,0	; Anzahl wird berechnet
 	.word	TrashMap
-	.byte	39-TrashX,191-TrashY,TrashX+DOUBLE_B,TrashY
+	.byte	(98-TrashX)|128,56,TrashX+DOUBLE_B,TrashY
 	.word	TrashService
 	.word	PrintMap
 	.byte	2,193-PrintY,PrintX+DOUBLE_B,PrintY
@@ -837,7 +837,7 @@ IconTab:
 .else
 	.byte	0,0,0,0	; Anzahl wird berechnet
 	.word	TrashMap
-	.byte	39-TrashX,191-TrashY,TrashX,TrashY
+	.byte	(98-TrashX)|128,56,TrashX,TrashY
 	.word	TrashService
 	.word	PrintMap
 	.byte	2,193-PrintY,PrintX,PrintY
@@ -1003,7 +1003,7 @@ KS11:	lda	#11
 	.byte	p2
 	.word	p3
 .endmacro
-	
+
 MAIN_RIGHT	= 214
 
 HauptMenu:	.byte	0,13
@@ -1366,7 +1366,7 @@ CloseAll:	jsr	GotoFirstMenu
 	bpl	@loop
 	jsr	ClearMultiFile
 	jmp	RedrawAll
-	
+
 AutoSwap:	jsr	GotoFirstMenu
 	ldx	#$2a
 	lda	AutoSwapFlag
@@ -1444,7 +1444,7 @@ EndGhost:	ldx	#0
 	jsr	DisablSprite
 	pla
 	rts
-	
+
 GoToBasic:	jsr	GotoFirstMenu
 	lda	#0
 	sta	r5L
@@ -1539,7 +1539,7 @@ ReLoadAll:	ldy	#3
 Reset:	jsr	GotoFirstMenu
 Reset2:	jsr	ClearScreen
 ReLoadAll2:
-	
+
 	ldx	#03
 @10:	txa
 	pha
@@ -1572,11 +1572,18 @@ ReLoadAll2:
 RedrawHead:	lda	#2
 	jsr	SetPattern
 	jsr	i_Rectangle
+.ifdef scalable_coords
+	ByteCY	0, 0
+	ByteCY	SC_FROM_END+0, 15
+	WordCX	0, 0
+	WordCX  SC_FROM_END+0, 15
+.else
 	.byte	0,15
 .ifdef topdesk128
 	.word	0+DOUBLE_W,319+DOUBLE_W+ADD1_W
 .else
 	.word	0,319
+.endif
 .endif
 	jsr	MaxTextWin
 
@@ -2349,7 +2356,7 @@ PrintDiskInfo:	PushW	r0
 @21:	PopW	r0
 	rts
 	; 		==>
-	
+
 @sub:	lda	KBytesFlag
 	cmp	#' '
 	beq	@kbytes
@@ -2443,7 +2450,13 @@ PrintDriveNames:	MoveB	numDrives,a7L
 	lda	@data,x
 	sta	r1H
 .ifdef topdesk128
+
+.ifdef scalable_coords
+	LoadW___	r11,(SC_FROM_END | 32)
+	;LoadW___	r11,272+16
+.else
 	LoadW___	r11,272+16+DOUBLE_W
+.endif
 .else
 	LoadW___	r11,272+16
 .endif
@@ -2568,7 +2581,7 @@ Handler:	ldx	messageBuffer+1	; File/Icontabellenadresse nach r0
 	cmp	#WN_SCROLL_R
 	beq	@08
 	cmp	#WN_CLOSE
-	bne	@04	
+	bne	@04
 	jmp	CloseService
 @04:	jmp	NormHandler
 @05:	jsr	PrintDiskInfo
@@ -2823,11 +2836,11 @@ DispSizeRectangle:	PushW	r0
 
 DispJumpTable:
 	.repeat	$500
-	.byte 0	
+	.byte 0
 	.endrep
 
 .export __DISPJUMPTABLE__ := DispJumpTable
-	
+
 MyDispFiles	=	DispJumpTable
 DispFiles	=	MyDispFiles+3
 MyCheckFiles	=	DispFiles+3
@@ -3155,7 +3168,7 @@ Multi_Select:	jsr	InvertRectangle
 @10:	tax
 	jmp	UnMarkFile
 
-TextSprite:	
+TextSprite:
 ;j
 .incbin "topdesk/TextSprite.bf"
 
@@ -3203,7 +3216,7 @@ CloseService2:	LoadB	messageBuffer,WN_CLOSE
 	lda	windowsOpen,x
 	bne	CloseService
 	rts
-	
+
 CloseService:	jsr	CheckKlick
 	bcc	@05
 	ldx	messageBuffer+1
@@ -3352,7 +3365,7 @@ NewDirLoad:	ldx	activeWindow
 	jsr	Redraw
 	ldx	#0
 @10:	rts
-MoveService:	; Verschieben/Kopieren von Files zwischen aktivem und 
+MoveService:	; Verschieben/Kopieren von Files zwischen aktivem und
 	; (messageBuffer+1)-Fenster mit Multi-File-Bearbeitung
 	LoadB	DialBoxFlag,1
 	PushB	messageBuffer+1

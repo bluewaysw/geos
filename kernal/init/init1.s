@@ -19,11 +19,21 @@
 .ifdef bsw128
 .global _InitMachine2
 .endif
+.ifdef mega65
+.import MapUnderlay
+.import UnmapUnderlay
+.endif
 
 .segment "init1"
 
 _InitMachine:
+.ifdef mega65
+    jsr MapUnderlay
+.endif
 	jsr _DoFirstInitIO
+.ifdef mega65
+    jsr UnmapUnderlay
+.endif
 .if .defined(bsw128) || .defined(mega65)
 .import SetRightMargin
 .import SetNewMode0

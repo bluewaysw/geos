@@ -35,6 +35,7 @@
 .endif
 .ifdef mega65
 .import GetLeftXAddress
+.import _NormalizeY
 .endif
 
 .global ImprintLine
@@ -50,6 +51,7 @@
 ;   params:
 ;       r3  x1
 ;       r4  x2
+;		r11L	y
 ;   return:
 ;       r8L Begin positiv mask
 ;       r8H End negative mask
@@ -64,6 +66,7 @@ PrepareXCoord:
 	jsr _NormalizeX
 	ldx #r4
 	jsr _NormalizeX
+
 	lda r4L
 	ldx r4H
 	cpx r3H
@@ -79,7 +82,51 @@ PrepareXCoord:
 	stx r3H
 @2:
 .endif
-	ldx r11L
+.ifdef mega65
+	lda	r11L
+	pha
+	lda r3H
+	lsr
+	lsr
+	lsr
+	lsr
+	asl r11L
+	rol
+	asl r11L
+	rol
+	asl r11L
+	rol
+	asl r11L
+	rol
+	asl r11L
+	rol
+	tay
+	pla
+	sta	r11L
+	and #$07
+	ora #$f8
+	tax
+.else
+	lda r11L
+	pha
+	lda r3H
+	lsr
+	lsr
+	lsr
+	lsr
+	asl r11L
+	rol
+	asl r11L
+	rol
+	asl r11L
+	rol
+	tay
+	pla
+	sta	r11L
+	and #$03
+	ora #$f8
+	tax
+.endif
 	jsr _GetScanLine
 	lda r4L
 	and #%00000111
@@ -126,6 +173,8 @@ _InvertLine:
 .ifndef mega65
 	ldy r3L
 	lda r3H
+	and #$0F
+	sta r3H
 	beq @1
 	inc r5H
 	inc r6H
@@ -137,10 +186,19 @@ _InvertLine:
 @11:
 	ldy r3L
 	lda r3H
+	and #$0F
+	sta r3H
 	beq @12
-	inc r5H
-	inc r6H
+	pha
+	add r5H
+	sta r5H
+	pla
+	add r6H
+	sta r6H
 @12:
+	lda r4H
+	and #$0F
+	sta r4H
 .endif
 	lda r3H
 	cmp r4H
@@ -158,7 +216,8 @@ _InvertLine:
 @4:	bit WheelsTemp
 	bpl @5
 	eor #$FF
-@5:	sta (r6),y
+@5:	
+	sta (r6),y
 	sta (r5),y
 	tya
 	add #8

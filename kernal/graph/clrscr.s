@@ -17,13 +17,19 @@
 
 .global ClrScr
 
+
+SC_FROM_END             =   %100000000000
+SC_FROM_CENTER          =   %010000000000
+SC_SCALE                =   %110000000000
+
+
 .ifndef wheels
 ;---------------------------------------------------------------
 ; used by EnterDesktop
 ;---------------------------------------------------------------
 ClrScr:
 .ifdef mega65
-	LoadB dispBufferOn, ST_WR_FORE | ST_WR_BACK
+	LoadB dispBufferOn, ST_WR_FORE
 .else
 .ifdef bsw128
 	LoadB dispBufferOn, ST_WR_FORE | ST_WR_BACK
@@ -67,10 +73,10 @@ ClrScr:
 	jsr SetPattern
 	jsr i_Rectangle
 	.byte 0   ; y1
-	.byte SC_PIX_HEIGHT-1 ; y2
+	.byte <SC_FROM_END ;SC_PIX_HEIGHT-1 ; y2
 	.word 0   ; x1
 .ifdef mega65
-	.word 319 | DOUBLE_W | ADD1_W ; x2
+	.word (SC_FROM_END | 0)  + (((SC_FROM_END)>>8)<<12); | DOUBLE_W | ADD1_W ; x2
 .else
 	.word SCREENPIXELWIDTH-1 ; x2
 .endif

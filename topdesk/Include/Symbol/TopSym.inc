@@ -395,3 +395,7 @@ version	= $c00f
 
 windowBottom	= $34
 windowTop	= $33
+
+SC_FROM_END             =   %100000000000
+SC_FROM_CENTER          =   %010000000000
+SC_SCALE                =   %110000000000

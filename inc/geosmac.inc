@@ -446,3 +446,14 @@ ASSERT_NOT_BELOW_IO
 	bcc	addr
 .endmacro
 	
+.ifdef scalable_coords
+
+.macro ByteCY xc, yc
+	.byte	(yc & $FF)
+.endmacro
+
+.macro WordCX xc, yc
+	.word	xc + (yc/256)*16	
+.endmacro
+
+.endif

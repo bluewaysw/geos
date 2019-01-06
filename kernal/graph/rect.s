@@ -15,6 +15,8 @@
 .import _RecoverLine
 .import _VerticalLine
 .import ImprintLine
+.import UncompactXY
+.import _NormalizeY
 
 .global _Rectangle
 .global _InvertRectangle
@@ -35,7 +37,20 @@
 ; Destroyed: a, x, y, r5 - r8, r11
 ;---------------------------------------------------------------
 _Rectangle:
+	PushW	r2
+	PushB	r3H
+	PushB	r4H
+	PushB	r5H
+
+	ldx #r3
+	ldy	#r2L
+	jsr 	_NormalizeY
+	ldx #r4
+	ldy	#r2H
+	jsr 	_NormalizeY
+
 	MoveB r2L, r11L
+
 @1:	lda r11L
 	and #$07
 	tay
@@ -52,10 +67,33 @@ _Rectangle:
 	txa
 .endif
 	jsr _HorizontalLine
-	lda r11L
+	;lda r11L
 	inc r11L
+	bne @2
+
+	lda r3H
+	add #16
+	sta r3H
+	;cmp	r4H
+	;bcc	@3
+@2:
+	lda	r11L
 	cmp r2H
 	bne @1
+
+	lda	r4H
+	and #$F0
+	sta r5H
+	lda r3H
+	and #$F0
+	cmp	r5H
+	bne	@1
+
+@3:
+	PopB  	r5H
+	PopB  	r4H
+	PopB	r3H
+	PopW	r2
 	rts
 
 ;---------------------------------------------------------------

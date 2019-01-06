@@ -64,23 +64,31 @@ SprTabH:
 ; Destroyed: a, x, y, r6
 ;---------------------------------------------------------------
 _PosSprite:
+	PushB	r5H
+
+	lda	r4H
+	jsr	UncompactXY
+	sta r4H
+	sty r5H
+
+	jsr	_HR_PosSprite
+	PopB	r5H
+	rts
+
+
+_HR_PosSprite:
+
 .if .defined(bsw128) || .defined(mega65)
 	ldx #r4
 	jsr NormalizeX
 .endif
 	START_IO
 
-	lda	r4H
-	jsr	UncompactXY
-	sta r4H
-	tya
-	tax
-
 	lda r3L
 	rol
 	tay
 	
-	txa
+	lda	r5H
 	lsr
 	lda r5L
 	ror

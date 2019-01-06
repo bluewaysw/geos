@@ -95,6 +95,8 @@
 .global _map__CRC
 .global _map__GetRandom
 
+.global MapUnderlay
+.global UnmapUnderlay
 
 
 ;---------------------------------------------------------------
@@ -170,26 +172,26 @@ ApplyMapping:
     ; Z high map/offset hight
 
     ; config High
-    lda highMapBnk
-    ora #$20
-    taz
     lda highMap
     asl
-    bcc @2
-    inz
-@2:
+    pha
+    lda highMapBnk
+    rol
+    ora #$20
+    taz
+    pla
     tay
 
     ; config Low
-    lda lowMapBnk
-    ora #$80
-    tax
     lda lowMap    
     asl
-    bcc @1
-    inx
-@1:
-
+    pha
+    lda lowMapBnk
+    rol
+    ora #$80
+    tax
+    pla
+    
 	map
 	eom
 
@@ -198,31 +200,31 @@ ApplyMapping:
 
 
 _map_FollowChain:   
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _FollowChain
     jmp UnmapUnderlay
 _map_FindFTypes:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _FindFTypes
     jmp UnmapUnderlay
 _map_FindFile:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _FindFile
     jmp UnmapUnderlay
 _map_SetDevice:    
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _SetDevice
     jmp UnmapUnderlay
 _map_GetFHdrInfo:    
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _GetFHdrInfo
     jmp UnmapUnderlay
 _map_LdDeskAcc:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _LdDeskAcc
     jmp UnmapUnderlay
 _map_RstrAppl:    
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _RstrAppl
     jmp UnmapUnderlay
 _map_LdApplic:
@@ -235,97 +237,97 @@ _map_LdApplic:
 	MoveW_ fileHeader+O_GHST_VEC, r7
 	jmp StartAppl
 @1:	rts
-    ;jsr MapUnterlay
+    ;jsr MapUnderlay
     ;jsr _LdApplic
     ;jmp UnmapUnderlay
 _map_SaveFile:    
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _SaveFile
     jmp UnmapUnderlay
 _map_SetGDirEntry:    
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _SetGDirEntry
     jmp UnmapUnderlay
 _map_BldGDirEntry:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _BldGDirEntry
     jmp UnmapUnderlay
 _map_DeleteFile:    
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _DeleteFile
     bra __unmap
 _map_FreeFile:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _FreeFile
     bra __unmap
 _map_FastDelFile:   
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _FastDelFile
     bra __unmap
 _map_RenameFile:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _RenameFile
     bra __unmap
 _map_OpenRecordFile:    
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _OpenRecordFile
     bra __unmap
 _map_CloseRecordFile:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _CloseRecordFile
     bra __unmap
 _map_UpdateRecordFile:    
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _UpdateRecordFile
     bra __unmap
 _map_NextRecord:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _NextRecord
     bra __unmap
 _map_PreviousRecord:    
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _PreviousRecord
     bra __unmap
 _map_PointRecord:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _PointRecord
     bra __unmap
 _map_DeleteRecord:    
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _DeleteRecord
     bra __unmap
 _map_InsertRecord:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _InsertRecord
     bra __unmap
 _map_AppendRecord:    
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _AppendRecord
     bra __unmap
 _map_ReadRecord:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _ReadRecord
     bra __unmap
 _map_WriteRecord:    
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _WriteRecord
     bra __unmap
 _map_ReadByte:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr _ReadByte
     bra __unmap
 _map__CRC:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr __CRC
 __unmap:
     jmp UnmapUnderlay
 _map__GetRandom:
-    jsr MapUnterlay
+    jsr MapUnderlay
     jsr __GetRandom
     bra __unmap
 
 
-MapUnterlay:
+MapUnderlay:
     pha
     txa
     pha
