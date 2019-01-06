@@ -358,6 +358,7 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo format geos,00 d81 $@ | $(C1541) >/dev/null; \
 		echo write $< $(GEOS_OUT) | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
 		if [ -e $(DESKTOP_CVT) ]; then echo geoswrite $(DESKTOP_CVT) | $(C1541) $@; fi >/dev/null; \
 		echo \*\*\* Created fresh $@.; \
 	fi;
@@ -460,7 +461,7 @@ ifeq ($(VARIANT), bsw128)
 
 else
 	@echo Creating $@ from kernal.bin $(DRIVE).bin $(INPUT).bin
-	printf "\x00\x50" > $(BUILD_DIR)/tmp.bin
+	cp tmp2.bin $(BUILD_DIR)/tmp.bin
 	dd if=$(BUILD_DIR)/kernal/kernal.bin bs=1 count=16384 >> $(BUILD_DIR)/tmp.bin 2> /dev/null
 	cat $(BUILD_DIR)/drv/$(DRIVE).bin /dev/zero | dd bs=1 count=3456 >> $(BUILD_DIR)/tmp.bin 2> /dev/null
 	cat $(BUILD_DIR)/kernal/kernal.bin /dev/zero | dd bs=1 count=24832 skip=19840 >> $(BUILD_DIR)/tmp.bin 2> /dev/null

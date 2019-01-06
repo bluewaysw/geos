@@ -107,8 +107,9 @@ ASSERT_NOT_BELOW_IO
 	; 1. Set horizontal border width
 	LDA #$00
 	STA $D05C
+	LDA #$80
 	STA $D05D
-	
+		
 	; Set bitmap mode (makes horizontal borders take effect)
 	LDA   #$3B
 	STA   $D011
@@ -118,12 +119,14 @@ ASSERT_NOT_BELOW_IO
 	ORA   #$C8
 	STA   $D031
 
-	lda	#$04	; 3.5Mhz, H640, bitplanes
+	lda	#$04	; 3.5Mhz, H640, no bitplanes
 	sta	$d030
 	
 	 ; Set to 100 characters per row
 	 LDA   #100
 	 STA   $D058
+	 LDA #$64
+ 	STA $D05E
 	 
 	 ; Disable/Enable 16-colour sprite mode for each sprite?
 	 LDA	  #$00
