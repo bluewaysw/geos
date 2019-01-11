@@ -105,11 +105,16 @@ ASSERT_NOT_BELOW_IO
 
 	; enable 800x600 mode
 	; 1. Set horizontal border width
-	LDA #$00
+	LDA #39
 	STA $D05C
 	LDA #$80
 	STA $D05D
-		
+	LDA #1
+	sta $D076
+	
+	lda #$c9	
+	sta grcntrl2
+	
 	; Set bitmap mode (makes horizontal borders take effect)
 	LDA   #$3B
 	STA   $D011
@@ -122,11 +127,10 @@ ASSERT_NOT_BELOW_IO
 	lda	#$04	; 3.5Mhz, H640, no bitplanes
 	sta	$d030
 	
-	 ; Set to 100 characters per row
-	 LDA   #100
-	 STA   $D058
-	 LDA #$64
- 	STA $D05E
+	; Set to 100 characters per row
+	LDA   #90
+	STA   $D058
+	STA   $D05E
 	 
 	 ; Disable/Enable 16-colour sprite mode for each sprite?
 	 LDA	  #$00
@@ -159,9 +163,9 @@ ASSERT_NOT_BELOW_IO
 	sta $d048
 	lda #>74
 	sta $d049
-	lda #<553
+	lda #<554
 	sta $D04A
-	lda #>553
+	lda #>554
 	sta $d04b
 
 	lda #<74

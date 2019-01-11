@@ -341,6 +341,7 @@ PrintX	= 3
 PrintY	= 21
 
 Start2:
+
     lda	RamTopFlag
 	bne	@10
 	lda	ramExpSize
@@ -662,7 +663,7 @@ SetMyNewMode:
     rts
 
 @tab1:
-    wb  IconTab+6,(68-TrashX)|128
+    wb  IconTab+6,(89-TrashX)|128
     wb  IconTab+14,2
     wb  IconTab+22,STARTA_X
     wb  IconTab+30,STARTB_X
@@ -804,20 +805,20 @@ SetMyNewMode:
 
 
 
-STARTA_X	=	(98-BitX)
+STARTA_X	=	(89-BitX)
 STARTA_Y	=	32
-STARTB_X	=	(98-BitX)
+STARTB_X	=	(89-BitX)
 STARTB_Y	=	64
-STARTC_X	=	(98-BitX)
+STARTC_X	=	(89-BitX)
 STARTC_Y	=	96
-STARTD_X	=	(98-BitX)
+STARTD_X	=	(89-BitX)
 STARTD_Y	=	128
 
 IconTab:
 .ifdef topdesk128
 	.byte	0,0,0,0	; Anzahl wird berechnet
 	.word	TrashMap
-	.byte	(98-TrashX)|128,56,TrashX+DOUBLE_B,TrashY
+	.byte	(98-TrashX)|128,60,TrashX+DOUBLE_B,TrashY
 	.word	TrashService
 	.word	PrintMap
 	.byte	2,193-PrintY,PrintX+DOUBLE_B,PrintY
@@ -837,7 +838,7 @@ IconTab:
 .else
 	.byte	0,0,0,0	; Anzahl wird berechnet
 	.word	TrashMap
-	.byte	(98-TrashX)|128,56,TrashX,TrashY
+	.byte	(98-TrashX)|128,59,TrashX,TrashY
 	.word	TrashService
 	.word	PrintMap
 	.byte	2,193-PrintY,PrintX,PrintY
@@ -1569,7 +1570,8 @@ ReLoadAll2:
 ;Rts:
 	rts
 
-RedrawHead:	lda	#2
+RedrawHead:		
+	lda	#2
 	jsr	SetPattern
 	jsr	i_Rectangle
 .ifdef scalable_coords

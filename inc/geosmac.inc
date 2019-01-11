@@ -453,7 +453,7 @@ ASSERT_NOT_BELOW_IO
 .endmacro
 
 .macro WordCX xc, yc
-	.word	xc + (yc/256)*16	
+	.word	xc + (yc/256)<<12	
 .endmacro
 
 .endif

@@ -78,6 +78,10 @@ _FirstInit:
 	LoadB mob0clr, BLUE
 	sta mob1clr
 	LoadB extclr, BLACK
+	LoadB bakclr0, BLACK	;XXX workaround a
+				; bug in the current MEGA65
+				; bitstream showing parts of
+				; the background (in blue)
 	END_IO_X
 .endif
 .if .defined(mega65)

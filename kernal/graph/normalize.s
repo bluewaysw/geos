@@ -41,10 +41,10 @@ _NormalizeY:
 
 	lda #<479
 	clc
-	sbc zpage,y
+	;sbc zpage,y
 	sta zpage,y	
 	lda #>479
-	sbc zpage,x
+	;sbc zpage,x
 
 	asl
 	asl
@@ -71,11 +71,11 @@ _NormalizeX:
 	pha
 	and #$03
 	sta zpage+1,x
-	lda	#<789
+	lda	#<719
 	clc
 	sbc zpage, x
 	sta zpage, x
-	lda #>789
+	lda #>719
 	sbc zpage+1,x
 	sta zpage+1,x
 	pla

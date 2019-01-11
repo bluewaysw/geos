@@ -33,7 +33,7 @@ ResetMseRegion:
 @2:	LoadW mouseRight, SCREENPIXELWIDTH-1
 .endif
 	LoadB mouseBottom, $DF
-	LoadW mouseRight, 789 + $1000
+	LoadW mouseRight, 719 + $1000
 
 .else
 	LoadW mouseRight, SC_PIX_WIDTH-1

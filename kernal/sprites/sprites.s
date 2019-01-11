@@ -87,14 +87,22 @@ _HR_PosSprite:
 	lda r3L
 	rol
 	tay
-	
-	lda	r5H
-	lsr
 	lda r5L
-	ror
 	addv VIC_Y_POS_OFF
-
+	;sta r6L
 	sta mob0ypos,Y
+	
+	lda r5H
+	ldy $D077
+	ldx #1
+	jsr @2__
+	sta $D077
+
+	lda #2
+	ldy $D078
+	jsr @2_
+	sta $D078
+		
 .ifdef bsw128
 	lda graphMode
 	bpl @X
@@ -108,28 +116,29 @@ _HR_PosSprite:
 	sta r4L
 @X:
 .endif
-.ifdef mega65
-    MoveW   r4, r6
-	lda graphMode
-	bpl @X
-    asr r6H
-    ror r6L
-@X:
-    AddVW    VIC_X_POS_OFF, r6
-.else
+;.ifdef mega65
+	;MoveW r4, r6
+	;lda graphMode
+	;bpl @X
+	;asr r6H
+	;ror r6L
+;@X:
+;	AddVW    VIC_X_POS_OFF, r6
+;.else
+lda r3L
+rol
+tay
 	lda r4L
 	addv VIC_X_POS_OFF
-	sta r6L
-	lda r4H
-	adc #0
-	sta r6H
-.endif
-	lda r6L
+	;sta r6L
 	sta mob0xpos,Y
+	lda r4H
+;.endif
 
-	lda	#1
 	ldy	msbxpos
-	jsr	@2_
+	ldx	#1
+	
+	jsr	@2__
 	sta msbxpos
 	lda #2
 	ldy	$d05f
@@ -138,6 +147,10 @@ _HR_PosSprite:
 
 	END_IO
 	rts
+@2__:
+	adc #0
+	sta r6H
+	txa
 @2_:
 	ldx	r3L
 	and	r6H
@@ -150,7 +163,7 @@ _HR_PosSprite:
 	tya 
 	eor #$ff
 	ora BitMaskPow2,x
-	eor	#$ff
+	eor #$ff
 	rts
 
 ;---------------------------------------------------------------

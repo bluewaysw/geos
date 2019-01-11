@@ -970,10 +970,10 @@ FontPutChar:
 @99:
 	inc r5H
 	inc r6H
-	inc r5H
-	inc r6H
+;	inc r5H
+;	inc r6H
 	;AddVB $38, r5L
-	AddVB $18, r5L
+	AddVB $C8, r5L
 @98:
 	sta r6L
 	bcc @8

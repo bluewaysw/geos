@@ -158,7 +158,7 @@ OrigResetHandle:
 .ifdef mega65
     lda #GR_40
 	sta graphMode
-	LoadW	r5, 800
+	LoadW	r5, 720
 	jsr InitScanLineTab
 .endif
 	ldx #$ff

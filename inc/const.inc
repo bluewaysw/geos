@@ -88,11 +88,11 @@ GRBANK2                 =       %01
 GRBANK3                 =       %00
 
 ; screen
-VIC_X_POS_OFF           =       7
-VIC_Y_POS_OFF           =       24
+VIC_X_POS_OFF           =       56
+VIC_Y_POS_OFF           =       74
 SC_BYTE_WIDTH           =       40
 SC_PIX_HEIGHT           =       200
-SC_PIX_WIDTH            =       800
+SC_PIX_WIDTH            =       720
 SC_SIZE                 =       8000
 ; 128 screen size constants
 SCREENBYTEWIDTH         =       80
