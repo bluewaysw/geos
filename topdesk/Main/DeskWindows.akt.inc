@@ -777,16 +777,38 @@ DoMove:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinaten
 	clc
 	adc	#Grenze_oben
 	sta	mouseTop
+	
 	; unterer Rand = 199 - (yu-yo) + MausYOffSet
 	;	  = 199 - yu + yo + MausYOffSet
-	lda	#199
+	LoadW	r12, 479
+	
+	lda	r12L
 	sec
 	sbc	moveKoords+1
+	sta     r12L
+	lda     r12H
+	sbc     #0
+	sta     r12H
 	clc
-	adc	moveKoords
+	lda	r12L
+	adc     moveKoords
+	sta	r12L
+	lda 	r12H
+	adc     #0
+	sta     r12H
 	clc
-	adc	moveKoords+6
+	lda	r12L
+	adc     moveKoords+6
 	sta	mouseBottom
+	lda 	r12H
+	adc     #0
+	sta     r12H
+	rol     
+	rol     
+	rol     
+	rol     
+	ora     mouseRight + 1
+	sta     mouseRight + 1
 
 	LoadB	moveFlag,$ff
 	rts
@@ -801,11 +823,12 @@ AppMoveFrame:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinate
 	jmp	AppRubberFrame
 @10:	php		; Mauszeiger bewegt?
 	sei
-	CmpW	$3a,@mx
+	CmpW	mouseXPos,@mx
 	bne	@20	; >ja
-	lda	$3c
+	lda	mouseYPos
 	cmp	@my
-	beq	@30	; >nein
+	bne	@20	; >nein
+	jmp	@30
 @20:	ldy	#05	; Altes Rechteck l|schen
 @25:	lda	moveKoords,y
 	sta	r2,y
@@ -817,24 +840,46 @@ AppMoveFrame:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinate
 	sbc	r2L
 	sta	r2H
 	SubW	r3,r4
-	MoveW_	$3a,r3	; neues x holen
+	MoveW_ 	mouseXPos,r3	; neues x holen
 	SubW	moveKoords+7,r3	; minus Mausabstandx
 	AddW	r3,r4	; aus b mach xr
-	lda	$3c	; neues y holen
+	
+	lda	mouseYPos	; neues y holen
 	sec
 	sbc	moveKoords+6	; minus Mausabstandy
 	sta	r2L
+	bcs	@27a
+	pha
+	sec
+	lda     r3H
+	sbc     #16
+	sta     r3H
+	sec
+	lda     r4H
+	sbc     #16
+	sta     r4H
+	pla
+@27a:
 	clc
 	adc	r2H	; aus h mach yu
 	sta	r2H
+	bcc     @27b
+	clc
+	lda     r4H
+	adc     #16
+	sta     r4H
+@27b:
+	
 	ldy	#05	; Neues Rechteck zeichnen
 @27:	lda	r2,y
 	sta	moveKoords,y
 	dey
 	bpl	@27
 	jsr	InvFrame
-	MoveW_	$3a,@mx
-	MoveB	$3c,@my
+	
+	MoveW_	mouseXPos,@mx
+	MoveB	mouseYPos,@my
+	
 @30:	plp
 	jmp	AppRubberFrame
 @mx:	.word	0
@@ -850,8 +895,8 @@ DoRubber:	; Gr|~enver{nderung eines Rahmens an Abh{ngigkeit der
 	sta	moveKoords,y
 	dey
 	bpl	@10
-	MoveW_	r4,$3a	; mouseX
-	MoveB	r2H,$3c	; mouseY
+	MoveW_	r4,mouseXPos	; mouseX
+	MoveB	r2H,mouseYPos	; mouseY
 	; oberer Rand = yo + 40
 	lda	r2L
 	clc
@@ -864,7 +909,12 @@ DoRubber:	; Gr|~enver{nderung eines Rahmens an Abh{ngigkeit der
 .else
 	LoadW___	mouseRight,319
 .endif
-	LoadB	mouseBottom,199
+        ; 479 => $1DF
+	LoadB	mouseBottom, $DF
+	lda	mouseRight+1
+	adc	#16
+	sta	mouseRight+1
+
 	; linker Rand = ml + 40
 	lda	moveKoords+2
 	clc
@@ -873,12 +923,12 @@ DoRubber:	; Gr|~enver{nderung eines Rahmens an Abh{ngigkeit der
 	lda	moveKoords+3
 	adc	#00
 	sta	mouseLeft+1
-	MoveB	$3c,r2H
+	MoveB	mouseYPos,r2H
 	sta	moveKoords+1
-	lda	$3a
+	lda	mouseXPos
 	sta	moveKoords+4
 	sta	r4L
-	lda	$3b
+	lda	mouseXPos+1
 	sta	moveKoords+5
 	sta	r4H
 	plp
@@ -893,9 +943,9 @@ AppRubberFrame:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordina
 	rts
 @10:	php		; Mauszeiger bewegt?
 	sei
-	CmpW	$3a,@mx
+	CmpW	mouseXPos,@mx
 	bne	@20	; >ja
-	lda	$3c
+	lda	mouseYPos
 	cmp	@my
 	beq	@30	; >nein
 @20:	ldy	#05	; Altes Rechteck l|schen
@@ -903,9 +953,13 @@ AppRubberFrame:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordina
 	sta	r2,y
 	dey
 	bpl	@25
+	PushW	r3
+	PushB	r2L
 	jsr	InvFrame
-	MoveW_	$3a,r4
-	MoveB	$3c,r2H
+	PopB	r2L
+	PopW	r3
+	MoveW_	mouseXPos,r4
+	MoveB	mouseYPos,r2H
 
 	ldy	#05	; Neues Rechteck zeichnen
 @27:	lda	r2,y
@@ -913,8 +967,8 @@ AppRubberFrame:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordina
 	dey
 	bpl	@27
 	jsr	InvFrame
-	MoveW_	$3a,@mx
-	MoveB	$3c,@my
+	MoveW_	mouseXPos,@mx
+	MoveB	mouseYPos,@my
 @30:	plp
 	rts
 @mx:	.word	0

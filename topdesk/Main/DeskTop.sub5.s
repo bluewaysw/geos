@@ -150,6 +150,7 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	adc	#21
 	sta	r2H
 	jsr	GetClipRec
+.if 0
 .ifdef topdesk128
     lda SchmalFlag
     cmp #'*'
@@ -166,12 +167,14 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
     jsr NormalizeX
 @sc10:
 .endif
+.endif
 	jsr	CutRec
 	bcs	@005
 	MoveW_	a2,r0
 	MoveW_	a4,r10
 	LoadB	r13L,3	; Breite immer 3
 	LoadB	r13H,21	; H|he immer 21
+.if 0
 .ifdef topdesk128
     lda SchmalFlag
     cmp #'*'
@@ -182,7 +185,7 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
     LoadB   r13L, $83
 @sc20:
 .endif
-
+.endif
   lda #0
 	ldx	a3H
 	ldy #0
@@ -197,6 +200,7 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	lda	a4H
 	adc	#00
 	sta	r11H
+.if 0
 .ifdef topdesk128
     lda SchmalFlag
     cmp #'*'
@@ -216,7 +220,7 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
     inc @scy
 @sc30:
 .endif
-
+.endif
 	MoveW_	a1,r0	; Filenamenzeiger setzen
 	ldy	#16
 	lda	(r0),y
@@ -447,6 +451,7 @@ _GetFileRect:	; Ermittlung des Iconrechtecks eines Files einer DispFile-Darstell
     lda SchmalFlag
     cmp #'*'
     beq @sc10
+.if 0
     lda r3H
     ora #$80
     sta r3H
@@ -457,11 +462,11 @@ _GetFileRect:	; Ermittlung des Iconrechtecks eines Files einer DispFile-Darstell
     jsr NormalizeX
     ldx #r4
     jsr NormalizeX
+.endif
 @sc10:
     AddW    a3, r3
     AddW    a3, r4
 .endif
-
 	jsr	GetClipRec
 	jsr	CutRec	; Schnittfl{che berechnen, Ende
 	pla

@@ -669,7 +669,7 @@ SetMyNewMode:
     wb  IconTab+30,STARTB_X
     wb  IconTab+38,STARTC_X
     wb  IconTab+46,STARTD_X
-    ww  RightMax, 319
+    ww  RightMax, 719
     wb  GraphIndex, 8
 .ifdef lang_de
     ww  HauptMenu+4,214
@@ -913,7 +913,8 @@ OpenDa:	pha
 	jsr	DoneWithIO
 	LoadB	KSFlag,0
 	rts
-@10:	lda	@dr
+@10:	
+	lda	@dr
 	beq	@20
 	lda	ghostFile
 	bpl	@20
@@ -934,7 +935,8 @@ OpenDa:	pha
 	bpl	@loop
 	LoadB	AskDiskFlag,$ff
 	jmp	RedrawAll
-@20:	ldx	numDrives	; bei numDrives=1 kein Laufwerkswechsel
+@20:
+	ldx	numDrives	; bei numDrives=1 kein Laufwerkswechsel
 	dex
 	bne	@25
 	pla
@@ -948,7 +950,9 @@ OpenDa:	pha
 	beq	@27
 	pla
 @26:	jsr	NewSetDevice
+
 	jmp	OpenNext
+
 @27:	pla
 	rts
 
@@ -1897,10 +1901,12 @@ OpenNext:	ldx	activeWindow	; eventuell selektierte Files
 	stx	messageBuffer+1
 	jsr	DispMarking
 	jsr	ClearMultiFile
-@05:	jsr	GetNext	; freie WindowNummer holen
+@05:	
+	jsr	GetNext	; freie WindowNummer holen
 	bcc	@11
 	jmp	OpenNext10	; >keine mehr frei
-@11:	txa
+@11:	
+	txa
 	pha
 	jsr	GetDiskName
 	txa
@@ -1947,6 +1953,9 @@ OpenNextNr:	lda	#0
 	tax
 	sec
 	jsr	SpeedWinMax
+	;@HOHO:
+	;inc $d020
+	;jmp @HOHO
 	pla
 	tax
 	jsr	OpenWindow

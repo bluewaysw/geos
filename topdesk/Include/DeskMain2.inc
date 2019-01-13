@@ -144,10 +144,10 @@ GetPos:
     sta r2H,x
     rts
 @xL:    .byte   <(STARTA_X*8),<(STARTB_X*8),<(STARTC_X*8),<(STARTD_X*8)
-@xH:    .byte   (>(STARTA_X*8))+$80
-        .byte   (>(STARTB_X*8))+$80
-        .byte   (>(STARTC_X*8))+$80
-        .byte   (>(STARTD_X*8))+$80
+@xH:    .byte   (>(STARTA_X*8))
+        .byte   (>(STARTB_X*8))
+        .byte   (>(STARTC_X*8))
+        .byte   (>(STARTD_X*8))
 @y:     .byte   STARTA_Y, STARTB_Y, STARTC_Y, STARTD_Y
 .endif
 

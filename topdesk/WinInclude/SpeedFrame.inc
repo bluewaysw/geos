@@ -93,6 +93,12 @@ SpeedFrame:
 	dey
 	dey
 	bpl	@120
+	
+	lda 	dblClickCount
+	bne     @w1
+	LoadB   dblClickCount, 1
+@w1:	cmp     dblClickCount
+        beq     @w1
 	dec	r8L
 	bne	@100
 	rts

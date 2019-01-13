@@ -67,6 +67,18 @@ _Rectangle:
 	txa
 .endif
 	jsr _HorizontalLine
+	lda	r11L
+	cmp r2H
+	bne 	@3_
+
+	lda	r4H
+	and #$F0
+	sta r5H
+	lda r3H
+	and #$F0
+	cmp	r5H
+	beq 	@3
+@3_:
 	;lda r11L
 	inc r11L
 	bne @2
@@ -77,17 +89,7 @@ _Rectangle:
 	;cmp	r4H
 	;bcc	@3
 @2:
-	lda	r11L
-	cmp r2H
-	bne @1
-
-	lda	r4H
-	and #$F0
-	sta r5H
-	lda r3H
-	and #$F0
-	cmp	r5H
-	bne	@1
+	bra	@1
 
 @3:
 	PopB  	r5H
