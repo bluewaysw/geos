@@ -29,6 +29,7 @@ InvFrame:
 	sta	r11L
 	; if r11L is the bottom end of the frame
 	; r3H need to transport the msb of bottom y
+	PushB	r3H
 	lda	r3H
 	and     #%00001111
 	sta	r3H
@@ -37,6 +38,7 @@ InvFrame:
 	ora	r3H
 	sta	r3H
 	jsr	InvertLine
+	PopB	r3H
 	PopW    r11
 	PopW    r8
 	rts

@@ -283,15 +283,45 @@ Font_tabH:
 	.hibytes Font_tab
 
 Font_2:
-	ldx r1H
+	lda r1H
+	pha
+	lda r11H
+	lsr
+	lsr
+	lsr
+	lsr
+	asl r1H
+	rol
+	asl r1H
+	rol
+	asl r1H
+	rol
+	asl r1H
+	rol
+	asl r1H
+	rol
+	tay
+	pla	
+	sta r1H
+	and #$07
+	ora #$f8
+	tax
+
+	;ldx r1H
 .ifdef bsw128
 	jsr _GetScanLine
 .else
 	jsr GetScanLine
 .endif
+	lda leftMargin+1
+	tay
+	and #%00001111
+	sta leftMargin+1
+	lda FontTVar2+1
+	and #%00001111
+	tax 
 	lda FontTVar2
-	ldx FontTVar2+1
-	bmi @2
+	;bmi @2
 	cpx leftMargin+1
 	bne @1
 	cmp leftMargin
@@ -301,22 +331,23 @@ Font_2:
 @3:	pha
 	and #%11111000
 	sta r4L
+	sty leftMargin+1
 .ifdef bsw128
 	bbsf 7, graphMode, @LE319
 .endif
 .ifdef mega65
-    ldy #$00
+	ldy #$00
 	sty r1L
 	clc
 	adc r5L
 	sta r5L
 	sta r6L
-    bcc @4
-    inx
+	bcc @4
+	inx
 @4:
-    cpx #0
-    beq @5
-    dex
+	cpx #0
+	beq @5
+	dex
 	inc r5H
 	inc r6H
 	bra @4
@@ -357,6 +388,7 @@ Font_2:
 @LE333:
 .if .defined(bsw128) || .defined(mega65)
 	lda FontTVar2+1
+	and #%00001111
 	lsr a
 	sta r7L
 	lda FontTVar2
@@ -375,7 +407,9 @@ Font_2:
 	ror a
 	lsr a
 .else
-	MoveB FontTVar2+1, r3L
+	lda FontTVar2+1
+	and #%00001111
+	sta r3L
 	lsr r3L
 	lda FontTVar2
 	ror

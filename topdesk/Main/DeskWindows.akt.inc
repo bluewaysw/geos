@@ -259,10 +259,19 @@ DrawWindow2:	; Par: a4-a6: Window-Rechteck
 	sta	NoClipFlag
 	jsr	SetPattern
 	jsr	GetClipRec
+	lda	#1
+	sta	cutDebug
 	jsr	CutRec
 	bcc	@n10
+	lda	#0
+	sta	cutDebug
 	rts
-@n10:	ldy	#5
+@n10:
+lda	#0
+sta	cutDebug
+
+
+	ldy	#5
 @nloop:	lda	r2L,y
 	cmp	a4L,y
 	bne	@n20
@@ -354,11 +363,11 @@ DrawWindow2:	; Par: a4-a6: Window-Rechteck
 	bne	@l40
 	lda	#0
 	sec
-	jsr	DrawPoint
+	;jsr	DrawPoint
 	jmp	@weiter
 @l40:	lda	#0
 	sec
-	jsr	DrawLine
+	;jsr	DrawLine
 @weiter:	lda	a1L
 	clc
 	adc	#3
@@ -477,6 +486,10 @@ MaxTextWin:	; Ret: x unver{ndert
 	bpl	@10
 .ifdef topdesk128
 	MoveW_  RightMax, rightMargin
+	LoadB   windowBottom, $df
+	lda	rightMargin+1
+	ora	#16
+	sta	rightMargin+1	
 .endif
 	rts
 @b:	.byte	0,199
@@ -486,9 +499,9 @@ MaxTextWin:	; Ret: x unver{ndert
 	.word	0,319
 .endif
 SetTextWin:	; Par: r2-r4 zu setzendes Textfenster
-	jsr	GetClipRec
-	jsr	CutRec
-	bcs	@end
+	;jsr	GetClipRec
+	;jsr	CutRec
+	;bcs	@end
 	ldy	#5
 @loop:	lda	windowTop,y
 	sta	OldClip,y
@@ -526,16 +539,29 @@ DrawWindowC:	lda	#1
 	jsr	DrawWindow2
 	bcc	@geht
 	rts
-@geht:	MoveB	a4L,r2L	; Textfenster f}r Titelstring setzen
+@geht:	
+	lda	a5H
+	sta	a1L
+	
+	MoveB	a4L,r2L	; Textfenster f}r Titelstring setzen
 	clc
 	adc	#BREITEY-1
 	sta	r2H
+	lda	a1L
+	bcc	@10
+	clc
+	adc     #16
+@10:
+	sta     a1H
+	
 	lda	a5L
 	clc
 	adc	#3+BREITEX
 	sta	r3L
 	lda	a5H
 	adc	#0
+	and	#%00001111
+	ora	a1L
 	sta	r3H
 	lda	a6L
 	sec
@@ -543,12 +569,21 @@ DrawWindowC:	lda	#1
 	sta	r4L
 	lda	a6H
 	sbc	#0
+	and	#%00001111
+	ora	a1H
 	sta	r4H
+	
 	MoveW_	r3,r11	; Titeltext einzeichnen
 	lda	r2L
 	clc
 	adc	#8
 	sta	r1H
+	bcc	@23
+	clc
+	lda	r11H
+	adc	#16
+	sta	r11H
+@23:
 	jsr	SetTextWin
 	bcs	@gn
 	ldy	#7
@@ -560,6 +595,7 @@ DrawWindowC:	lda	#1
 	ldx	@num
 	jsr	PutTitle	; PrintTitle
 	jsr	RestoreTextWin
+	
 @gn:	ldy	#05
 @ploop1:	lda	windowTop,y
 	pha
@@ -748,30 +784,61 @@ DoMove:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinaten
 	bpl	@10
 	php
 	sei
-	lda	$3a
+	
+	lda     r3H
+	tay
+	and     #%00001111
+	sta	r3H
+	lda	mouseXPos
 	sec
 	sbc	r3L
 	sta	moveKoords+7
-	lda	$3b
+	lda	mouseXPos+1
+	and     #%00001111
 	sbc	r3H
+	and	#%00001111
 	sta	moveKoords+8
-	lda	$3c
+	
+	tya
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r3H
+	
+	lda	mouseXPos+1
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r3L
+	lda	mouseYPos
 	sec
 	sbc	r2L
 	sta	moveKoords+6
+	lda	r3L
+	sbc	r3H
+	asl
+	asl
+	asl
+	asl
+	ora	moveKoords+8
+	sta	moveKoords+8
+	
 	plp
 	; rechter Rand = MausXOffset
 	MoveW_	moveKoords+7,mouseLeft
 	; linker Rand = 319-(xr-xl)+MausXOffset
 	; 	= 319-xr+xl+MausXOffSet
 .ifdef topdesk128
-    MoveW_   RightMax, mouseRight
+	MoveW_   RightMax, mouseRight
 .else
 	LoadW___	mouseRight,319
 .endif
 	SubW	moveKoords+4,mouseRight
 	AddW	moveKoords+2,mouseRight
 	AddW	moveKoords+7,mouseRight
+		
 	; oberer Rand = MausYOffset+Grenze_oben
 	lda	moveKoords+6
 	clc
@@ -782,20 +849,38 @@ DoMove:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinaten
 	;	  = 199 - yu + yo + MausYOffSet
 	LoadW	r12, 479
 	
-	lda	r12L
+	lda	moveKoords+5
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r3H
+	lda	moveKoords+3
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r3L
+	
+	lda	r12L		; minus high
 	sec
 	sbc	moveKoords+1
 	sta     r12L
 	lda     r12H
-	sbc     #0
+	sbc     r3H
 	sta     r12H
 	clc
 	lda	r12L
 	adc     moveKoords
 	sta	r12L
 	lda 	r12H
-	adc     #0
+	adc     r3L
 	sta     r12H
+	
+	lda	mouseRight + 1
+	and	#%00001111
+	sta	mouseRight + 1
+	
 	clc
 	lda	r12L
 	adc     moveKoords+6
@@ -835,40 +920,83 @@ AppMoveFrame:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinate
 	dey
 	bpl	@25
 	jsr	InvFrame
+
+	lda	r3H
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r0L
+	lda	r4H
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r0H
+
 	lda	r2H	; aus yu/xr mach h/b
 	sec
 	sbc	r2L
 	sta	r2H
+	lda	r0H
+	sbc	r0L
+	sta     r0H
+	
 	SubW	r3,r4
 	MoveW_ 	mouseXPos,r3	; neues x holen
 	SubW	moveKoords+7,r3	; minus Mausabstandx
 	AddW	r3,r4	; aus b mach xr
 	
+	lda	mouseXPos+1
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r12H
+	lda	moveKoords+8
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r12L
+	
 	lda	mouseYPos	; neues y holen
 	sec
 	sbc	moveKoords+6	; minus Mausabstandy
 	sta	r2L
-	bcs	@27a
-	pha
-	sec
-	lda     r3H
-	sbc     #16
-	sta     r3H
-	sec
-	lda     r4H
-	sbc     #16
-	sta     r4H
-	pla
-@27a:
+	lda	r12H
+	sbc     r12L
+	sta	r0L
+	
+	lda	r2L	
 	clc
 	adc	r2H	; aus h mach yu
 	sta	r2H
-	bcc     @27b
-	clc
-	lda     r4H
-	adc     #16
-	sta     r4H
-@27b:
+	lda	r0L
+	adc	r0H
+	sta	r0H
+
+	lda	r0L
+	asl
+	asl
+	asl
+	asl
+	sta	r0L
+	lda	r0H
+	asl
+	asl
+	asl
+	asl
+	sta	r0H
+
+	lda	r3H
+	and	#%00001111
+	ora	r0L
+	sta	r3H
+	lda	r4H
+	and	#%00001111
+	ora	r0H
+	sta	r4H
 	
 	ldy	#05	; Neues Rechteck zeichnen
 @27:	lda	r2,y
@@ -953,11 +1081,7 @@ AppRubberFrame:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordina
 	sta	r2,y
 	dey
 	bpl	@25
-	PushW	r3
-	PushB	r2L
 	jsr	InvFrame
-	PopB	r2L
-	PopW	r3
 	MoveW_	mouseXPos,r4
 	MoveB	mouseYPos,r2H
 
@@ -1083,6 +1207,9 @@ NewMouseService:
 	bpl	@29
 .ifdef topdesk128
     MoveW_   RightMax, mouseRight
+    lda	mouseRight+1
+    ora #16
+    sta mouseRight+1
 .endif
 	lda	moveVector
 	ldx	moveVector+1
@@ -1106,7 +1233,7 @@ NewMouseService:
 	lda	oldMsVec
 	ldx	oldMsVec+1
 	jmp	CallRoutine
-@d:	.byte	0,199
+@d:	.byte	0,$df
 .ifdef topdesk128
     .byte  0, 0
 .else
@@ -1446,6 +1573,7 @@ BackWindow:	; aktuelles Window nach hinten setzen
 	jmp	@59
 @70:	jsr	DrawShadow
 	jmp	SendActivate
+cutDebug:	.byte	0
 CutRec:	; Schnittfl{che zwischen zwei Rechtecken berechnen
 	; Rechteck 1: r2-r4
 	; Rechteck 2: r5-r7	( bleibt unver{ndert )
@@ -1453,38 +1581,74 @@ CutRec:	; Schnittfl{che zwischen zwei Rechtecken berechnen
 	; bei c = 1 keine Schnittfl{che vorhanden
 	; zerst|rt: A
 
+	PushW	r0
+	lda	r3H
+	and     #%11110000
+	sta     r0L 
+	lda	r3H
+	and	#%00001111
+	sta	r3H
+	lda	r4H
+	and     #%11110000
+	sta     r0H 
+	lda	r4H
+	and	#%00001111
+	sta	r4H
+
 	; r3 = MAX(r3,r6)
 	lda	r6L
 	sec
 	sbc	r3L
 	lda	r6H
+	and     #%00001111
 	sbc	r3H
 	bmi	@10
-@05:	MoveW_	r6,r3
+	MoveB   r6L, r3L
+	lda	r6H
+	and	#%00001111
+	sta     r3H
 @10:	; r2L = MAX (r2L,r5L)
 	lda	r5L
 	sec
 	sbc	r2L
-	lda	#00
-	sbc	#00
+	lda	r6H
+	and	#%11110000
+	sbc	r0L
 	bmi	@20
 	MoveB	r5L,r2L
+	lda 	r6H
+	and	#%11110000
+	sta	r0L
+	lda	cutDebug
+	beq	@20
+	inc $d021
 @20:	; r4 = MIN (r4,r7)
 	lda	r7L
 	sec
 	sbc	r4L
 	lda	r7H
+	and     #%00001111
 	sbc	r4H
 	bpl	@30
-	MoveW_	r7,r4
+	MoveB   r7L, r4L
+	lda	r7H
+	and	#%00001111
+	sta     r4H
 @30:	; r2H = MIN (r2H,r5H)
 	lda	r5H
 	sec
 	sbc	r2H
-	lda	#00
-	sbc	#00
+	lda	r7H
+	and	#%11110000
+	sbc	r0H
 	bpl	@40
 	MoveB	r5H,r2H
+	lda	r7H
+	and	#%11110000
+	sta	r0H
+	lda	cutDebug
+	beq	@40
+	inc $d021
 @40:	; Schnittfl{che jetzt in r2-r4
 	; wenn r4<r3 oder r2H<r2L, dann existiert keine Schnittfl{che
 	lda	r4L
@@ -1493,15 +1657,31 @@ CutRec:	; Schnittfl{che zwischen zwei Rechtecken berechnen
 	lda	r4H
 	sbc	r3H
 	bpl	@50
-@49:	sec
+@49:
+	PopW	r0
+	sec
 	rts
 @50:	lda	r2H
 	sec
 	sbc	r2L
-	lda	#00
-	sbc	#00
-	bmi	@49
-@60:	clc
+	lda	r0H
+	sbc	r0L
+	bpl	@60
+	lda	cutDebug
+	beq	@60
+@61:
+	inc $d021
+	jmp @61
+@60:
+	lda	r3H
+	ora	r0L
+	sta	r3H
+	lda	r4H
+	ora	r0H
+	sta	r4H
+	PopW	r0
+	
+	clc
 	rts
 DrawShadow:
 RemoveShadow:	PushW	a0
@@ -1662,33 +1842,33 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	; r0	Zeiger auf Bitmap
 	; windowTop-rightmargin: Clipping Window
 .ifdef topdesk128
-    txa
-    pha
-		tya
-		pha
-    ldx #r10
-    jsr NormalizeX
-    LoadB   @off80, 0
-    lda graphMode
-    bmi @n80
-    lda r13L
-    and #$7f
-    sta MapBreite
-    bne @schmal
+	txa
+	pha
+	tya
+	pha
+	ldx	#r10
+	jsr	NormalizeX
+	LoadB	@off80, 0
+	lda	graphMode
+	bmi	@n80
+	lda	r13L
+	and	#$7f
+	sta	MapBreite
+	bne	@schmal
 @n80:
-    lda r13L
-    sta MapBreite
-    bpl @schmal
-    ldx #1
-    stx @off80
-    and #$7f
-    asl
+	lda	r13L
+	sta	MapBreite
+	bpl	@schmal
+	ldx	#1
+	stx	@off80
+	and	#$7f
+	asl
 @schmal:
-    sta r13L
-		pla
-		tay
-    pla
-    tax
+	sta	r13L
+	pla
+	tay
+	pla
+	tax
 .endif
 
 	lda	leftMargin+1	; r10>=leftMargin?
@@ -1768,25 +1948,27 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	txa
 	pha
 	sta r2L
-	cmp #($F8-1)
-	bcc @norm
+	
+	
+	;cmp #($F8-1)
+	;bcc @norm
 
 	; if larger than, high rest y
-	and #7
-	sty r2L
+	;and #7
+	;sty r2L
 
-	asl r2L
-	rol r2H
-	asl r2L
-	rol r2H
-	asl r2L
-	rol r2H
+	;asl r2L
+	;rol r2H
+	;asl r2L
+	;rol r2H
+	;asl r2L
+	;rol r2H
 
-	ora r2L
-	sta r2L
-	lda r2H
-	and #7
-	sta r2H
+	;ora r2L
+	;sta r2L
+	;lda r2H
+	;and #7
+	;sta r2H
 
 @norm:
 	sec
@@ -1817,9 +1999,9 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	inx		; n{chste Zeile
 	bne @04
 	iny
-	txa
-	ora #$F8
-	tax
+	;txa
+	;ora #$F8
+	;tax
 @04:
 	dec	r13H
 	bne	@01
@@ -1828,8 +2010,31 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	rts
 @sub:
 .ifdef topdesk128
-    jsr DispTest
+    	jsr DispTest
 .endif
+	lda	r2L
+	pha
+	lda	r2H
+	;lsr
+	;lsr	
+	;lsr
+	;lsr
+	asl	r2L
+	rol
+	asl	r2L
+	rol
+	asl	r2L
+	rol
+	asl	r2L
+	rol
+	asl	r2L
+	rol
+	tay
+	pla	
+	sta	r2L
+	and	#$07
+	ora 	#$f8
+	tax
 
 	jsr	GetScanLine	; Zeilenadresse holen
 .ifdef topdesk13
@@ -2297,9 +2502,17 @@ BackgroundRectangle:	; Wiederherstellung des Hintergrundes im Rechteck r2-r4
 	bit r10L
 	bpl @21
 
+	; by 8
+	sty	r10H
 	txa
-	tay
-  ldx #$f8
+	asl
+	rol	r10H
+	asl
+	rol	r10H
+	asl
+	rol	r10H
+	ldy	r10H
+	tax
 
 	lda r10L
 	and #$7F
@@ -2383,8 +2596,8 @@ MaxWindow:	; actives Window auf Maximalgr|~e setzen / bzw. zur}ck
 
 NewPutString:
 .ifdef topdesk128
-    ldx #r11
-    jsr NormalizeX
+    	ldx 	#r11
+    	jsr 	NormalizeX
 .endif
 	ldy	#00
 	lda	(r0),y
@@ -2400,7 +2613,8 @@ NewPutString:
 @04:	jsr	SmallPutChar
 @05:	IncW	r0
 	jmp	NewPutString
-@10:	rts
+@10:
+	rts
 oldRecoverVec:	.word	0
 MyRecoverService:	ldy	#5
 @loop0:	lda	r2L,y

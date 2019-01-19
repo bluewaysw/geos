@@ -32,9 +32,9 @@ InitRamTab:
 	.byte 0                       ; mouseOn
 	.word mousePicData            ; msePicPtr
 	.byte 0                       ; windowTop
-	.byte SC_PIX_HEIGHT-1         ; windowBottom
+	.byte $df         	      ; windowBottom
 	.word 0                       ; leftMargin
-	.word SC_PIX_WIDTH-1          ; rightMargin
+	.word $1000 + 719            ; rightMargin
 	.byte 0                       ; pressFlag
 
 	.word appMain

@@ -186,9 +186,18 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 @sc20:
 .endif
 .endif
-  lda #0
 	ldx	a3H
-	ldy #0
+	lda 	r10H
+	tay
+	and	#%00001111
+	sta	r10H
+	tya
+	lsr
+	lsr
+	lsr
+	lsr
+	tay
+	lda 	#0
 	jsr	DrawMap
 	; Darstellung des Filenames, auf dessen Text a1 zeigt, zentriert
 	; an der Position a4+12, a3H+27
@@ -296,21 +305,21 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	adc	#00
 	sta	a4H
 .ifdef topdesk128
-    lda graphMode
-    bpl @send
-    lda SchmalFlag
-    cmp #'*'
-    beq @send
-    AddVW__    5, a4
+	lda 	graphMode
+	bpl	@send
+	lda	SchmalFlag
+	cmp	#'*'
+	beq	@send
+	AddVW__ 5, a4
 	jsr	DispNumber
-    AddVW__  25, a4
-    lsr a4H
-    ror a4L
+	AddVW__	25, a4
+	lsr 	a4H
+	ror 	a4L
 	rts
 @send:
 .endif
 	jsr	DispNumber
-    rts
+	rts
 @geticon:	; Icon nachladen
 	ldy	#16
 	lda	(a1),y
