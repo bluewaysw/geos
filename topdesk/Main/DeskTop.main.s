@@ -1607,6 +1607,33 @@ RedrawHead:
 	jsr	FrameRectangle
 	jmp	InitClock
 
+mode_Menue:
+	jsr	MySubMenuDA2
+modeoben:	.byte 13+13+1
+modeunten:	.byte 8*14+13+13+1+1		; wird berechnet!
+		.word 80,171
+		.byte 8 | VERTICAL
+		mpt	Mode40Text,MENU_ACTION,Mode_Call
+		mpt	Mode80Text,MENU_ACTION, Mode_Call
+		mpt	ModeNSText,MENU_ACTION,Mode_Call
+		mpt	ModeHRText,MENU_ACTION,Mode_Call
+		mpt	ModeHRSText,MENU_ACTION,Mode_Call
+		mpt	ModeSRText,MENU_ACTION,Mode_Call
+		mpt	ModeSRSText,MENU_ACTION,Mode_Call
+		mpt	ModeHCText,MENU_ACTION,Mode_Call
+Mode40Text:	.byte "  40-cols",0
+Mode80Text:	.byte "  80-cols",0
+ModeNSText:	.byte ITALICON, "  nice scale",PLAINTEXT,0
+ModeHRText:	.byte "* high-res",0
+ModeHRSText:	.byte ITALICON, "  high-res scaled",PLAINTEXT,0
+ModeSRText:	.byte ITALICON, "  super-res",PLAINTEXT,0
+ModeSRSText:	.byte ITALICON, "  super-res scaled",PLAINTEXT,0
+ModeHCText:	.byte ITALICON, "  high-color",PLAINTEXT,0
+
+Mode_Call:
+	jsr	GotoFirstMenu
+	rts
+	
 geos_Menue:
 	jsr	DA_Init
 	txa
@@ -1619,7 +1646,7 @@ geosunten:	.byte 28		; wird berechnet!
 geosanz:	.byte 1		; wird eingesetzt!
 	mpt	DeskInfoText,MENU_ACTION,DispInfo
 .ifdef topdesk128
-    mpt SwitchText,MENU_ACTION, Switch
+	mpt	SwitchText,DYN_SUB_MENU, mode_Menue
 .endif
 	mpt	DASpace + 0*17,MENU_ACTION,DA_Call
 	mpt	DASpace + 1*17,MENU_ACTION,DA_Call
@@ -1631,7 +1658,7 @@ geosanz:	.byte 1		; wird eingesetzt!
 	mpt	DASpace + 7*17,MENU_ACTION,DA_Call
 DeskInfoText:	.byte	"TopDesk Info",0
 .ifdef topdesk128
-SwitchText:  .byte   "switch 40/80",0
+SwitchText:  .byte   "switch mode",0
 .endif
 
 maxDesks	= 8	; maximale Anzahl der angezeigten DA's

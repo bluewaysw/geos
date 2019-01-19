@@ -1102,6 +1102,23 @@ GenData:	.word	GenTab,DARecSpace
 GenData:	.word	GenTab,$7f80
 .endif
 
+MySubMenuDA2:	
+	pla
+	clc
+	adc	#1
+	sta	r0L
+	pla
+	adc	#0
+	sta	r0H
+	MoveW_	RecoverVector,@r1
+	LoadW___	RecoverVector,@11
+	rts
+@11:	
+	MoveW_	@r1,RecoverVector
+	jmp 	MyRecoverService
+	
+@r1:	.word 0
+
 MySubMenuDA:	LoadW___	GenData+2,DARecSpace
 	bne	MySub2
 .ifdef topdesk128
