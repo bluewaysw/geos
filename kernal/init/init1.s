@@ -23,10 +23,12 @@
 .import MapUnderlay
 .import UnmapUnderlay
 .endif
+.import dtLoad
 
 .segment "init1"
 
 _InitMachine:
+inc $d020
 .ifdef mega65
     jsr MapUnderlay
 .endif
@@ -36,10 +38,10 @@ _InitMachine:
 .endif
 .if .defined(bsw128) || .defined(mega65)
 .import SetRightMargin
-.import SetNewMode0
+.import SetNewMode
 _InitMachine2:
 	jsr InitGEOEnv
-	jmp SetNewMode0
+	jmp SetNewMode
 .endif
 InitGEOEnv:
 	LoadW r0, InitRamTab
@@ -47,7 +49,13 @@ InitGEOEnv:
 	LoadB	CPU_DATA, RAM_64K
 	jsr _InitRam
 	LoadB	CPU_DATA, IO_IN
+.ifdef mega65
+	jsr MapUnderlay
+	jsr SetRightMargin
+	jmp UnmapUnderlay	
+.else
 	jmp SetRightMargin
+.endif
 .else
 .ifdef wheels
 	.assert * = _InitRam, error, "Code must run into _InitRam"

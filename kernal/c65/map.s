@@ -64,6 +64,7 @@
 .import _ReadByte
 .import __CRC
 .import __GetRandom
+.import _SetNewMode
 
 .global _map_FollowChain   
 .global _map_FindFTypes
@@ -94,6 +95,7 @@
 .global _map_ReadByte
 .global _map__CRC
 .global _map__GetRandom
+.global _map_SetNewMode
 
 .global MapUnderlay
 .global UnmapUnderlay
@@ -325,6 +327,10 @@ _map__GetRandom:
     jsr MapUnderlay
     jsr __GetRandom
     bra __unmap
+_map_SetNewMode:
+	jsr MapUnderlay
+	jsr _SetNewMode
+	bra __unmap
 
 
 MapUnderlay:

@@ -13,6 +13,9 @@
 .global RcvrMnu0
 .global ResetMseRegion
 
+.import screenMaxX
+.import screenMaxY
+
 .segment "mouse3"
 
 .ifndef wheels
@@ -32,9 +35,15 @@ ResetMseRegion:
 @1:	rts
 @2:	LoadW mouseRight, SCREENPIXELWIDTH-1
 .endif
-	LoadB mouseBottom, $DF
-	LoadW mouseRight, 719 + $1000
-
+	MoveB screenMaxY, mouseBottom
+	MoveB screenMaxX, mouseRight
+	lda screenMaxY+1
+	asl
+	asl
+	asl
+	asl
+	ora screenMaxX+1
+	sta mouseRight+1
 .else
 	LoadW mouseRight, SC_PIX_WIDTH-1
 	LoadB mouseBottom, SC_PIX_HEIGHT-1

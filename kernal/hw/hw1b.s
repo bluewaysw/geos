@@ -105,6 +105,7 @@ ASSERT_NOT_BELOW_IO
 
 	; enable 800x600 mode
 	; 1. Set horizontal border width
+	.if 0
 	LDA #39
 	STA $D05C
 	LDA #$80
@@ -172,6 +173,7 @@ ASSERT_NOT_BELOW_IO
 	sta $d04e
 	lda #>74
 	sta $d04f
+.endif
 .else
 	lda #$a5
 	sta $d02f

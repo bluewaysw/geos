@@ -88,7 +88,7 @@ next:	.WORD	0
 	sta	$d06f
 
 	LDA   $D054
-	ORA   #$50
+	ORA   #$40
 	STA   $D054
 	lda   #$40
 	sta	  $d031

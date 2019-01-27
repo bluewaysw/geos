@@ -5,6 +5,7 @@
 ; These are not part of the API and can be changed.
 
 .include "config.inc"
+.include "inc/const.inc"
 
 .global menuOptNumber
 .global menuTop
@@ -72,6 +73,13 @@
 .global verifyFlag
 .global TempCurDrive
 .global scr_mobx
+
+.global screenCardsX
+.global screenMaxX
+.global screenMaxY
+.global spriteXPosOff
+.global spriteYPosOff
+.global screenNextLine
 
 .segment "vars"
 
@@ -169,3 +177,10 @@ KbdDBncTab:     .res 8, 0
 		.res 3, 0
 KbdDMltTab:     .res 20, 0
 .endif
+
+screenCardsX:	.word 40
+screenMaxX:	.word 319
+screenNextLine: .word 312
+screenMaxY:     .word 199
+spriteXPosOff:	.word VIC_X_POS_OFF
+spriteYPosOff:	.word VIC_Y_POS_OFF

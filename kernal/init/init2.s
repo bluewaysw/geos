@@ -38,6 +38,9 @@
 _FirstInit:
 	sei
 	cld
+.ifdef mega65
+	LoadB screencolors, $BF
+.endif
 .ifdef bsw128
 	LoadB screencolors, $BF
 	sta @1

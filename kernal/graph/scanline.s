@@ -13,6 +13,8 @@
 .global _GetScanLine
 .ifdef mega65
 .global InitScanLineTab
+.global LineTabH
+.global LineTabL
 .endif
 
 .segment "graph2n"
@@ -323,42 +325,7 @@ GSC80_6:
 	rts
 .endif
 
-.ifdef mega65
 
-;---------------------------------------------------------------
-; InitScanLineTab                                             
-;
-; Function:  Inits the scan line tab for given scan line 
-;            size.
-;
-; Pass:      r5  scanline size
-; Destroyed: a, x
-;---------------------------------------------------------------
-InitScanLineTab:
-
-	PushB	CPU_DATA
-	LoadB	CPU_DATA, RAM_64K
-
-	ldx	#0
-	txa
-	sta LineTabL, X
-	sta LineTabH, x
-@1:
-	clc
-	lda	LineTabL,X
-	add r5L
-	sta LineTabL+1,X
-	lda	LineTabH,X
-	adc r5H
-	sta LineTabH+1,X
-	inx
-	cpx		#127
-	bne		@1
-
-	PopB	CPU_DATA
-
-	rts
-.endif
 
 
 .segment "graph2o"

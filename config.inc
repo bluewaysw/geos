@@ -163,7 +163,7 @@ config_inc = 1
 	removeToBASIC = 1
 
 	; for 2MHz-on-border on C128 in 64 mode
-	use2MHz = 1
+	;use2MHz = 1
 
 	; only VLIR and SEQ supported
 	;onlyVLIR = 1

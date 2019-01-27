@@ -202,6 +202,7 @@
 .import _map_ReadByte
 .import _map__CRC
 .import _map__GetRandom
+.import _map_SetNewMode
 .else
 .import _InsertRecord
 .import _NextRecord
@@ -397,6 +398,7 @@
 .global SwapRAM
 .global VerifyRAM
 .global DoRAMOp
+.global SetNewMode
 
 .if .defined(bsw128) || .defined(mega65)
 .global NormalizeX
@@ -1005,7 +1007,7 @@ SetMsePic:
 	UNIMPLEMENTED
 SetNewMode:
 .import _SetNewMode
-	jmp _SetNewMode
+	jmp _map_SetNewMode
 NormalizeX:
 	jmp _NormalizeX
 MoveBData:

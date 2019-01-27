@@ -54,8 +54,8 @@ _EnterDeskTop:
 	stx firstBoot
 .endif
 	txs
-	jsr ClrScr
 	jsr _InitMachine
+	jsr ClrScr
 .ifdef useRamExp
 	MoveW DeskTopStart, r0
 	MoveB DeskTopLgh, r2H

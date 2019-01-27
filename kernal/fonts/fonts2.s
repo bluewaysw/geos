@@ -53,6 +53,8 @@ PrvCharWidth = $880D
 .global FontPutChar
 .global _GetRealSize
 
+.import screenNextLine
+
 .segment "fonts2"
 
 ;---------------------------------------------------------------
@@ -994,20 +996,21 @@ FontPutChar:
 	bne @8
 .ifdef mega65
 @88:
-	inc r5H         ; end of block, we need to add a line
-	inc r6H
-	bbrf    7, graphMode, @99
-	inc r5H
-	inc r6H
-	AddVB $78, r5L
-	bra @98
 @99:
-	inc r5H
-	inc r6H
-;	inc r5H
-;	inc r6H
-	;AddVB $38, r5L
-	AddVB $C8, r5L
+	clc
+	lda screenNextLine+1
+	adc r5H
+	sta r5H
+	clc
+	lda screenNextLine+1
+	adc r6H
+	sta r6H
+
+	clc
+	lda screenNextLine
+	lda #$38
+	adc r5L
+	sta r5L
 @98:
 	sta r6L
 	bcc @8

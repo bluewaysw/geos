@@ -173,6 +173,16 @@ The GEOS KERNAL has a quite complicated memory layout:
 * $C100-$C2E5: KERNAL Jump Table
 * $C2E6-$FFFF: KERNAL
 
+For C65/MEGA65 there is a different/specific layout:
+
+* $9000-$9FFF: KERNAL ("lokernal")
+* $A000-$BFFF: KERNEL Underlay (graphics area mapped out as needed)
+* $C000-$C01A: KERNAL Header
+* $C01B-$C0FF: KERNAL
+* $C100-$C2E5: KERNAL Jump Table
+* $C2E6-$FFFF: KERNAL
+* $D000-$DFFF: I/O area on by default (hidden for calling methods)
+
 The header and the jump table must be at $C000 and $C100, respectively. Together with the graphics bitmap at $A000, this partitions the KERNAL into four parts: lokernal, below header, between header and jump table, and above jump table.
 
 The linker config file positions the segments from the source files into these parts. If the code of any segment changes, the header and the jump table will remain at their positions. If a part overruns, the linker will report and error, and you can consult the `kernal.map` output file to find out where to best put the extra code.

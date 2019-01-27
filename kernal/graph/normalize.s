@@ -16,6 +16,8 @@
 .global _NormalizeY
 .endif
 
+.import screenMaxX
+
 .segment "graph5"
 
 .ifdef mega65
@@ -71,11 +73,11 @@ _NormalizeX:
 	pha
 	and #$03
 	sta zpage+1,x
-	lda	#<719
+	lda	screenMaxX
 	clc
 	sbc zpage, x
 	sta zpage, x
-	lda #>719
+	lda screenMaxX+1
 	sbc zpage+1,x
 	sta zpage+1,x
 	pla

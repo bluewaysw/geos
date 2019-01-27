@@ -25,6 +25,9 @@
 .global _EnablSprite
 .global _PosSprite
 
+.import spriteXPosOff
+.import spriteYPosOff
+
 .segment "sprites"
 
 ;---------------------------------------------------------------
@@ -88,7 +91,8 @@ _HR_PosSprite:
 	rol
 	tay
 	lda r5L
-	addv VIC_Y_POS_OFF
+	clc
+	adc spriteYPosOff
 	;sta r6L
 	sta mob0ypos,Y
 	
@@ -129,7 +133,8 @@ lda r3L
 rol
 tay
 	lda r4L
-	addv VIC_X_POS_OFF
+	clc
+	adc spriteXPosOff
 	;sta r6L
 	sta mob0xpos,Y
 	lda r4H
