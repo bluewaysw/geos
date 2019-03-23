@@ -51,7 +51,7 @@ Icons_1:
 	lda r0L
 	ora r0H
 	beq @3
-	jsr _BitmapUp
+	;jsr _BitmapUp
 @3:	inc r10L
 	lda r10L
 	ldy #0
@@ -125,6 +125,7 @@ FindClkIcon:
 	beq @2
 	iny
 	lda mouseXPos+1
+	and #%00001111
 	lsr
 .if .defined(bsw128) || .defined(mega65)
 	sta L888F
@@ -141,7 +142,7 @@ FindClkIcon:
 .if .defined(bsw128) || .defined(mega65)
 	pha
 	lda (IconDescVec),y
-	jsr LFCCC
+	jsr LFCCC_
 	sta L888F
 	pla
 .endif
@@ -166,22 +167,66 @@ FindClkIcon:
 .endif
 	bcs @2
 	dey
+	LoadB L8890, 0
+	lda (IconDescVec-1),y
+	bpl @11
+
+	; in GEOS6 scalable mode
+	lda (IconDescVec),y
+	bit #%01000000
+	beq @23
+
+	lda (IconDescVec),y
+	clc
+	ora #%10000000
+	adc scrFullCardsX+1
+@23:
+	; we are in cards, so mult by 8
+	asl
+	rol L8890
+	asl
+	rol L8890
+	asl
+	rol L8890
+
+@11:
+	sta L888F
+
+	lda mouseXPos+1
+	lsr
+	lsr
+	lsr
+	lsr
+	pha
+
 	lda mouseYPos
 	sec
-	sbc (IconDescVec),y
+	sbc L888F
+	sta L888F
+
+	pla
+	sbc L8890
+
 	bcc @2
+	bne @2
 	iny
 	iny
+	lda L888F
 	cmp (IconDescVec),y
 	bcc @3
 @2:	inc r0L
 	lda r0L
 	ldy #0
 	cmp (IconDescVec),y
-	bne @1
+	beq @19
+	jmp @1
+@19:
 	clc
 	rts
-@3:	sec
+@3:
+inc $d020
+
+	sec
 	rts
 
 CalcIconCoords:
@@ -243,3 +288,25 @@ LFCCC:	pha
 	rts
 .endif
 
+.if .defined(bsw128) || .defined(mega65)
+LFCCC_:
+	pha
+	and #%11000000
+
+	bpl @1
+	cmp #%11000000
+	bne @2
+
+	pla
+	; x negative case
+	clc
+	adc scrFullCardsX
+	rts
+@2:
+	pla
+	and #%01111111
+	rts
+@1:
+	pla
+	rts
+.endif

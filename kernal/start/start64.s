@@ -156,18 +156,18 @@ OrigResetHandle:
 	sei
 	cld
 .ifdef mega65
-    lda #GR_40
+	lda #5
 	sta graphMode
 	LoadW	r5, 720
 	jsr InitScanLineTab
 .endif
 	ldx #$ff
 .ifdef mega65
-    jsr MapUnderlay
+ 	jsr MapUnderlay
 .endif
 	jsr _DoFirstInitIO
 .ifdef mega65
-    jsr UnmapUnderlay
+ 	jsr UnmapUnderlay
 .endif
 	jsr InitGEOEnv
 .ifdef usePlus60K

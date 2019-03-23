@@ -12,6 +12,7 @@
 ;	t	"CiMac"
 ;endif
 
+
 Grenze_oben	= 15
 GD_CLOSE	= $02
 GD_HIDE	= $40
@@ -475,29 +476,17 @@ WindowData:	; LinienEndpunkte in Abh{ngigkeit von den Endpunkten
 	Punkt	-1,0,0,0,0	; Ende
 
 MaxTextWin:	; Ret: x unver{ndert
-.ifdef topdesk128
-	ldy	#3
-.else
 	ldy	#5
-.endif
 @10:	lda	@b,y
 	sta	windowTop,y
 	dey
 	bpl	@10
-.ifdef topdesk128
-	MoveW_  RightMax, rightMargin
-	LoadB   windowBottom, $df
-	lda	rightMargin+1
-	ora	#16
-	sta	rightMargin+1	
-.endif
 	rts
-@b:	.byte	0,199
-.ifdef topdesk128
-    .byte   0, 0
-.else
-	.word	0,319
-.endif
+@b:
+	ByteCY	0, 0
+	ByteCY	751|0, 400
+	WordCX	0, 0
+	WordCX  751|0, 400
 SetTextWin:	; Par: r2-r4 zu setzendes Textfenster
 	;jsr	GetClipRec
 	;jsr	CutRec
@@ -539,10 +528,10 @@ DrawWindowC:	lda	#1
 	jsr	DrawWindow2
 	bcc	@geht
 	rts
-@geht:	
+@geht:
 	lda	a5H
 	sta	a1L
-	
+
 	MoveB	a4L,r2L	; Textfenster f}r Titelstring setzen
 	clc
 	adc	#BREITEY-1
@@ -553,7 +542,7 @@ DrawWindowC:	lda	#1
 	adc     #16
 @10:
 	sta     a1H
-	
+
 	lda	a5L
 	clc
 	adc	#3+BREITEX
@@ -572,7 +561,7 @@ DrawWindowC:	lda	#1
 	and	#%00001111
 	ora	a1H
 	sta	r4H
-	
+
 	MoveW_	r3,r11	; Titeltext einzeichnen
 	lda	r2L
 	clc
@@ -595,7 +584,7 @@ DrawWindowC:	lda	#1
 	ldx	@num
 	jsr	PutTitle	; PrintTitle
 	jsr	RestoreTextWin
-	
+
 @gn:	ldy	#05
 @ploop1:	lda	windowTop,y
 	pha
@@ -784,7 +773,7 @@ DoMove:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinaten
 	bpl	@10
 	php
 	sei
-	
+
 	lda     r3H
 	tay
 	and     #%00001111
@@ -798,14 +787,14 @@ DoMove:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinaten
 	sbc	r3H
 	and	#%00001111
 	sta	moveKoords+8
-	
+
 	tya
 	lsr
 	lsr
 	lsr
 	lsr
 	sta	r3H
-	
+
 	lda	mouseXPos+1
 	lsr
 	lsr
@@ -824,7 +813,7 @@ DoMove:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinaten
 	asl
 	ora	moveKoords+8
 	sta	moveKoords+8
-	
+
 	plp
 	; rechter Rand = MausXOffset
 	MoveW_	moveKoords+7,mouseLeft
@@ -838,17 +827,17 @@ DoMove:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinaten
 	SubW	moveKoords+4,mouseRight
 	AddW	moveKoords+2,mouseRight
 	AddW	moveKoords+7,mouseRight
-		
+
 	; oberer Rand = MausYOffset+Grenze_oben
 	lda	moveKoords+6
 	clc
 	adc	#Grenze_oben
 	sta	mouseTop
-	
+
 	; unterer Rand = 199 - (yu-yo) + MausYOffSet
 	;	  = 199 - yu + yo + MausYOffSet
 	LoadW	r12, 479
-	
+
 	lda	moveKoords+5
 	lsr
 	lsr
@@ -861,7 +850,7 @@ DoMove:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinaten
 	lsr
 	lsr
 	sta	r3L
-	
+
 	lda	r12L		; minus high
 	sec
 	sbc	moveKoords+1
@@ -876,11 +865,11 @@ DoMove:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinaten
 	lda 	r12H
 	adc     r3L
 	sta     r12H
-	
+
 	lda	mouseRight + 1
 	and	#%00001111
 	sta	mouseRight + 1
-	
+
 	clc
 	lda	r12L
 	adc     moveKoords+6
@@ -888,10 +877,10 @@ DoMove:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinaten
 	lda 	r12H
 	adc     #0
 	sta     r12H
-	rol     
-	rol     
-	rol     
-	rol     
+	rol
+	rol
+	rol
+	rol
 	ora     mouseRight + 1
 	sta     mouseRight + 1
 
@@ -941,12 +930,12 @@ AppMoveFrame:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinate
 	lda	r0H
 	sbc	r0L
 	sta     r0H
-	
+
 	SubW	r3,r4
 	MoveW_ 	mouseXPos,r3	; neues x holen
 	SubW	moveKoords+7,r3	; minus Mausabstandx
 	AddW	r3,r4	; aus b mach xr
-	
+
 	lda	mouseXPos+1
 	lsr
 	lsr
@@ -959,7 +948,7 @@ AppMoveFrame:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinate
 	lsr
 	lsr
 	sta	r12L
-	
+
 	lda	mouseYPos	; neues y holen
 	sec
 	sbc	moveKoords+6	; minus Mausabstandy
@@ -967,8 +956,8 @@ AppMoveFrame:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinate
 	lda	r12H
 	sbc     r12L
 	sta	r0L
-	
-	lda	r2L	
+
+	lda	r2L
 	clc
 	adc	r2H	; aus h mach yu
 	sta	r2H
@@ -997,17 +986,17 @@ AppMoveFrame:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinate
 	and	#%00001111
 	ora	r0H
 	sta	r4H
-	
+
 	ldy	#05	; Neues Rechteck zeichnen
 @27:	lda	r2,y
 	sta	moveKoords,y
 	dey
 	bpl	@27
 	jsr	InvFrame
-	
+
 	MoveW_	mouseXPos,@mx
 	MoveB	mouseYPos,@my
-	
+
 @30:	plp
 	jmp	AppRubberFrame
 @mx:	.word	0
@@ -1584,13 +1573,13 @@ CutRec:	; Schnittfl{che zwischen zwei Rechtecken berechnen
 	PushW	r0
 	lda	r3H
 	and     #%11110000
-	sta     r0L 
+	sta     r0L
 	lda	r3H
 	and	#%00001111
 	sta	r3H
 	lda	r4H
 	and     #%11110000
-	sta     r0H 
+	sta     r0H
 	lda	r4H
 	and	#%00001111
 	sta	r4H
@@ -1680,7 +1669,7 @@ CutRec:	; Schnittfl{che zwischen zwei Rechtecken berechnen
 	ora	r0H
 	sta	r4H
 	PopW	r0
-	
+
 	clc
 	rts
 DrawShadow:
@@ -1948,8 +1937,8 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	txa
 	pha
 	sta r2L
-	
-	
+
+
 	;cmp #($F8-1)
 	;bcc @norm
 
@@ -2016,7 +2005,7 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	pha
 	lda	r2H
 	;lsr
-	;lsr	
+	;lsr
 	;lsr
 	;lsr
 	asl	r2L
@@ -2030,7 +2019,7 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	asl	r2L
 	rol
 	tay
-	pla	
+	pla
 	sta	r2L
 	and	#$07
 	ora 	#$f8
@@ -2438,6 +2427,7 @@ SpWinFrame:	PushW	a0
 @10:	jsr	GetWinRec2
 @20:	PopW	a0
 	rts
+
 NewDoIcons:	MoveW_	oldMsVec,mouseVector
 	MoveW_	r0,iconTab
 	jsr	DoIcons
@@ -2501,7 +2491,26 @@ BackgroundRectangle:	; Wiederherstellung des Hintergrundes im Rechteck r2-r4
 	ldy #0
 	bit r10L
 	bpl @21
+	bvc @22
 
+	; x negative case
+	clc
+	lda r10L
+	adc scrFullCardsX
+	sta r10L
+@22:
+	; deal with neg y case
+	txa
+	and #%01000000
+	beq @23
+	clc
+	txa
+	ora #%10000000
+	adc scrFullCardsX+1
+	tax
+
+@23:
+	; GEOS 6 mode for different interpretation
 	; by 8
 	sty	r10H
 	txa
@@ -2518,6 +2527,16 @@ BackgroundRectangle:	; Wiederherstellung des Hintergrundes im Rechteck r2-r4
 	and #$7F
 	sta r10L
 
+	; process negative
+	and #%01000000
+	beq @21
+
+	; y is from bottom border
+	;sec
+	;lda scrFullCardsX
+	;sbc r10L
+	;sta r10L
+
 @21:
 	LoadB	r10H,0	; xk:=xk*8
 	asl	r10L
@@ -2528,7 +2547,9 @@ BackgroundRectangle:	; Wiederherstellung des Hintergrundes im Rechteck r2-r4
 	rol	r10H
 	jsr	DrawMap	; Bitmap darstellen
 	dec	@num
-	bne	@20	; und mit n{chstem Icon weitermachen
+	beq	@11
+	jmp	@20	; und mit n{chstem Icon weitermachen
+@11:
 	MoveW_	curWinData,a0	; weitere Background-Rekonstruktionen
 	lda	#WN_RESTORE	; einleiten
 	ldx	#0

@@ -17,6 +17,7 @@
 .endif
 
 .import screenMaxX
+.import screenMaxY
 
 .segment "graph5"
 
@@ -41,12 +42,12 @@ _NormalizeY:
 	and #$0F
 	sta zpage+1,x
 
-	lda #<479
-	clc
-	;sbc zpage,y
-	sta zpage,y	
-	lda #>479
-	;sbc zpage,x
+	lda screenMaxY
+	sec
+	sbc zpage,y
+	sta zpage,y
+	lda screenMaxY+1
+	sbc zpage,x
 
 	asl
 	asl

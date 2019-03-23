@@ -72,14 +72,19 @@ ClrScr:
 @4:	lda #2
 	jsr SetPattern
 	jsr i_Rectangle
+.ifdef scalable_coords
+	ByteCY	0, 0
+	ByteCY	SC_FROM_END|0, SC_FROM_END|0
+	WordCX	0, 0
+	WordCX  SC_FROM_END|0, SC_FROM_END|0
+.else
+
 	.byte 0   ; y1
 	.byte <SC_FROM_END ;SC_PIX_HEIGHT-1 ; y2
 	.word 0   ; x1
-.ifdef mega65
-	.word (SC_FROM_END | 0)  + (((SC_FROM_END)>>8)<<12); | DOUBLE_W | ADD1_W ; x2
-.else
 	.word SCREENPIXELWIDTH-1 ; x2
 .endif
+inc $d020
 	rts
 .endif
 

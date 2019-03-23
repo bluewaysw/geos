@@ -16,6 +16,7 @@
 ;.include "topdesk/Main/DeskWindows.ext.inc"
 ;endif
 ;	d	"DeskWin $400"
+
 .include "topdesk/Main/DeskWindows.akt.inc"
 
 
@@ -149,6 +150,7 @@ __ClearMultiFile:
 .global TypTab
 .global SchmalFlag
 .endif
+
 
 __STARTUP_RUN__:
 
@@ -341,7 +343,6 @@ PrintX	= 3
 PrintY	= 21
 
 Start2:
-
     lda	RamTopFlag
 	bne	@10
 	lda	ramExpSize
@@ -663,13 +664,13 @@ SetMyNewMode:
     rts
 
 @tab1:
-    wb  IconTab+6,(89-TrashX)|128
+    wb  IconTab+6,-8|128
     wb  IconTab+14,2|128
     wb  IconTab+22,STARTA_X
     wb  IconTab+30,STARTB_X
     wb  IconTab+38,STARTC_X
     wb  IconTab+46,STARTD_X
-    ww  RightMax, 719
+    ww  RightMax, 639
     wb  GraphIndex, 8
 .ifdef lang_de
     ww  HauptMenu+4,214
@@ -681,6 +682,8 @@ SetMyNewMode:
 .else
     ww  DispMenuRight,182
 .endif
+    ww	modeunten+1, 80
+    ww	modeunten+3, 171
     ww  geosoben+4,80
     ww  Datei_Menue+2+3,28
     ww  Datei_Menue+4+3,112
@@ -727,12 +730,12 @@ SetMyNewMode:
     .word   0
 
 @tab2:
-    wb  IconTab+6,((39-TrashX)*2)|128
-    wb  IconTab+14,2*2|128
-    wb  IconTab+22,STARTA_X*2
-    wb  IconTab+30,STARTB_X*2
-    wb  IconTab+38,STARTC_X*2
-    wb  IconTab+46,STARTD_X*2
+    wb  IconTab+6,-8|128
+    wb  IconTab+14,2|128
+    wb  IconTab+22,STARTA_X
+    wb  IconTab+30,STARTB_X
+    wb  IconTab+38,STARTC_X
+    wb  IconTab+46,STARTD_X
     ww  RightMax,639
 .ifdef mega65
     wb  GraphIndex,8
@@ -749,6 +752,8 @@ SetMyNewMode:
 .else
     ww  DispMenuRight,237
 .endif
+    ww	modeunten+1, 104
+    ww	modeunten+3, 235
     ww  geosoben+4,104
 .ifdef lang_de
     ww  Datei_Menue+2+3,36
@@ -805,23 +810,23 @@ SetMyNewMode:
 
 
 
-STARTA_X	=	(89-BitX)
-STARTA_Y	=	32
-STARTB_X	=	(89-BitX)
-STARTB_Y	=	64
-STARTC_X	=	(89-BitX)
-STARTC_Y	=	96
-STARTD_X	=	(89-BitX)
-STARTD_Y	=	128
+STARTA_X	=	-8 | 128
+STARTA_Y	=	4
+STARTB_X	=	-8 | 128
+STARTB_Y	=	8
+STARTC_X	=	-8 | 128
+STARTC_Y	=	12
+STARTD_X	=	-8 | 128
+STARTD_Y	=	16
 
 IconTab:
 .ifdef topdesk128
 	.byte	0,0,0,0	; Anzahl wird berechnet
 	.word	TrashMap
-	.byte	(89-TrashX)|128,56,TrashX+DOUBLE_B,TrashY
+	.byte	-8|128,-20,TrashX+DOUBLE_B,TrashY
 	.word	TrashService
 	.word	PrintMap
-	.byte	2|128,56,PrintX+DOUBLE_B,PrintY
+	.byte	2|128,-20,PrintX+DOUBLE_B,PrintY
 	.word	PrintService
 	.word	BitMap
 	.byte	STARTA_X,STARTA_Y,BitX+DOUBLE_B,BitY
@@ -913,7 +918,7 @@ OpenDa:	pha
 	jsr	DoneWithIO
 	LoadB	KSFlag,0
 	rts
-@10:	
+@10:
 	lda	@dr
 	beq	@20
 	lda	ghostFile
@@ -1574,7 +1579,7 @@ ReLoadAll2:
 ;Rts:
 	rts
 
-RedrawHead:		
+RedrawHead:
 	lda	#2
 	jsr	SetPattern
 	jsr	i_Rectangle
@@ -1631,9 +1636,28 @@ ModeSRSText:	.byte ITALICON, "  super-res scaled",PLAINTEXT,0
 ModeHCText:	.byte ITALICON, "  high-color",PLAINTEXT,0
 
 Mode_Call:
+	sta	graphMode
+	cmp	#1
+	bne     @10
+	lda     #$80
+	sta	graphMode
+
+@10:
 	jsr	GotoFirstMenu
+
+        lda graphMode
+        sta oldGraphMode
+        jsr SetNewMode
+        jsr SetMyNewMode
+        jsr SetColor
+        jsr RedrawHead
+        jsr DispMultiCount
+        ;jsr SwitchWin
+        jmp RedrawAll
+
 	rts
-	
+
+
 geos_Menue:
 	jsr	DA_Init
 	txa
@@ -1928,11 +1952,11 @@ OpenNext:	ldx	activeWindow	; eventuell selektierte Files
 	stx	messageBuffer+1
 	jsr	DispMarking
 	jsr	ClearMultiFile
-@05:	
+@05:
 	jsr	GetNext	; freie WindowNummer holen
 	bcc	@11
 	jmp	OpenNext10	; >keine mehr frei
-@11:	
+@11:
 	txa
 	pha
 	jsr	GetDiskName

@@ -180,7 +180,7 @@
 	CmpB source+0, dest+0
 @j:
 .endmacro
-	
+
 .macro CmpWI source, immed
 	.local @j
 	CmpBI source+1, >(immed)
@@ -445,15 +445,15 @@ ASSERT_NOT_BELOW_IO
 	beq	addr
 	bcc	addr
 .endmacro
-	
+
 .ifdef scalable_coords
 
 .macro ByteCY xc, yc
-	.byte	(yc & $FF)
+	.byte	(<yc)&$FF
 .endmacro
 
 .macro WordCX xc, yc
-	.word	xc + (yc/256)<<12	
+	.word	xc + ((yc & $0F00) << 4)
 .endmacro
 
 .endif

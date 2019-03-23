@@ -211,3 +211,5 @@ END_MOUSE               =       $fffa ; ---
 NMI_VECTOR              =       $fffa ; ---
 RESET_VECTOR            =       $fffc ; ---
 IRQ_VECTOR              =       $fffe ; ---
+
+scrFullCardsX		=	$886E

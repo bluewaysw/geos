@@ -75,6 +75,7 @@
 .global scr_mobx
 
 .global screenCardsX
+.global scrFullCardsX
 .global screenMaxX
 .global screenMaxY
 .global spriteXPosOff
@@ -179,8 +180,10 @@ KbdDMltTab:     .res 20, 0
 .endif
 
 screenCardsX:	.word 40
+scrFullCardsX:	.word 40
 screenMaxX:	.word 319
 screenNextLine: .word 312
 screenMaxY:     .word 199
 spriteXPosOff:	.word VIC_X_POS_OFF
 spriteYPosOff:	.word VIC_Y_POS_OFF
+

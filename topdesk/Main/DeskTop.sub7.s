@@ -250,7 +250,8 @@ StashDrivers:	lda	sysRAMFlg
 myserial:	.word	0
 
 	;.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-StartUp:	lda	RamTopFlag
+StartUp:
+	lda	RamTopFlag
 	beq	@norm
 	lda	sysRAMFlg	; REU-MoveData ausschalten
 	and	#$7f
@@ -312,7 +313,8 @@ StartUp:	lda	RamTopFlag
 @t2:	.byte	"the same Bootdisk as",0
 @t3:	.byte	"with TopDesk installation.",0
 .endif
-@allesok:	LoadB	backPattern,2
+@allesok:
+	LoadB	backPattern,2
 	LoadW___	keyVector,KeyHandler
 	jsr	SetNumDrives
 	ldx	numDrives
@@ -366,7 +368,7 @@ StartUp:	lda	RamTopFlag
 	cpy	#4
 	bne	@loop3
 	jmp	Start2
-	
+
 .include "topdesk/DeskInclude/DosFormat.s.inc"
 
 DeskFormat:	MoveB	curDrive,Name+2	; nur Zwischenspeicher
@@ -396,7 +398,7 @@ DeskFormat:	MoveB	curDrive,Name+2	; nur Zwischenspeicher
 	bne	@05
 	ldy	#0
 	sty	@abhier
-	beq	@08	
+	beq	@08
 @05:	LoadB	numDrives,4
 	tay
 	dey	; g}ltige Laufwerke ermitteln
@@ -410,7 +412,7 @@ DeskFormat:	MoveB	curDrive,Name+2	; nur Zwischenspeicher
 @06a:	dec	numDrives	; Eine ermittelte RAM-Disk wird nicht
 	tya		; als zu formatierendes Laufwerk an-
 	asl		; geboten, in dem das zugeh|rige
-	tax		; Icon in der Dialogbox nicht 
+	tax		; Icon in der Dialogbox nicht
 	lda	@icontab,x	; dargestellt wird, durch
 	sta	r0L	; MoveW 0,:icontab+RamLaufw*2 .
 	lda	@icontab+1,x
@@ -463,7 +465,7 @@ DeskFormat:	MoveB	curDrive,Name+2	; nur Zwischenspeicher
 	LoadB	r1L,0	; Doppelseitig-Flag
 	lda	r0L
 	cmp	#2
-	beq	@99	; Abbruch 
+	beq	@99	; Abbruch
 	cmp	#YES
 	bne	@99a
 	LoadB	r1L,1	; Doppelseitig-Flag

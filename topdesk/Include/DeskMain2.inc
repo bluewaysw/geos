@@ -264,7 +264,7 @@ SwapFile:	jsr	GetAktlDisk
 	LoadB	r6H,$80	; Dir-Block in $8000 benutzen
 	bne	@26	; sonst
 @25:	LoadB	r6H,$83	; r6 als Zeiger auf 1. Eintrag in $8300
-@26:	ldy	#29	
+@26:	ldy	#29
 @30:	lda	(r5),y	; Dir-Eintr{ge austauschen
 	pha
 	lda	(r6),y
@@ -443,7 +443,7 @@ GetAktlWinDisk:	; wie GetWinDisk, jedoch immer f}r das aktuelle Fenster
 GetWinDisk:	; Diskettennamen aus dem Pfadnamen eines Fensters ermitteln
 	; Par:	x: Fensternummer
 	; Ret:	Diskettenname abgelegt in DiskName
-	;	z-Flag gesetzt, wenn DiskName mit Diskname des aktl. 
+	;	z-Flag gesetzt, wenn DiskName mit Diskname des aktl.
 	; 	Fensters identisch
 	;	r0: Zeiger auf Disknamen (nicht DiskName) des Fensters x
 	txa
@@ -561,7 +561,7 @@ ClxR	= 319
 ClyO	= 1
 ClyU	= ClyO+12
 TimeX	= 55
-TimeY	= 9 
+TimeY	= 9
 DateX	= 5
 DateY	= TimeY
 ; InitClock
@@ -588,15 +588,15 @@ InitClock:
 	ldx	#$00
 	jsr	RestartProcess
 	jsr	EnableProcess
-	
+
 	rts
 ProzessTab:	.word	ShowClock
 	.word	500
 year	= $8516
-ShowClock:	
+ShowClock:
 	LoadB	dispBufferOn,%10000000
 	php
-	sei	
+	sei
 	ldy	#4
 @10:	lda	year,y
 	sta	MyJahr,y
@@ -619,7 +619,7 @@ ShowClock:
 	lda	#MinZehner-TagZehner
 	jsr	DivnSet
 @Ausg:
-	LoadW___	rightMargin,ClxR-1
+	LoadW___	rightMargin,ClxR+1
 	jsr	i_PutString
 	.word	ClxL-DateX
 	.byte	ClyO+DateY
@@ -655,7 +655,7 @@ MinZehner:	.byte	"0"
 	.byte	PLAINTEXT
 MinEiner:	.byte	"0"
 	.byte	PLAINTEXT
-	.byte	"  "	
+	.byte	"  "
 	.byte	NULL
 	LoadW___	rightMargin,319
 	rts
@@ -780,7 +780,7 @@ DispMenuRight:
 @t2:	.byte	PLAINTEXT," beeing deleted",0
 .endif
 
-TrashService:	
+TrashService:
 DeskDelete:	jsr	GotoFirstMenu
 	ldx	MultiCount
 	dex
@@ -1102,7 +1102,7 @@ GenData:	.word	GenTab,DARecSpace
 GenData:	.word	GenTab,$7f80
 .endif
 
-MySubMenuDA2:	
+MySubMenuDA2:
 	pla
 	clc
 	adc	#1
@@ -1113,10 +1113,10 @@ MySubMenuDA2:
 	MoveW_	RecoverVector,@r1
 	LoadW___	RecoverVector,@11
 	rts
-@11:	
+@11:
 	MoveW_	@r1,RecoverVector
 	jmp 	MyRecoverService
-	
+
 @r1:	.word 0
 
 MySubMenuDA:	LoadW___	GenData+2,DARecSpace

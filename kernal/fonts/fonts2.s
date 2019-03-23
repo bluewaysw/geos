@@ -303,7 +303,7 @@ Font_2:
 	asl r1H
 	rol
 	tay
-	pla	
+	pla
 	sta r1H
 	and #$07
 	ora #$f8
@@ -321,7 +321,7 @@ Font_2:
 	sta leftMargin+1
 	lda FontTVar2+1
 	and #%00001111
-	tax 
+	tax
 	lda FontTVar2
 	;bmi @2
 	cpx leftMargin+1
@@ -1008,7 +1008,6 @@ FontPutChar:
 
 	clc
 	lda screenNextLine
-	lda #$38
 	adc r5L
 	sta r5L
 @98:
