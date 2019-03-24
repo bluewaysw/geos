@@ -118,22 +118,22 @@ SetNewMode0:
 	; First byte is foreground colour (8-bit) and second byte is background colour (also 8-bit),
 	; so each 8x8 cell can still have only 2 colours, but they can be chosen from the whole
 	; palette.
-	LDA #<$2000
+	LDA #<$e000
 	STA $D060
-	LDA #>$2000
+	LDA #>$e000
 	STA $D061
-	LDA #<1
+	LDA #<4
 	STA $D062
-	LDA #>1
+	LDA #>4
 	STA $D063
 	; Set bitmap data to somewhere that has 100x60 x 8 = 48,000 bytes of RAM.
 	; (We are using 2nd bank of 64KB for this)
 	; NOTE: This can't actually be set freely (yet), but will be on 16KB boundaries.
-	LDA #<$4000
+	LDA #<$0000
 	STA $D068
-	LDA #>$4000
+	LDA #>$0000
 	STA $D069
-	LDA #1
+	LDA #4
 	STA $D06A
 
 	LDA #$8F
@@ -203,22 +203,22 @@ SetNewMode0:
 	; First byte is foreground colour (8-bit) and second byte is background colour (also 8-bit),
 	; so each 8x8 cell can still have only 2 colours, but they can be chosen from the whole
 	; palette.
-	LDA #<$2000
+	LDA #<$e000
 	STA $D060
-	LDA #>$2000
+	LDA #>$e000
 	STA $D061
-	LDA #<1
+	LDA #<4
 	STA $D062
-	LDA #>1
+	LDA #>4
 	STA $D063
 	; Set bitmap data to somewhere that has 100x60 x 8 = 48,000 bytes of RAM.
 	; (We are using 2nd bank of 64KB for this)
 	; NOTE: This can't actually be set freely (yet), but will be on 16KB boundaries.
-	LDA #<$4000
+	LDA #<$0000
 	STA $D068
-	LDA #>$4000
+	LDA #>$0000
 	STA $D069
-	LDA #1
+	LDA #4
 	STA $D06A
 
 	LDA #$8F
@@ -300,22 +300,22 @@ SetNewMode0:
 	; First byte is foreground colour (8-bit) and second byte is background colour (also 8-bit),
 	; so each 8x8 cell can still have only 2 colours, but they can be chosen from the whole
 	; palette.
-	LDA #<$2000
+	LDA #<$e000
 	STA $D060
-	LDA #>$2000
+	LDA #>$e000
 	STA $D061
-	LDA #<1
+	LDA #<4
 	STA $D062
-	LDA #>1
+	LDA #>4
 	STA $D063
 	; Set bitmap data to somewhere that has 100x60 x 8 = 48,000 bytes of RAM.
 	; (We are using 2nd bank of 64KB for this)
 	; NOTE: This can't actually be set freely (yet), but will be on 16KB boundaries.
-	LDA #<$4000
+	LDA #<$0000
 	STA $D068
-	LDA #>$4000
+	LDA #>$0000
 	STA $D069
-	LDA #1
+	LDA #4
 	STA $D06A
 
 	LDA #$8F
@@ -408,11 +408,11 @@ SetNewMode0:
 	sta $d04b
 
 
-	LDA #<$4000
+	LDA #<$0000
 	STA $D068
-	LDA #>$4000
+	LDA #>$0000
 	STA $D069
-	LDA #1
+	LDA #4
 	STA $D06A
 
 	LDA #<$8c00

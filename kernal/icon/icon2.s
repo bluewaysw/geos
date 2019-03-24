@@ -51,7 +51,7 @@ Icons_1:
 	lda r0L
 	ora r0H
 	beq @3
-	;jsr _BitmapUp
+	jsr _BitmapUp
 @3:	inc r10L
 	lda r10L
 	ldy #0
@@ -122,7 +122,9 @@ FindClkIcon:
 	lda (IconDescVec),y
 	iny
 	ora (IconDescVec),y
-	beq @2
+	bne @22
+	jmp @2
+@22:
 	iny
 	lda mouseXPos+1
 	and #%00001111
@@ -168,19 +170,24 @@ FindClkIcon:
 	bcs @2
 	dey
 	LoadB L8890, 0
-	lda (IconDescVec-1),y
+	dey
+	lda (IconDescVec),y
 	bpl @11
 
+
+	iny
 	; in GEOS6 scalable mode
 	lda (IconDescVec),y
 	bit #%01000000
 	beq @23
 
 	lda (IconDescVec),y
+
 	clc
 	ora #%10000000
 	adc scrFullCardsX+1
 @23:
+
 	; we are in cards, so mult by 8
 	asl
 	rol L8890
@@ -188,8 +195,12 @@ FindClkIcon:
 	rol L8890
 	asl
 	rol L8890
-
+	bra @111
 @11:
+	iny
+	lda (IconDescVec),y
+
+@111:
 	sta L888F
 
 	lda mouseXPos+1
@@ -224,7 +235,6 @@ FindClkIcon:
 	clc
 	rts
 @3:
-inc $d020
 
 	sec
 	rts

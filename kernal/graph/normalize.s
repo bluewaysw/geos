@@ -75,7 +75,7 @@ _NormalizeX:
 	and #$03
 	sta zpage+1,x
 	lda	screenMaxX
-	clc
+	sec
 	sbc zpage, x
 	sta zpage, x
 	lda screenMaxX+1

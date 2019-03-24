@@ -33,9 +33,9 @@ _StashRAM:
 
 	lda #>opddmalist
 	ldy #<opddmalist
-	
+
 	jmp _DoRAMOp
-	
+
 _FetchRAM:
 	START_IO_X
 
@@ -51,16 +51,16 @@ _FetchRAM:
 	lda r1H
 	and #$7f
 	sta opFromAddr_fetch+1
-	
+
 	lda #>opddmalist_fetch
 	ldy #<opddmalist_fetch
-	
+
 _DoRAMOp:
 
-	sta $d701
-	lda #0
+	sta	$d701
+	lda	#0
 	sta	$d702
-	sta $d704	;	enhanced bank
+	sta 	$d704	;	enhanced bank
 	sty	$d705
 
 	END_IO_X
@@ -83,7 +83,7 @@ opFromAddr:
 	.byte	0				; bank 0
 opToAddr:
 	.word	DISK_SWAPBASE+DISK_DRV_LGH
-	.byte	8				; bank 1
+	.byte	5				; bank 1
 	.word	0				; unsued mod
 
 opddmalist_fetch:
@@ -97,7 +97,7 @@ opLength_fetch:
 	.word	DISK_DRV_LGH
 opFromAddr_fetch:
 	.word	DISK_BASE
-	.byte	8				; bank 0
+	.byte	5				; bank 0
 opToAddr_fetch:
 	.word	DISK_SWAPBASE+DISK_DRV_LGH
 	.byte	0				; bank 1
@@ -189,4 +189,3 @@ _DoRAMOp:
 @3:	rts
 .endif ; REUPresent
 .endif
-

@@ -28,9 +28,8 @@
 .segment "init1"
 
 _InitMachine:
-inc $d020
 .ifdef mega65
-    jsr MapUnderlay
+        jsr MapUnderlay
 .endif
 	jsr _DoFirstInitIO
 .ifdef mega65
@@ -52,7 +51,7 @@ InitGEOEnv:
 .ifdef mega65
 	jsr MapUnderlay
 	jsr SetRightMargin
-	jmp UnmapUnderlay	
+	jmp UnmapUnderlay
 .else
 	jmp SetRightMargin
 .endif
@@ -63,4 +62,3 @@ InitGEOEnv:
 	jmp _InitRam
 .endif
 .endif
-

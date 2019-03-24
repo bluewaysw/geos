@@ -52,8 +52,41 @@ _BitmapUp:
 .endif
 	sta r3L
 	sta r4L
-@1:	jsr BitmapUpHelp
+
+	ldx #$F8	; y high part
+	bit r1L
+	bpl @5
+	bit r1H
+	bvc @2	; not neg
+
+	clc
+	lda r1H
+	ora #%10000000
+	adc scrFullCardsX+1
+	and #$7F
+	sta r1H
+	bra @2
+@5:
+	lda r1H
+	and #$07
+	ora #$F8
+	tax
+	lsr r1H
+	lsr r1H
+	lsr r1H
+@2:
+@1:	txa
+	pha
+	jsr BitmapUpHelp
+	pla
+	tax
+	inx
+	bne @4
+	txa
+	ora #$F8
+	tax
 	inc r1H
+@4:
 	dec r2H
 	bne @1
 	PopB r9H
@@ -63,18 +96,7 @@ _BitmapUp:
 	rts
 
 BitmapUpHelp:
-  ldx r1H
-	bit r1L
-	bpl @scanLine
-	txa
-	;and #$7F
-	;lsr a
-	;lsr a
-	;lsr a
-	;tay
-@scanLine:
-ldy #0
-ldx #$F8
+	ldy r1H
 	jsr _GetScanLine
 	MoveB r2L, r3H
 .if .defined(bsw128) || .defined(mega65)
@@ -91,24 +113,34 @@ ldx #$F8
 	and #$7F
 	cmp #$20
 .else
-	ldx	r5H
+	ldx r5H
 	ldy #0
 	sty r5H
+
 	ldy #3  ; by 8
 	lda r1L
+	bit r1L
+	bpl @41
+	bvc @41
+
+	; x negative case
+	clc
+	adc scrFullCardsX
+@41:
 	and #$7f
 	bpl @4
 	bbrf 7, graphMode, @4
 	ldy #4  ; by 16
 @4:
-    and #$7F
+    	and #$7F
 @5:
 	asl a
 	rol r5H
-    dey
-    bne @5
+	dey
+	bne @5
+
 	pha
-	lda	r5H
+	lda r5H
 	stx r5H
 	pha
 	add r5H
@@ -118,7 +150,7 @@ ldx #$F8
 	sta r6H
 
 	pla
-    tay
+	tay
 .endif
 .else
 	CmpBI r1L, $20
@@ -128,7 +160,7 @@ ldx #$F8
 	inc r5H
 	inc r6H
 @1:
-    asl
+	asl
 	asl
 	asl
 .endif

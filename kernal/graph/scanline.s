@@ -131,11 +131,15 @@ _GetScanLine:
 	bbsf 7, graphMode, @X1
 	;;and	#%11100000
 @X1:
-	add	#$a0
+	add	#$60
 	ror
-
-	ldx	#0
-    jsr _MapHigh
+	clc
+	ldx	#1
+	add 	#$80
+	bcc 	@Y1
+	ldx	#2
+@Y1:
+    	jsr	_MapHigh
 
 	lda	r5H
 	and	#%00011111
@@ -164,7 +168,7 @@ _GetScanLine:
 ;
 ; background only
 ;
-@2:	
+@2:
 .ifdef bsw128
 	bvc @3
 .else
@@ -231,16 +235,16 @@ _GetScanLine:
 	sub	#$60
 	lsr
 
-	ldx	#0
-    jsr _MapHigh
+	ldx	#$FC
+    	jsr 	_MapHigh
 	;sub #$40
 	;lsr
 	pla
 	lsr
 	add #$90		; back buffer is at $18000
 
-	ldx #4
-    jsr _MapLow
+	ldx 	#4
+    	jsr 	_MapLow
 
 	lda	r5H
 	and	#%00011111
@@ -339,12 +343,12 @@ GSC80_6:
 LineTabL:
 	;.lobytes LineTab
 	.repeat	128
-		.byte 0	
+		.byte 0
 	.endrep
 LineTabH:
 	;.hibytes LineTab
 	.repeat	128
-		.byte 0	
+		.byte 0
 	.endrep
 
 
@@ -358,4 +362,3 @@ LineTabH:
 	.hibytes LineTab
 
 .endif
-

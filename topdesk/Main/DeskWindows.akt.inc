@@ -2431,6 +2431,7 @@ SpWinFrame:	PushW	a0
 NewDoIcons:	MoveW_	oldMsVec,mouseVector
 	MoveW_	r0,iconTab
 	jsr	DoIcons
+
 	MoveW_	curWinData,a0
 	MoveW_	mouseVector,oldMsVec
 	LoadW___	mouseVector,NewMouseService

@@ -664,7 +664,7 @@ SetMyNewMode:
     rts
 
 @tab1:
-    wb  IconTab+6,-8|128
+    wb  IconTab+6,-4|128
     wb  IconTab+14,2|128
     wb  IconTab+22,STARTA_X
     wb  IconTab+30,STARTB_X
@@ -730,7 +730,7 @@ SetMyNewMode:
     .word   0
 
 @tab2:
-    wb  IconTab+6,-8|128
+    wb  IconTab+6,-4|128
     wb  IconTab+14,2|128
     wb  IconTab+22,STARTA_X
     wb  IconTab+30,STARTB_X
@@ -810,23 +810,23 @@ SetMyNewMode:
 
 
 
-STARTA_X	=	-8 | 128
+STARTA_X	=	-4 | 128
 STARTA_Y	=	4
-STARTB_X	=	-8 | 128
+STARTB_X	=	-4 | 128
 STARTB_Y	=	8
-STARTC_X	=	-8 | 128
+STARTC_X	=	-4 | 128
 STARTC_Y	=	12
-STARTD_X	=	-8 | 128
+STARTD_X	=	-4 | 128
 STARTD_Y	=	16
 
 IconTab:
 .ifdef topdesk128
 	.byte	0,0,0,0	; Anzahl wird berechnet
 	.word	TrashMap
-	.byte	-8|128,-20,TrashX+DOUBLE_B,TrashY
+	.byte	-4|128,-4,TrashX+DOUBLE_B,TrashY
 	.word	TrashService
 	.word	PrintMap
-	.byte	2|128,-20,PrintX+DOUBLE_B,PrintY
+	.byte	2|128,-4,PrintX+DOUBLE_B,PrintY
 	.word	PrintService
 	.word	BitMap
 	.byte	STARTA_X,STARTA_Y,BitX+DOUBLE_B,BitY
@@ -843,10 +843,10 @@ IconTab:
 .else
 	.byte	0,0,0,0	; Anzahl wird berechnet
 	.word	TrashMap
-	.byte	(89-TrashX)|128,56,TrashX,TrashY
+	.byte	-4|128,-4,TrashX,TrashY
 	.word	TrashService
 	.word	PrintMap
-	.byte	2|128,56,PrintX,PrintY
+	.byte	2|128,-4,PrintX,PrintY
 	.word	PrintService
 	.word	BitMap
 	.byte	STARTA_X,STARTA_Y,BitX,BitY

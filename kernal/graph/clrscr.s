@@ -84,7 +84,6 @@ ClrScr:
 	.word 0   ; x1
 	.word SCREENPIXELWIDTH-1 ; x2
 .endif
-inc $d020
 	rts
 .endif
 
