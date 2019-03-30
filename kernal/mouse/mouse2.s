@@ -90,7 +90,7 @@ ProcessMouse:
 .ifdef wheels_bad_ideas
 	; While the mouse pointer is not showing,
 	; Wheels doesn't call the mouse driver.
-	; For a joystick, this means that the 
+	; For a joystick, this means that the
 	; pointer can't be moved while it's
 	; invisible, and for a 1531 mouse, it means
 	; the input registers may overflow in the
@@ -98,10 +98,23 @@ ProcessMouse:
 	;
 	; This is probably not a good idea.
 	bbrf MOUSEON_BIT, mouseOn, @1
+
+	; disable 40 mhz mode from the outside to
+	; stay compatible with C64 input drivers
+	PushB $d054
+	and #%10111111
+	sta $d054
 	jsr UpdateMouse
+	PopB $d054
 .else
 
+	; disable 40 mhz mode from the outside to
+	; stay compatible with C64 input drivers
+	PushB $d054
+	and #%10111111
+	sta $d054
 	jsr UpdateMouse
+	PopB $d054
 
 	bbrf MOUSEON_BIT, mouseOn, @1
 .endif
@@ -146,7 +159,7 @@ CheckMsePos:
 	jsr	UncompactXY
 	sta r5L
 	sty	r5H
-.endif	
+.endif
 
 	ldy mouseLeft
 	ldx r4L	;mouseLeft+1
@@ -207,7 +220,7 @@ CheckMsePos:
 	bcc @B
 	beq @B
 @A:	smbf OFFMENU_BIT, faultData
-@B:	
+@B:
 	rts
 
 .ifdef wheels ; this got moved :(
@@ -293,4 +306,3 @@ DoMouseFault:
 	bbsf 6, menuOptNumber, @3
 @2:	jsr _DoPreviousMenu
 @3:	rts
-

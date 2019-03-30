@@ -38,6 +38,11 @@ _DoKeyboardScan:
 	PushB clkreg
 	LoadB clkreg, 0
 .endif
+.ifdef mega65
+	PushB $D054
+	and #%10111111
+	sta $D054
+.endif
 	lda KbdQueFlag
 	bne @1
 	lda KbdNextKey
@@ -100,6 +105,9 @@ _DoKeyboardScan:
 @5:
 .ifdef bsw128
 	PopB clkreg
+.endif
+.ifdef mega65
+	PopB $d054
 .endif
 	rts
 
@@ -218,4 +226,3 @@ KbdScanHelp1:
 .endif
 	rts
 .endif
-
