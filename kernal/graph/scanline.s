@@ -134,10 +134,11 @@ _GetScanLine:
 	add	#$60
 	ror
 	clc
-	ldx	#1
-	add 	#$80
+	ldx	#0
+	add 	#$00
 	bcc 	@Y1
-	ldx	#2
+	;ldx	#2
+	ldx	#0
 @Y1:
     	jsr	_MapHigh
 
