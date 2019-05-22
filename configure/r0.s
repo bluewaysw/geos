@@ -519,7 +519,11 @@ L0736:  lda     r2L                             ; 0736 A5 06                    
 ; ----------------------------------------------------------------------------
 L0739:  lda     curDrive                        ; 0739 AD 89 84                 ...
         eor     #$01                            ; 073C 49 01                    I.
-InitDrive:  jsr     SetDevice                       ; 073E 20 B0 C2                  ..
+InitDrive:
+;inc $d020
+  jsr     SetDevice                       ; 073E 20 B0 C2                  ..
+inc $d020
+inc $d020
         txa                                     ; 0741 8A                       .
         bne     L0768                           ; 0742 D0 24                    .$
 .ifndef config128
@@ -744,10 +748,10 @@ InitNewDrive:  ; init drive driver
         bvc     L08FF                           ; 08F4 50 09                    P.
 L08F6:
         ; handle non first boot setup, using dialogs
-		jsr     SetupDrive                           ; 08F6 20 05 1E                  ..
+	jsr     SetupDrive                           ; 08F6 20 05 1E                  ..
         lda     V212B                           ; 08F9 AD 2B 21                 .+!
         jsr     InitDrive                           ; 08FC 20 3E 07                  >.
-
+inc $d020
 L08FF:  dec     L180C                           ; 08FF CE 0C 18                 ...
         ldy     V212B                           ; 0902 AC 2B 21                 .+!
         lda     $8486,y                         ; 0905 B9 86 84                 ...
@@ -888,7 +892,7 @@ L0A0B:  ldy     $848F                           ; 0A0B AC 8F 84                 
         beq     L0A18                           ; 0A0E F0 08                    ..
         lda     #$09                            ; 0A10 A9 09                    ..
         jsr     L0A3D
-        jsr     $c2c8
+        jsr     StashRAM
 L0A18:  ldy     $8490                           ; 0A18 AC 90 84                 ...
         beq     L0A25                           ; 0A1B F0 08                    ..
         lda     #$0A                            ; 0A1D A9 0A                    ..
@@ -903,6 +907,7 @@ L0A25:  ldy     V212F                           ; 0A25 AC 2F 21                 
         lda     #$00                            ; 0A35 A9 00                    ..
         sta     r1L                             ; 0A37 85 04                    ..
         jsr     MoveData                        ; 0A39 20 7E C1                  ~.
+
         rts                                     ; 0A3C 60                       `
 ; ----------------------------------------------------------------------------
 L0A3D:  pha                                     ; 0A3D 48                       H

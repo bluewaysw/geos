@@ -714,7 +714,7 @@ __InitForIO:
 	sei
 	lda CPU_DATA
 	sta tmpCPU_DATA
-.if (!.defined(config128)) || (!.defined(mega65))
+.if (!.defined(config128)) || (.defined(mega65))
 	LoadB CPU_DATA, KRNL_IO_IN
 .endif
 	lda grirqen
@@ -803,7 +803,7 @@ __DoneWithIO:
 	lda cia2base+13
 	lda tmpgrirqen
 	sta grirqen
-	
+
 	lda	#$a5
 	sta	$d02f
 	lda #$96
@@ -811,8 +811,8 @@ __DoneWithIO:
 	lda $d031
 	ora #$40
 	sta $d031
-	
-.if (!.defined(config128)) || (!.defined(mega65))
+
+.if (!.defined(config128)) || (.defined(mega65))
 	lda tmpCPU_DATA
 	sta CPU_DATA
 .endif
@@ -1952,4 +1952,3 @@ tryCount:
 	.byte 0
 borderFlag:
 	.byte 0
-

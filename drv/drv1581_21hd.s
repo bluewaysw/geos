@@ -179,7 +179,7 @@ ReadLink:
         .byte   $00                             ; 9061 00                       .
 ; ----------------------------------------------------------------------------
         bpl     __GetDirHead                    ; 9062 10 00                    ..
-__GetDirHead:	
+__GetDirHead:
         lda     #$FF                            ; 9064 A9 FF                    ..
         sta     L9BFA                           ; 9066 8D FA 9B                 ...
         jsr     EnterTurbo                      ; 9069 20 14 C2                  ..
@@ -293,7 +293,7 @@ L9114:  clc                                     ; 9114 18                       
 __OpenDisk:
         jsr     NewDisk                         ; 9116 20 E1 C1                  ..
         txa                                     ; 9119 8A                       .
-        bne     L913C                           ; 911A D0 20                    . 
+        bne     L913C                           ; 911A D0 20                    .
         jsr     GetDirHead                      ; 911C 20 47 C2                  G.
         bne     L913C                           ; 911F D0 1B                    ..
         jsr     L9286                           ; 9121 20 86 92                  ..
@@ -354,7 +354,7 @@ L916C:  sta     L9C01                           ; 916C 8D 01 9C                 
         sta     r3L                             ; 9181 85 08                    ..
         ldx     #$06                            ; 9183 A2 06                    ..
         ldy     #$08                            ; 9185 A0 08                    ..
-        .byte   $20                             ; 9187 20                        
+        .byte   $20                             ; 9187 20
 L9188:  adc     #$C1                            ; 9188 69 C1                    i.
         lda     r8L                             ; 918A A5 12                    ..
         beq     L9194                           ; 918C F0 06                    ..
@@ -440,7 +440,7 @@ _GetNxtDirEntry:
         ldx     #$00                            ; 921E A2 00                    ..
         ldy     #$00                            ; 9220 A0 00                    ..
         clc                                     ; 9222 18                       .
-        lda     #$20                            ; 9223 A9 20                    . 
+        lda     #$20                            ; 9223 A9 20                    .
         adc     r5L                             ; 9225 65 0C                    e.
         sta     r5L                             ; 9227 85 0C                    ..
         bcc     L922D                           ; 9229 90 02                    ..
@@ -555,7 +555,7 @@ L92F7:  lda     diskBlkBuf,y                    ; 92F7 B9 00 80                 
         beq     L9312                           ; 92FA F0 16                    ..
         tya                                     ; 92FC 98                       .
         clc                                     ; 92FD 18                       .
-        adc     #$20                            ; 92FE 69 20                    i 
+        adc     #$20                            ; 92FE 69 20                    i
         tay                                     ; 9300 A8                       .
         bcc     L92F7                           ; 9301 90 F4                    ..
         lda     #$01                            ; 9303 A9 01                    ..
@@ -864,21 +864,24 @@ L94EE:  rts                                     ; 94EE 60                       
 
 ; ----------------------------------------------------------------------------
 __InitForIO:
-		sei
         php                                     ; 94EF 08                       .
         pla                                     ; 94F0 68                       h
         sta     L9BF0                           ; 94F1 8D F0 9B                 ...
         sei                                     ; 94F4 78                       x
         lda     CPU_DATA                        ; 94F5 A5 01                    ..
         sta     L9BF2                           ; 94F7 8D F2 9B                 ...
-.if (!.defined(config128)) || (!.defined(mega65))
+.if (!.defined(config128)) || (.defined(mega65))
         lda     #$36                            ; 94FA A9 36                    .6
         sta     CPU_DATA                        ; 94FC 85 01                    ..
 .endif
         lda     grirqen                         ; 94FE AD 1A D0                 ...
         sta     L9BF1                           ; 9501 8D F1 9B                 ...
-        lda     clkreg                          ; 9504 AD 30 D0                 .0.
+        lda     $d030                           ; 9504 AD 30 D0                 .0.
         sta     L9BEF                           ; 9507 8D EF 9B                 ...
+        lda     $d031                           ; 9504 AD 30 D0                 .0.
+        sta     saveD031                           ; 9507 8D EF 9B
+        and #%10111111
+        sta     $D031             
         ldy     #$00                            ; 950A A0 00                    ..
         sty     clkreg                          ; 950C 8C 30 D0                 .0.
         sty     grirqen                         ; 950F 8C 1A D0                 ...
@@ -886,7 +889,7 @@ __InitForIO:
         sta     grirq                           ; 9514 8D 19 D0                 ...
         sta     $DC0D                           ; 9517 8D 0D DC                 ...
         sta     $DD0D                           ; 951A 8D 0D DD                 ...
-.if .defined(config128) & (!.defined(mega65))
+.if .defined(config128) && (!.defined(mega65))
         lda     #>D_IRQHandler
         sta     $0315
         sta     $0319
@@ -957,7 +960,7 @@ D_NMIHandler:
 __DoneWithIO:
         sei                                     ; 9592 78                       x
         lda     L9BEF                           ; 9593 AD EF 9B                 ...
-        sta     clkreg                          ; 9596 8D 30 D0                 .0.
+        sta     $d030                           ; 9596 8D 30 D0                 .0.
         lda     L9BF3                           ; 9599 AD F3 9B                 ...
         sta     mobenble                        ; 959C 8D 15 D0                 ...
         lda     #$7F                            ; 959F A9 7F                    ..
@@ -967,15 +970,16 @@ __DoneWithIO:
         sta     grirqen                         ; 95AA 8D 1A D0                 ...
 
 		lda	#$a5
-		sta	$d02f
+	        sta	$d02f
 		lda #$96
 		sta	$d02f
-		
-.if (!.defined(mega65))
-.if (!.defined(config128)) || (!.defined(mega65))
+                lda saveD031
+                sta $D031
+
+
+.if (!.defined(config128)) || (.defined(mega65))
         lda     L9BF2                           ; 95AD AD F2 9B                 ...
         sta     CPU_DATA                        ; 95B0 85 01                    ..
-.endif
 .endif
         lda     L9BF0                           ; 95B2 AD F0 9B                 ...
         pha                                     ; 95B5 48                       H
@@ -1112,13 +1116,13 @@ L96A7:  jsr     SendCHUNK                       ; 96A7 20 CD 96                 
         txa                                     ; 96AA 8A                       .
         bne     L96CA                           ; 96AB D0 1D                    ..
         clc                                     ; 96AD 18                       .
-        lda     #$20                            ; 96AE A9 20                    . 
+        lda     #$20                            ; 96AE A9 20                    .
         adc     $8D                             ; 96B0 65 8D                    e.
         sta     $8D                             ; 96B2 85 8D                    ..
         bcc     L96B8                           ; 96B4 90 02                    ..
         inc     TURBO_DD00                      ; 96B6 E6 8E                    ..
 L96B8:  clc                                     ; 96B8 18                       .
-        lda     #$20                            ; 96B9 A9 20                    . 
+        lda     #$20                            ; 96B9 A9 20                    .
         adc     L96F1                           ; 96BB 6D F1 96                 m..
         sta     L96F1                           ; 96BE 8D F1 96                 ...
         bcc     L96C6                           ; 96C1 90 03                    ..
@@ -1134,13 +1138,13 @@ SendCHUNK:
         jsr     SendDOSCmd                      ; 96D1 20 B8 95                  ..
         txa                                     ; 96D4 8A                       .
         bne     L96ED                           ; 96D5 D0 16                    ..
-        lda     #$20                            ; 96D7 A9 20                    . 
+        lda     #$20                            ; 96D7 A9 20                    .
         jsr     CIOUT                           ; 96D9 20 A8 FF                  ..
         ldy     #$00                            ; 96DC A0 00                    ..
 L96DE:  lda     ($8D),y                         ; 96DE B1 8D                    ..
         jsr     CIOUT                           ; 96E0 20 A8 FF                  ..
         iny                                     ; 96E3 C8                       .
-        cpy     #$20                            ; 96E4 C0 20                    . 
+        cpy     #$20                            ; 96E4 C0 20                    .
         bcc     L96DE                           ; 96E6 90 F6                    ..
         jsr     UNLSN                           ; 96E8 20 AE FF                  ..
         ldx     #$00                            ; 96EB A2 00                    ..
@@ -1846,6 +1850,7 @@ L9BE8:  rts                                     ; 9BE8 60                       
 .segment        "drv1581_21hd_b": absolute
 
 L9BEF:  brk                                     ; 9BEF 00                       .
+saveD031: .byte 0
 L9BF0:  brk                                     ; 9BF0 00                       .
 L9BF1:  brk                                     ; 9BF1 00                       .
 L9BF2:  brk                                     ; 9BF2 00                       .

@@ -571,7 +571,7 @@ __InitForIO:
 	sei
 	lda CPU_DATA
 	sta tmpCPU_DATA
-.ifndef config128
+.if (!.defined(config128)) || (.defined(mega65))
 	LoadB CPU_DATA, KRNL_IO_IN
 .endif
 	lda grirqen
@@ -589,7 +589,7 @@ __InitForIO:
 	sta irqvec+1
 	lda #<D_IRQHandler
 	sta irqvec
-.ifdef config128
+.if .defined(config128) &(!.defined(mega65))
 	lda #>D_IRQHandler
 	sta nmivec+1
 	lda #<D_IRQHandler
@@ -630,7 +630,7 @@ IniForIO0:
 	rts
 
 D_IRQHandler:
-.ifdef config128
+.if .defined(config128) &(!.defined(mega65))
     pla
     sta $ff00
 .endif
@@ -652,7 +652,16 @@ __DoneWithIO:
 	lda cia2base+13
 	lda tmpgrirqen
 	sta grirqen
-.ifndef config128
+
+	lda	#$a5
+	sta	$d02f
+	lda #$96
+	sta	$d02f
+	lda $d031
+	ora #$40
+	sta $d031
+
+.if (!.defined(config128)) || (.defined(mega65))
 	lda tmpCPU_DATA
 	sta CPU_DATA
 .endif
@@ -829,6 +838,9 @@ DUNK5:
 
 GetSync:
 	sei
+	lda $d031
+	and #%10111111
+	sta $d031
 	MoveB TURBO_DD00, cia2base
 GetSync0:
 	bbrf 7, cia2base, GetSync0

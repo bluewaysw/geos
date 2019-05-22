@@ -39,8 +39,8 @@ vdcdata = $d601
 .import L0672
 .import L0739
 .import InitDrive
-.import	L0911 
-.import L0E19 
+.import	L0911
+.import L0E19
 .import L0FA0
 .import L0FB3
 .import L0A66
@@ -313,7 +313,7 @@ UIEntry:
 L1472:  jsr     CloseRecordFile                 ; 1472 20 77 C2                  w.
         ldx     #>incompKernDlg                 ; 1475 A2 15                    ..
         lda     #<incompKernDlg                 ; 1477 A9 42                    .B
-        jsr     L2022                           ; 1479 20 22 20                  " 
+        jsr     L2022                           ; 1479 20 22 20                  "
 L147C:  jmp     EnterDeskTop                    ; 147C 4C 2C C2                 L,.
 ; ----------------------------------------------------------------------------
 ; we are geso64/geos128 as config requires
@@ -452,15 +452,15 @@ L1551:  clc                                     ; 1551 18                       
         .byte   "CONFIGURE"                     ; 1553 43 4F 4E 46 49 47 55 52  CONFIGUR
                                                 ; 155B 45                       E
         .byte   $22                             ; 155C 22                       "
-        .byte   " is not applicable"            ; 155D 20 69 73 20 6E 6F 74 20   is not 
+        .byte   " is not applicable"            ; 155D 20 69 73 20 6E 6F 74 20   is not
                                                 ; 1565 61 70 70 6C 69 63 61 62  applicab
                                                 ; 156D 6C 65                    le
         .byte   $00
 L1570:
         .byte   $18                             ; 156F 00 18                    ..
-        .byte   "to this version of GEOS KERNAL"; 1571 74 6F 20 74 68 69 73 20  to this 
-                                                ; 1579 76 65 72 73 69 6F 6E 20  version 
-                                                ; 1581 6F 66 20 47 45 4F 53 20  of GEOS 
+        .byte   "to this version of GEOS KERNAL"; 1571 74 6F 20 74 68 69 73 20  to this
+                                                ; 1579 76 65 72 73 69 6F 6E 20  version
+                                                ; 1581 6F 66 20 47 45 4F 53 20  of GEOS
                                                 ; 1589 4B 45 52 4E 41 4C        KERNAL
         .byte   $00                             ; 158F 00                       .
 ; ----------------------------------------------------------------------------
@@ -503,9 +503,9 @@ L15CF:  pha                                     ; 15CF 48                       
 L15DF:  lda     V212E                           ; 15DF AD 2E 21                 ..!
         sta     r15H                            ; 15E2 85 21                    .!
         lda     V212D                           ; 15E4 AD 2D 21                 .-!
-        sta     r15L                            ; 15E7 85 20                    . 
+        sta     r15L                            ; 15E7 85 20                    .
         ldy     #$00                            ; 15E9 A0 00                    ..
-        lda     (r15L),y                        ; 15EB B1 20                    . 
+        lda     (r15L),y                        ; 15EB B1 20                    .
         sta     V212B                           ; 15ED 8D 2B 21                 .+!
         jsr     InitDrive                           ; 15F0 20 3E 07                  >.
         ldy     V212B                           ; 15F3 AC 2B 21                 .+!
@@ -516,28 +516,29 @@ L15DF:  lda     V212E                           ; 15DF AD 2E 21                 
 L15FF:  lda     V212E                           ; 15FF AD 2E 21                 ..!
         sta     r15H                            ; 1602 85 21                    .!
         lda     V212D                           ; 1604 AD 2D 21                 .-!
-        sta     r15L                            ; 1607 85 20                    . 
+        sta     r15L                            ; 1607 85 20                    .
         ldy     #$00                            ; 1609 A0 00                    ..
-        lda     (r15L),y                        ; 160B B1 20                    . 
+        lda     (r15L),y                        ; 160B B1 20                    .
         sta     V212B                           ; 160D 8D 2B 21                 .+!
         jsr     InitDrive                           ; 1610 20 3E 07                  >.
+        inc $d020
         ldy     V212B                           ; 1613 AC 2B 21                 .+!
         lda     $8486,y                         ; 1616 B9 86 84                 ...
         sta     V212C                           ; 1619 8D 2C 21                 .,!
 L161C:  ldy     #$01                            ; 161C A0 01                    ..
-        lda     (r15L),y                        ; 161E B1 20                    . 
+        lda     (r15L),y                        ; 161E B1 20                    .
         sta     V212A                           ; 1620 8D 2A 21                 .*!
 L1623:  clc                                     ; 1623 18                       .
         lda     #$02                            ; 1624 A9 02                    ..
-        adc     r15L                            ; 1626 65 20                    e 
-        sta     r15L                            ; 1628 85 20                    . 
+        adc     r15L                            ; 1626 65 20                    e
+        sta     r15L                            ; 1628 85 20                    .
         bcc     L162E                           ; 162A 90 02                    ..
         inc     r15H                            ; 162C E6 21                    .!
 L162E:  ldy     #$00                            ; 162E A0 00                    ..
-        lda     (r15L),y                        ; 1630 B1 20                    . 
+        lda     (r15L),y                        ; 1630 B1 20                    .
         sta     r13L                            ; 1632 85 1C                    ..
         iny                                     ; 1634 C8                       .
-        lda     (r15L),y                        ; 1635 B1 20                    . 
+        lda     (r15L),y                        ; 1635 B1 20                    .
         sta     r13H                            ; 1637 85 1D                    ..
         beq     L165D                           ; 1639 F0 22                    ."
         ldy     V212A                           ; 163B AC 2A 21                 .*!
@@ -715,7 +716,7 @@ L17B2:
 .endif
         jsr     PutString                       ; 17C6 20 48 C1                  H.
 L17C9:  lda     sysRAMFlg                       ; 17C9 AD C4 88                 ...
-        and     #$20                            ; 17CC 29 20                    ) 
+        and     #$20                            ; 17CC 29 20                    )
         beq     L17D2                           ; 17CE F0 02                    ..
         lda     #$02                            ; 17D0 A9 02                    ..
 L17D2:  ldy     #$02                            ; 17D2 A0 02                    ..
@@ -733,11 +734,12 @@ ConfigOtherPressVec:
         bpl     L17EA                           ; 17E7 10 01                    ..
         rts                                     ; 17E9 60                       `
 ; ----------------------------------------------------------------------------
-L17EA:  
+L17EA:
 	lda     #$00                            ; 17EA A9 00                    ..
         sta     L180C                           ; 17EC 8D 0C 18                 ...
         jsr     L1837                           ; 17EF 20 37 18                  7.
         jsr     L180D                           ; 17F2 20 0D 18                  ..
+        inc $d020
         jsr     L181B                           ; 17F5 20 1B 18                  ..
         lda     ramExpSize                      ; 17F8 AD C3 88                 ...
         beq     L1800                           ; 17FB F0 03                    ..
@@ -782,7 +784,7 @@ L1857:  ldy     #$02                            ; 1857 A0 02                    
         jsr     IsMseInRegion                   ; 185C 20 B3 C2                  ..
         beq     L1872                           ; 185F F0 11                    ..
         lda     sysRAMFlg                       ; 1861 AD C4 88                 ...
-        eor     #$20                            ; 1864 49 20                    I 
+        eor     #$20                            ; 1864 49 20                    I
         sta     sysRAMFlg                       ; 1866 8D C4 88                 ...
         sta     sysFlgCopy                      ; 1869 8D 12 C0                 ...
         sta     $040A                           ; 186C 8D 0A 04                 ...
@@ -815,7 +817,7 @@ L1873:  LoadW   r0, RAMExpStr
 RAMExpStr:
         .byte   $18                             ; 18A5 18                       .
         .byte   "RAM expansion: "               ; 18A6 52 41 4D 20 65 78 70 61  RAM expa
-                                                ; 18AE 6E 73 69 6F 6E 3A 20     nsion: 
+                                                ; 18AE 6E 73 69 6F 6E 3A 20     nsion:
         .byte   $00                             ; 18B5 00                       .
 ; ----------------------------------------------------------------------------
 MenuQuit:
@@ -838,7 +840,7 @@ L18D6:  jmp     L043E                           ; 18D6 4C 3E 04                 
 ; ----------------------------------------------------------------------------
         ldx     #>SomeTextDlg                            ; 18D9 A2 18                    ..
         lda     #<SomeTextDlg                            ; 18DB A9 E0                    ..
-        jmp     L2022                           ; 18DD 4C 22 20                 L" 
+        jmp     L2022                           ; 18DD 4C 22 20                 L"
 ; ----------------------------------------------------------------------------
 SomeTextDlg:
         .byte   $81
@@ -853,7 +855,7 @@ MenuShowInfo:
         jsr     DoPreviousMenu                  ; 18E9 20 90 C1                  ..
         ldx     #>InfoDlg                       ; 18EC A2 18                    ..
         lda     #<InfoDlg                           ; 18EE A9 F4                    ..
-        jsr     L2022                           ; 18F0 20 22 20                  " 
+        jsr     L2022                           ; 18F0 20 22 20                  "
         rts                                     ; 18F3 60                       `
 ; ----------------------------------------------------------------------------
 InfoDlg:
@@ -941,7 +943,7 @@ L19BC:  lda     $0406,y                         ; 19BC B9 06 04                 
 ; ----------------------------------------------------------------------------
 L19CE:  ldx     #>CantSaveDlg                            ; 19CE A2 19                    ..
         lda     #<CantSaveDlg                            ; 19D0 A9 D5                    ..
-        jmp     L2022                           ; 19D2 4C 22 20                 L" 
+        jmp     L2022                           ; 19D2 4C 22 20                 L"
 ; ----------------------------------------------------------------------------
 CantSaveDlg:
         .byte   $81
@@ -967,7 +969,7 @@ L19E4:  .byte   $18                             ; 19E4 18                       
 L1A03:
         .byte   $18
         .byte   "Can't find "                   ; 1A04 43 61 6E 27 74 20 66 69  Can't fi
-                                                ; 1A0C 6E 64 20                 nd 
+                                                ; 1A0C 6E 64 20                 nd
         .byte   $22                             ; 1A0F 22                       "
         .byte   "CONFIGURE"                     ; 1A10 43 4F 4E 46 49 47 55 52  CONFIGUR
                                                 ; 1A18 45                       E
@@ -1028,25 +1030,25 @@ L1A6F:
 L1A74:  lda     V212E                           ; 1A74 AD 2E 21                 ..!
         sta     r15H                            ; 1A77 85 21                    .!
         lda     V212D                           ; 1A79 AD 2D 21                 .-!
-        sta     r15L                            ; 1A7C 85 20                    . 
+        sta     r15L                            ; 1A7C 85 20                    .
         ldy     #$00                            ; 1A7E A0 00                    ..
-        lda     (r15L),y                        ; 1A80 B1 20                    . 
+        lda     (r15L),y                        ; 1A80 B1 20                    .
         sta     V212B                           ; 1A82 8D 2B 21                 .+!
         tay                                     ; 1A85 A8                       .
         lda     $8486,y                         ; 1A86 B9 86 84                 ...
         sta     V212C                           ; 1A89 8D 2C 21                 .,!
         ldy     #$01                            ; 1A8C A0 01                    ..
-        lda     (r15L),y                        ; 1A8E B1 20                    . 
+        lda     (r15L),y                        ; 1A8E B1 20                    .
         sta     V212A                           ; 1A90 8D 2A 21                 .*!
         clc                                     ; 1A93 18                       .
         lda     #$02                            ; 1A94 A9 02                    ..
-        adc     r15L                            ; 1A96 65 20                    e 
-        sta     r15L                            ; 1A98 85 20                    . 
+        adc     r15L                            ; 1A96 65 20                    e
+        sta     r15L                            ; 1A98 85 20                    .
         bcc     L1A9E                           ; 1A9A 90 02                    ..
         inc     r15H                            ; 1A9C E6 21                    .!
 L1A9E:  ldy     #$0B                            ; 1A9E A0 0B                    ..
 L1AA0:  lda     #$00                            ; 1AA0 A9 00                    ..
-        sta     (r15L),y                        ; 1AA2 91 20                    . 
+        sta     (r15L),y                        ; 1AA2 91 20                    .
         dey                                     ; 1AA4 88                       .
         bpl     L1AA0                           ; 1AA5 10 F9                    ..
         jsr     L1C39                           ; 1AA7 20 39 1C                  9.
@@ -1074,18 +1076,18 @@ L1AA0:  lda     #$00                            ; 1AA0 A9 00                    
         lda     V212E                           ; 1ADD AD 2E 21                 ..!
         sta     r15H                            ; 1AE0 85 21                    .!
         lda     V212D                           ; 1AE2 AD 2D 21                 .-!
-        sta     r15L                            ; 1AE5 85 20                    . 
+        sta     r15L                            ; 1AE5 85 20                    .
         clc                                     ; 1AE7 18                       .
         lda     #$02                            ; 1AE8 A9 02                    ..
-        adc     r15L                            ; 1AEA 65 20                    e 
-        sta     r15L                            ; 1AEC 85 20                    . 
+        adc     r15L                            ; 1AEA 65 20                    e
+        sta     r15L                            ; 1AEC 85 20                    .
         bcc     L1AF2                           ; 1AEE 90 02                    ..
         inc     r15H                            ; 1AF0 E6 21                    .!
 L1AF2:  ldy     #$00                            ; 1AF2 A0 00                    ..
-        lda     (r15L),y                        ; 1AF4 B1 20                    . 
+        lda     (r15L),y                        ; 1AF4 B1 20                    .
         sta     r13L                            ; 1AF6 85 1C                    ..
         iny                                     ; 1AF8 C8                       .
-        lda     (r15L),y                        ; 1AF9 B1 20                    . 
+        lda     (r15L),y                        ; 1AF9 B1 20                    .
         sta     r13H                            ; 1AFB 85 1D                    ..
         beq     L1B5A                           ; 1AFD F0 5B                    .[
         ldy     V212A                           ; 1AFF AC 2A 21                 .*!
@@ -1112,11 +1114,11 @@ L1AF2:  ldy     #$00                            ; 1AF2 A0 00                    
         sta     r0H                             ; 1B26 85 03                    ..
         lda     r15H                            ; 1B28 A5 21                    .!
         pha                                     ; 1B2A 48                       H
-        lda     r15L                            ; 1B2B A5 20                    . 
+        lda     r15L                            ; 1B2B A5 20                    .
         pha                                     ; 1B2D 48                       H
         jsr     PutString                       ; 1B2E 20 48 C1                  H.
         pla                                     ; 1B31 68                       h
-        sta     r15L                            ; 1B32 85 20                    . 
+        sta     r15L                            ; 1B32 85 20                    .
         pla                                     ; 1B34 68                       h
         sta     r15H                            ; 1B35 85 21                    .!
         ldy     V212A                           ; 1B37 AC 2A 21                 .*!
@@ -1129,8 +1131,8 @@ L1B44:  lda     #$00                            ; 1B44 A9 00                    
 L1B46:  jsr     L15CF                           ; 1B46 20 CF 15                  ..
         clc                                     ; 1B49 18                       .
         lda     #$02                            ; 1B4A A9 02                    ..
-        adc     r15L                            ; 1B4C 65 20                    e 
-        sta     r15L                            ; 1B4E 85 20                    . 
+        adc     r15L                            ; 1B4C 65 20                    e
+        sta     r15L                            ; 1B4E 85 20                    .
         bcc     L1B54                           ; 1B50 90 02                    ..
         inc     r15H                            ; 1B52 E6 21                    .!
 L1B54:  inc     V212A                           ; 1B54 EE 2A 21                 .*!
@@ -1144,14 +1146,14 @@ L1B5B:  dey                                     ; 1B5B 88                       
         tax                                     ; 1B61 AA                       .
         lda     L1BA9,y                         ; 1B62 B9 A9 1B                 ...
         ldy     #$00                            ; 1B65 A0 00                    ..
-        sta     (r15L),y                        ; 1B67 91 20                    . 
+        sta     (r15L),y                        ; 1B67 91 20                    .
         iny                                     ; 1B69 C8                       .
         txa                                     ; 1B6A 8A                       .
-        sta     (r15L),y                        ; 1B6B 91 20                    . 
+        sta     (r15L),y                        ; 1B6B 91 20                    .
         clc                                     ; 1B6D 18                       .
         lda     #$02                            ; 1B6E A9 02                    ..
-        adc     r15L                            ; 1B70 65 20                    e 
-        sta     r15L                            ; 1B72 85 20                    . 
+        adc     r15L                            ; 1B70 65 20                    e
+        sta     r15L                            ; 1B72 85 20                    .
         bcc     L1B78                           ; 1B74 90 02                    ..
         inc     r15H                            ; 1B76 E6 21                    .!
 L1B78:  rts                                     ; 1B78 60                       `
@@ -1216,7 +1218,7 @@ L1BA9:
         .byte   <OptShadowed1581
         .byte   <OptRAM1571
         .byte   <OptRAM1581
-		.byte   <OptF011
+	.byte   <OptF011
 
 L1BB2:
         .byte   >OptNoDrive
@@ -1228,7 +1230,7 @@ L1BB2:
         .byte   >OptShadowed1581
         .byte   >OptRAM1571
         .byte   >OptRAM1581
-		.byte   >OptF011
+	.byte   >OptF011
 
 ; no drive
 OptNoDrive:
@@ -1325,7 +1327,7 @@ F011Label:
         .byte   "F011"                          ; 1BCE 31 35 34 31              1541
         .byte   $00                             ; 1BD2 00                       .
 
-		
+
 L1C39:  ldy     V212C                           ; 1C39 AC 2C 21                 .,!
         beq     L1C40                           ; 1C3C F0 02                    ..
         ldy     #$01                            ; 1C3E A0 01                    ..
@@ -1396,7 +1398,7 @@ ShowF011:  ldy     #10                            ; 1C93 A0 05                  
 ; ----------------------------------------------------------------------------
 NoF011:  ldy     #$00                            ; 1C96 A0 00                    ..
         rts                                     ; 1C98 60                       `
-		
+
 ; ----------------------------------------------------------------------------
 L1C99:  lda     V212C                           ; 1C99 AD 2C 21                 .,!
         cmp     #$03                            ; 1C9C C9 03                    ..
@@ -1486,14 +1488,16 @@ InitNoDrive:
 L1D08:  sta     L1D9A                           ; 1D08 8D 9A 1D                 ...
         ldx     #>UnplugDlg                            ; 1D0B A2 1D                    ..
         lda     #<UnplugDlg                            ; 1D0D A9 9D                    ..
-        jsr     L2022                           ; 1D0F 20 22 20                  " 
+        jsr     L2022                           ; 1D0F 20 22 20                  "
         lda     r0L                             ; 1D12 A5 02                    ..
         cmp     #$02                            ; 1D14 C9 02                    ..
         beq     L1D27                           ; 1D16 F0 0F                    ..
         jsr     L1D28                           ; 1D18 20 28 1D                  (.
 L1D1B:  lda     V212B                           ; 1D1B AD 2B 21                 .+!
         jsr     L1DF2                           ; 1D1E 20 F2 1D                  ..
+inc $d020
         jsr     CheckAllDrives                           ; 1D21 20 B0 1D                  ..
+inc $d020
         dec     L180C                           ; 1D24 CE 0C 18                 ...
 L1D27:  rts                                     ; 1D27 60                       `
 ; ----------------------------------------------------------------------------
@@ -1530,15 +1534,15 @@ L1D60:  brk                                     ; 1D60 00                       
 
 L1D61:  .byte   $18                             ; 1D61 18                       .
         .byte   "If you are able to, please"    ; 1D62 49 66 20 79 6F 75 20 61  If you a
-                                                ; 1D6A 72 65 20 61 62 6C 65 20  re able 
+                                                ; 1D6A 72 65 20 61 62 6C 65 20  re able
                                                 ; 1D72 74 6F 2C 20 70 6C 65 61  to, plea
                                                 ; 1D7A 73 65                    se
         .byte   $00                             ; 1D7C 00                       .
 L1D7D:
         .byte   "turn OFF and/or unplug drive " ; 1D7D 74 75 72 6E 20 4F 46 46  turn OFF
-                                                ; 1D85 20 61 6E 64 2F 6F 72 20   and/or 
+                                                ; 1D85 20 61 6E 64 2F 6F 72 20   and/or
                                                 ; 1D8D 75 6E 70 6C 75 67 20 64  unplug d
-                                                ; 1D95 72 69 76 65 20           rive 
+                                                ; 1D95 72 69 76 65 20           rive
 L1D9A:  .byte   "x."                            ; 1D9A 78 2E                    x.
         .byte   0                                    ; 1D9C 00                       .
 ; ----------------------------------------------------------------------------
@@ -1610,24 +1614,24 @@ SetupDrive:
 ; ----------------------------------------------------------------------------
 SetupDriveAB:  lda     #$00                            ; 1E14 A9 00                    ..
         sta     L1E04                           ; 1E16 8D 04 1E                 ...
-        
+
 		; set new drive type
 		ldy     V212B                           ; 1E19 AC 2B 21                 .+!
         lda     V212F                           ; 1E1C AD 2F 21                 ./!
         sta     $8486,y                         ; 1E1F 99 86 84                 ...
         inc     $848D
-        
+
 		lda     V212B
         jsr     InitAndCheckDrive
 		bne     L1E48                           ; 1E2B D0 1B                    ..
-        
+
 		; the other drive empty?
 		lda     V212B                           ; 1E2D AD 2B 21                 .+!
         eor     #$01                            ; 1E30 49 01                    I.
         tay                                     ; 1E32 A8                       .
         lda     $8486,y                         ; 1E33 B9 86 84                 ...
         beq     L1E59                           ; 1E36 F0 21                    .!
-        
+
 		tya                                     ; 1E38 98                       .
         ldy     #$0B                            ; 1E39 A0 0B                    ..
         bit     sysRAMFlg                       ; 1E3B 2C C4 88                 ,..
@@ -1644,16 +1648,16 @@ L1E4A:  sty     L1E04                           ; 1E4A 8C 04 1E                 
         jsr     PurgeTurbo                      ; 1E56 20 35 C2                  5.
 L1E59:  ldx     #>PluginDlg                            ; 1E59 A2 1F                    ..
         lda     #<PluginDlg                            ; 1E5B A9 A1                    ..
-        jsr     L2022                           ; 1E5D 20 22 20                  " 
+        jsr     L2022                           ; 1E5D 20 22 20                  "
         lda     r0L                             ; 1E60 A5 02                    ..
         cmp     #$02                            ; 1E62 C9 02                    ..
         beq     L1E98                           ; 1E64 F0 32                    .2
-        
+
 		; not canceled
 		lda     V212B                           ; 1E66 AD 2B 21                 .+!
         jsr     InitAndCheckDrive                           ; 1E69 20 E1 1D                  ..
         bne     L1E98                           ; 1E6C D0 2A                    .*
-        
+
 		lda     V212B                           ; 1E6E AD 2B 21                 .+!
         eor     #$01                            ; 1E71 49 01                    I.
         sta     curDevice                       ; 1E73 85 BA                    ..
@@ -1709,7 +1713,7 @@ L1EDD:  sty     L1E04                           ; 1EDD 8C 04 1E                 
         jsr     PurgeTurbo                      ; 1EEB 20 35 C2                  5.
 L1EEE:  ldx     #>PluginDlg2                            ; 1EEE A2 1F                    ..
         lda     #<PluginDlg2                            ; 1EF0 A9 B3                    ..
-        jsr     L2022                           ; 1EF2 20 22 20                  " 
+        jsr     L2022                           ; 1EF2 20 22 20                  "
         lda     r0L                             ; 1EF5 A5 02                    ..
         cmp     #$02                            ; 1EF7 C9 02                    ..
         beq     L1F29                           ; 1EF9 F0 2E                    ..
@@ -1746,20 +1750,20 @@ L1F3E:  jsr     CheckAllDrives                           ; 1F3E 20 B0 1D        
 ; ----------------------------------------------------------------------------
 L1F42:
         .byte   $18                             ; 1F42 18                       .
-        .byte   "Plug in & turn ON new drive."  ; 1F43 50 6C 75 67 20 69 6E 20  Plug in 
+        .byte   "Plug in & turn ON new drive."  ; 1F43 50 6C 75 67 20 69 6E 20  Plug in
                                                 ; 1F4B 26 20 74 75 72 6E 20 4F  & turn O
                                                 ; 1F53 4E 20 6E 65 77 20 64 72  N new dr
                                                 ; 1F5B 69 76 65 2E              ive.
         .byte   $00                             ; 1F5F 00                       .
 L1F60:  .byte   $18                             ; 1F60 18                       .
         .byte   "(Must be set to device 8 or 9)"; 1F61 28 4D 75 73 74 20 62 65  (Must be
-                                                ; 1F69 20 73 65 74 20 74 6F 20   set to 
+                                                ; 1F69 20 73 65 74 20 74 6F 20   set to
                                                 ; 1F71 64 65 76 69 63 65 20 38  device 8
                                                 ; 1F79 20 6F 72 20 39 29         or 9)
         .byte   $00                             ; 1F7F 00                       .
 L1F80:  .byte   $18                             ; 1F80 18                       .
         .byte   "(Must be set to device 8 or 10)"; 1F81 28 4D 75 73 74 20 62 65 (Must be
-                                                ; 1F89 20 73 65 74 20 74 6F 20   set to 
+                                                ; 1F89 20 73 65 74 20 74 6F 20   set to
                                                 ; 1F91 64 65 76 69 63 65 20 38  device 8
                                                 ; 1F99 20 6F 72 20 31 30 29      or 10)
         .byte   $00
@@ -1856,7 +1860,7 @@ L2022:  stx     r0H                             ; 2022 86 03                    
         pha                                     ; 202D 48                       H
         lda     r5L                             ; 202E A5 0C                    ..
         pha                                     ; 2030 48                       H
-        jsr     L205B                           ; 2031 20 5B 20                  [ 
+        jsr     L205B                           ; 2031 20 5B 20                  [
         pla                                     ; 2034 68                       h
         sta     r5L                             ; 2035 85 0C                    ..
         pla                                     ; 2037 68                       h
@@ -1865,13 +1869,13 @@ L2022:  stx     r0H                             ; 2022 86 03                    
 ; ----------------------------------------------------------------------------
 L203D:
         ldx     #$04                            ; 203D A2 04                    ..
-        jsr     L204B                           ; 203F 20 4B 20                  K 
+        jsr     L204B                           ; 203F 20 4B 20                  K
         LoadW   r0, L1A37
         rts                                     ; 204A 60                       `
 ; ----------------------------------------------------------------------------
 L204B:  stx     V2550                           ; 204B 8E 50 25                 .P%
         ldx     V2550                           ; 204E AE 50 25                 .P%
-        jmp     L205B                           ; 2051 4C 5B 20                 L[ 
+        jmp     L205B                           ; 2051 4C 5B 20                 L[
 ; ----------------------------------------------------------------------------
 ConfigRecoverVector:
         ldx     V2550                           ; 2054 AE 50 25                 .P%
@@ -1896,7 +1900,7 @@ L20C7:  jsr     L2241                           ; 20C7 20 41 22                 
         sta     (r7L),y                         ; 20D0 91 10                    ..
         beq     L20DC                           ; 20D2 F0 08                    ..
 
-; recover		
+; recover
 L20D4:  jsr     L2241                           ; 20D4 20 41 22                  A"
         jsr     L2189                           ; 20D7 20 89 21                  .!
         lda     #$FF                            ; 20DA A9 FF                    ..
@@ -1913,7 +1917,7 @@ L205B:  lda     #$00                            ; 205B A9 00                    
         bvc     L2062                           ; 205E 50 02                    P.
 L2060:  lda     #$FF                            ; 2060 A9 FF                    ..
 L2062:  sta     r4H                             ; 2062 85 0B                    ..
-        jsr     L20BA                           ; 2064 20 BA 20                  . 
+        jsr     L20BA                           ; 2064 20 BA 20                  .
 .endif
 L2067:  ldx     r2H                             ; 2067 A6 07                    ..
         jsr     GetScanLine                     ; 2069 20 3C C1                  <.
@@ -1928,10 +1932,10 @@ L2075:  tay                                     ; 2075 A8                       
         sta     r4L                             ; 2078 85 0A                    ..
 L207A:  bit     r4H                             ; 207A 24 0B                    $.
         bpl     L2084                           ; 207C 10 06                    ..
-        jsr     L20AC                           ; 207E 20 AC 20                  . 
+        jsr     L20AC                           ; 207E 20 AC 20                  .
         clv                                     ; 2081 B8                       .
         bvc     L2087                           ; 2082 50 03                    P.
-L2084:  jsr     L20A0                           ; 2084 20 A0 20                  . 
+L2084:  jsr     L20A0                           ; 2084 20 A0 20                  .
 L2087:
 .ifndef config128
         inc     r1L                             ; 2087 E6 04                    ..
@@ -2046,7 +2050,7 @@ L20AC:  tya                                     ; 20AC 98                       
 L20BA:  LoadW	r1, V2551
 
         ldy     #$00                            ; 20C2 A0 00                    ..
-L20C4:  lda     L20D1,x                         ; 20C4 BD D1 20                 .. 
+L20C4:  lda     L20D1,x                         ; 20C4 BD D1 20                 ..
         sta     r2L,y                           ; 20C7 99 06 00                 ...
         inx                                     ; 20CA E8                       .
         iny                                     ; 20CB C8                       .
@@ -2199,7 +2203,7 @@ L2241:  txa                                     ; 2241 8A                       
         sta     r1L                             ; 224D 85 04                    ..
         clv                                     ; 224F B8                       .
         bvc     L225A                           ; 2250 50 08                    P.
-L2252:  
+L2252:
 .endif
 		LoadW	r1, V2551
 L225A:  ldy     #$00                            ; 225A A0 00                    ..
