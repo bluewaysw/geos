@@ -15,7 +15,7 @@
 .import _PutChar2
 .endif
 
-.import _GetRealSize
+.import GetRealSize
 
 .import NormalizeX
 
@@ -57,7 +57,7 @@ CalcDecimal:
 	ldx r3L
 	sta Z45,x
 	ldx currentMode
-	jsr _GetRealSize
+	jsr GetRealSize
 	tya
 	add r3H
 	sta r3H

@@ -41,4 +41,3 @@ _PutString:
 	PopB CPU_DATA
 .endif
 	rts
-

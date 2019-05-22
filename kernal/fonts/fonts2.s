@@ -72,6 +72,7 @@ PrvCharWidth = $880D
 ;---------------------------------------------------------------
 
 .ifndef wheels ; moved
+.ifndef mega65
 _GetRealSize:
 	subv 32
 _GetRealSize2:
@@ -118,6 +119,7 @@ _GetRealSize2:
 	rts
 .endif ; bsw128
 .endif
+.endif
 
 Font_1:
 	ldy r1H
@@ -130,11 +132,7 @@ Font_1:
 .else
 	ldx #0
 	addv 32
-.ifdef mega65
-	jsr _GetRealSize
-.else
 	jsr GetRealSize
-.endif
 	tya
 .endif
 	pha
@@ -215,11 +213,7 @@ Font_1:
 	jsr _GetRealSize2
 .else
 	addv 32
-.ifdef mega65
-	jsr _GetRealSize
-.else
 	jsr GetRealSize
-.endif
 .endif
 	sta r5H
 	SubB r5H, r1H
@@ -954,7 +948,9 @@ FontPutChar:
 	PushB r1H
 	tya
 	jsr Font_1 ; put pointer in r13
-	bcs @9 ; return
+	bcc @9_ ; return
+	jmp @9
+@9_:
 .ifdef bsw128
 	jsr _TempHideMouse
 	bbrf 7, graphMode, @1
@@ -974,15 +970,37 @@ FontPutChar:
 @4:	jsr Font_6
 @5:	plp
 	bcs @7
+	PushB r10L
+	lda leftMargin+1
+	and #%11110000
+	sta r10L
+	lda r11H
+	and #%11110000
+	cmp r10L
+	bne @7_
 	lda r1H
 	cmp windowTop
-	bcc @7
+@7_:
+	bcc @7__
+	lda rightMargin+1
+	and #%11110000
+	sta r10L
+	lda r11H
+	and #%11110000
+	cmp r10L
+	bne @6_
+	lda r1H
 	cmp windowBottom
+@6_:
 	bcc @6
-	bne @7
-@6:	jsr Font_4
+	bne @7__
+@6:	PopB r10L
+	jsr Font_4
+	bra @7
+@7__:	PopB r10L
 
-@7:	inc r5L         ; same byte next line
+@7:
+	inc r5L         ; same byte next line
 	inc r6L
 	lda r5L
 .ifdef mega65
@@ -1029,7 +1047,8 @@ FontPutChar:
 
 @8:	inc r1H
 	dec r10H
-	bne @1
+	beq @9
+	jmp @1
 @9:	PopB r1H
 .ifdef mega65
 	PopB	CPU_DATA

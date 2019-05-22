@@ -16,8 +16,8 @@
 .global _NormalizeY
 .endif
 
-.import screenMaxX
-.import screenMaxY
+;.import screenMaxX
+;.import screenMaxY
 
 .segment "graph5"
 

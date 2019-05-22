@@ -14,6 +14,7 @@
 .import DoDlgBox
 .import Ddec
 .import EnterDeskTop
+.import UnmapUnderlay
 
 ; syscall
 .global _Panic
@@ -80,7 +81,7 @@ SwapMemory:
 
 SwapRAMArgs:
 	.word DISK_BASE ; CBM addr
-	.word $c000     ; REU addr
+	.word dum$c000     ; REU addr
 	.word 0         ; count
 	.byte 0         ; REU bank
 
@@ -107,6 +108,17 @@ _Panic:
 	pla
 	sbc #0
 .else
+.ifdef mega65
+	LoadB CPU_DATA, IO_IN
+@13:
+	inc $d020
+	jmp @13
+	lda countHighMap
+	beq @12
+	jsr UnmapUnderlay
+	bra @13
+@12:
+.endif
 .ifdef bsw128
 	pla
 	pla
@@ -160,7 +172,6 @@ _Panic:
 @3:	addv '0'+7
 @4:	sta _PanicAddr,x
 	rts
-
 .segment "panic2"
 
 _PanicDB_DT:

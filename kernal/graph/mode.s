@@ -18,6 +18,7 @@
 .global _GraphicsString
 .global SetNewMode0
 .global i_FillRam
+.global _GetRealSize
 
 .segment "mode"
 
@@ -34,17 +35,19 @@
 .import SetVICRegs
 .endif
 
-.import screenMaxX
-.import screenMaxY
+;.import screenMaxX
+;.import screenMaxY
 .import screenCardsX
 ;.import scrFullCardsX
 .import spriteXPosOff
 .import spriteYPosOff
 .import screenNextLine
+.import PrvCharWidth
 
 .global SetRightMargin
 _SetNewMode:
-	jsr SetRightMargin
+        jsr SetNewMode0
+	jmp SetRightMargin
 SetNewMode0:
 .ifdef bsw128
 	lda grcntrl1
@@ -88,6 +91,11 @@ SetNewMode0:
 	lda #$09
 	sta $d016
 
+        LDA #79
+	STA $D05C
+	LDA #128
+	STA $D05D
+
 	; 90 column mode, or advanced modes
 	lda #$C0
     	sta $d031
@@ -100,10 +108,6 @@ SetNewMode0:
 	LDA #0
 	sta $D076
 
-	LDA #79
-	STA $D05C
-	LDA #$80
-	STA $D05D
 
 	lda	#$04	; 3.5Mhz, H640, no bitplanes
 	sta	$d030
@@ -148,6 +152,9 @@ SetNewMode0:
 	LoadB spriteXPosOff, VIC_X_POS_OFF_640
 	LoadB spriteYPosOff, VIC_Y_POS_OFF_640
 
+        LDA #0
+	STA $D05D
+
 	LoadW	r5, 640
 	jsr	InitScanLineTab
 	END_IO
@@ -165,11 +172,11 @@ SetNewMode0:
 	ldy #<(VIC_IniTbl_end - VIC_IniTbl)
 	jsr SetVICRegs
 
-	LDA #39
+        LDA #39
 	STA $D05C
-	LDA #$80
+	LDA #128
 	STA $D05D
-	LDA #1
+	LDA #$FF
 	sta $D076
 	LDA   $D054
 	ORA   #$10
@@ -189,6 +196,9 @@ SetNewMode0:
 	LDA   #90
 	STA   $D058
 	STA   $D05E
+
+        LDA #0
+	STA $D05D
 
 	lda	#$04	; 3.5Mhz, H640, no bitplanes
 	sta	$d030
@@ -264,9 +274,9 @@ SetNewMode0:
 
 	LDA #20
 	STA $D05C
-	LDA #$80
+	LDA #128
 	STA $D05D
-	LDA #1
+	LDA #$FF
 	sta $D076
 	LDA   $D054
 	ORA   #$10
@@ -286,14 +296,16 @@ SetNewMode0:
 	LDA   #94
 	STA   $D058
 	STA   $D05E
+        LDA #0
+	STA $D05D
 
 	lda	#$04	; 3.5Mhz, H640, no bitplanes
 	sta	$d030
 
-	lda cia2base
-	and #%00110000
-	ora #%00000101
-	sta cia2base
+	;lda cia2base
+	;and #%00110000
+	;ora #%00000101
+	;sta cia2base
 
 	; Set screen ram that has 100x60 cells x 2 bytes per cell = 12,000 bytes of colour
 	; information for bitmap mode.
@@ -311,6 +323,12 @@ SetNewMode0:
 	; Set bitmap data to somewhere that has 100x60 x 8 = 48,000 bytes of RAM.
 	; (We are using 2nd bank of 64KB for this)
 	; NOTE: This can't actually be set freely (yet), but will be on 16KB boundaries.
+;	LDA #<$2000
+;	STA $D068
+;	LDA #>$2000
+;	STA $D069
+;	LDA #1
+;	STA $D06A
 	LDA #<$0000
 	STA $D068
 	LDA #>$0000
@@ -337,7 +355,7 @@ SetNewMode0:
 
 	LoadW screenNextLine, 744
 	LoadW screenMaxX, 751
-	LoadW screenMaxY, 588
+	LoadW screenMaxY, 587
 	LoadW screenCardsX, 94
 	LoadB scrFullCardsX, 94
 	LoadB scrFullCardsX+1, 74
@@ -351,9 +369,11 @@ SetNewMode0:
 
 
 @14:
-	; 40 column compatibility mode
-    	lda #$40
-    	sta $d031
+        LoadW r0, VIC_IniTbl
+        .assert * - VIC_IniTbl_end - VIC_IniTbl < 256, error, "VIC_IniTbl must be < 256 bytes"
+        ldy #<(VIC_IniTbl_end - VIC_IniTbl)
+        jsr SetVICRegs
+
 
 	jsr i_FillRam
 	.word 1000
@@ -368,17 +388,17 @@ SetNewMode0:
 	LoadB scrFullCardsX+1, 25
 	LoadB spriteXPosOff, VIC_X_POS_OFF
 	LoadB spriteYPosOff, VIC_Y_POS_OFF
-	LoadW r0, VIC_IniTbl
-.assert * - VIC_IniTbl_end - VIC_IniTbl < 256, error, "VIC_IniTbl must be < 256 bytes"
-	ldy #<(VIC_IniTbl_end - VIC_IniTbl)
-	jsr SetVICRegs
 
 	LDA #80
 	STA $D05C
-	LDA #$80
+	LDA #128
 	STA $D05D
 	LDA #0
 	sta $D076
+
+        ; 40 column compatibility mode
+    	lda #$40
+    	sta $d031
 
 	lda #%00111011
 	sta $d011
@@ -390,10 +410,10 @@ SetNewMode0:
 	lda	#$04	; 3.5Mhz, H640, no bitplanes
 	sta	$d030
 
-	lda cia2base
-	and #%00110000
-	ora #%00000101
-	sta cia2base
+	;lda cia2base
+	;and #%00110000
+	;ora #%00000101
+	;sta cia2base
 
 	LDA	#$8F
 	 STA $d06D
@@ -442,6 +462,18 @@ SetRightMargin:
 .ifdef bsw128
 	lda #0
 .endif
+	lda screenMaxX
+	sta rightMargin
+	lda screenMaxY+1
+	asl
+	asl
+	asl
+	asl
+	ora screenMaxX+1
+	sta rightMargin+1
+	lda screenMaxY
+        sta windowBottom
+
 	ldx #>(SC_PIX_WIDTH-1)
 	ldy #<(SC_PIX_WIDTH-1)
 	bbrf 7, graphMode, @1
@@ -455,8 +487,8 @@ SetRightMargin:
 .ifdef bsw128
 	sta clkreg  ; D030
 .endif
-	stx rightMargin+1
-	sty rightMargin
+	;stx rightMargin+1
+	;sty rightMargin
 	jmp UseSystemFont
 
 .ifdef mega65
@@ -494,4 +526,103 @@ InitScanLineTab:
 	PopB	CPU_DATA
 
 	rts
+.endif
+
+;---------------------------------------------------------------
+; GetRealSize                                             $C1B1
+;
+; Function:  Returns the size of a character in the current
+;            mode (bold, italic...) and current Font.
+;
+; Pass:      a   ASCII character
+;            x   currentMode
+; Return:    y   character width
+;            x   character height
+;            a   baseline offset
+; Destroyed: nothing
+;---------------------------------------------------------------
+
+.ifndef wheels ; moved
+.ifdef mega65
+
+GetChWdth2:
+	cmp #$5f
+.ifdef bsw128 ; branch taken/not taken optimization
+	beq @2
+.else
+	bne @1
+	lda PrvCharWidth
+	rts
+@1:
+.endif
+        asl
+        tay
+        iny
+        iny
+.ifdef mega65
+        PushB	CPU_DATA
+        LoadB	CPU_DATA, RAM_64K
+.endif
+        lda (curIndexTable),y
+        dey
+        dey
+        sec
+        sbc (curIndexTable),y
+.ifdef mega65
+        tay
+        PopB	CPU_DATA
+        tya
+.endif
+        rts
+.ifdef bsw128 ; branch taken/not taken optimization
+@2:	lda PrvCharWidth
+        rts
+.endif
+
+_GetRealSize:
+	subv 32
+_GetRealSize2:
+	jsr GetChWdth2
+	tay
+	txa
+.ifndef bsw128
+	ldx curHeight
+	pha
+.endif
+	and #$40
+	beq @1
+	iny
+@1:
+.ifdef bsw128
+	txa
+.else
+	pla
+.endif
+	and #8
+.ifdef bsw128
+	bne @2
+	ldx curHeight
+	lda baselineOffset
+	rts
+@2:	ldx curHeight
+	inx
+	inx
+	iny
+	iny
+	lda baselineOffset
+	addv 2
+	rts
+.else
+	beq @2
+	inx
+	inx
+	iny
+	iny
+	lda baselineOffset
+	addv 2
+	rts
+@2:	lda baselineOffset
+	rts
+.endif ; bsw128
+.endif
 .endif

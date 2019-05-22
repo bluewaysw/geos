@@ -22,6 +22,10 @@
 
 .global InitRamTab
 
+SC_FROM_END             =   %100000000000
+SC_FROM_CENTER          =   %010000000000
+SC_SCALE                =   %110000000000
+
 .segment "init4"
 
 InitRamTab:
@@ -31,10 +35,12 @@ InitRamTab:
 	.byte ST_WR_FORE | ST_WR_BACK ; dispBufferOn
 	.byte 0                       ; mouseOn
 	.word mousePicData            ; msePicPtr
-	.byte 0                       ; windowTop
-	.byte $df         	      ; windowBottom
-	.word 0                       ; leftMargin
-	.word $1000 + 719            ; rightMargin
+	ByteCY 0, 0                   ; windowTop
+	ByteCY SC_FROM_END|0, SC_FROM_END|0
+	                              ; windowBottom
+	WordCX 0, 0                   ; leftMargin
+	WordCX SC_FROM_END|0, SC_FROM_END|0
+				      ; rightMargin
 	.byte 0                       ; pressFlag
 
 	.word appMain

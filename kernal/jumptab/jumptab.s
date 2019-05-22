@@ -173,36 +173,36 @@
 .import _NormalizeX
 .ifdef mega65
 .import _NormalizeY
-.import _map_FollowChain   
+.import _map_FollowChain
 .import _map_FindFTypes
 .import _map_FindFile
-.import _map_SetDevice   
-.import _map_GetFHdrInfo    
+.import _map_SetDevice
+.import _map_GetFHdrInfo
 .import _map_LdDeskAcc
-.import _map_RstrAppl    
+.import _map_RstrAppl
 .import _map_LdApplic
-.import _map_SaveFile 
-.import _map_SetGDirEntry    
+.import _map_SaveFile
+.import _map_SetGDirEntry
 .import _map_BldGDirEntry
-.import _map_DeleteFile    
+.import _map_DeleteFile
 .import _map_FreeFile
-.import _map_FastDelFile   
+.import _map_FastDelFile
 .import _map_RenameFile
-.import _map_OpenRecordFile    
+.import _map_OpenRecordFile
 .import _map_CloseRecordFile
-.import _map_UpdateRecordFile    
+.import _map_UpdateRecordFile
 .import _map_NextRecord
-.import _map_PreviousRecord    
+.import _map_PreviousRecord
 .import _map_PointRecord
-.import _map_DeleteRecord    
+.import _map_DeleteRecord
 .import _map_InsertRecord
-.import _map_AppendRecord    
+.import _map_AppendRecord
 .import _map_ReadRecord
-.import _map_WriteRecord    
+.import _map_WriteRecord
 .import _map_ReadByte
 .import _map__CRC
-.import _map__GetRandom
 .import _map_SetNewMode
+.import _map_GetRealSize
 .else
 .import _InsertRecord
 .import _NextRecord
@@ -232,10 +232,9 @@
 .import _RstrAppl
 .import _BldGDirEntry
 .import __CRC
-.import __GetRandom
-
 .endif
 
+.import _GetRandom
 .global InterruptMain
 .global InitProcesses
 .global RestartProcess
@@ -432,7 +431,6 @@
 .import __io_FrameRectangle
 .import __io_GraphicsString
 .import __io_SetPattern
-.import __io_GetRealSize
 .endif
 
 .ifdef wheels
@@ -581,11 +579,7 @@ InitRam:
 PutDecimal:
 	jmp _PutDecimal
 GetRandom:
-.ifdef mega65
-	jmp _map__GetRandom
-.else
-	jmp __GetRandom
-.endif
+	jmp _GetRandom
 MouseUp:
 	jmp _MouseUp
 MouseOff:
@@ -614,7 +608,7 @@ i_PutString:
 	jmp _i_PutString
 GetRealSize:
 .ifdef mega65
-	jmp __io_GetRealSize
+	jmp _map_GetRealSize
 .else
 	jmp _GetRealSize
 .endif
@@ -860,7 +854,7 @@ AppendRecord:
 .endif
 ReadRecord:
 .ifdef mega65
-	jmp _map_ReadRecord	
+	jmp _map_ReadRecord
 .else
 	jmp _ReadRecord
 .endif

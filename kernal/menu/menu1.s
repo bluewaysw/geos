@@ -191,7 +191,7 @@ DoMenu1_1:
 	smbf ICONSON_BIT, mouseOn
 .endif
 @5:	smbf MENUON_BIT, mouseOn
-	
+
 .ifdef mega65
 	PopB	CPU_DATA
 .endif
@@ -326,15 +326,17 @@ Menu_2:
 .else
 	LoadW__ leftMargin, 0
 .endif
+	PushB r1H
 	sec
 	lda menuRight
 	sbc #1
 	sta rightMargin
-	lda menuRight+1
+	lda rightMargin+1
+	and #%11110000
+	ora menuRight+1
 	sbc #0
 	sta rightMargin+1
 	LoadW StringFaultVec, MenuStringFault
-	PushB r1H
 .ifdef wheels
 	bit menuOptNumber
 	bmi @1
@@ -358,4 +360,3 @@ Menu_2:
 	PopW leftMargin
 	PopW r10
 	rts
-

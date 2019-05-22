@@ -28,6 +28,12 @@
 .segment "mainloop1"
 
 _MainLoop:
+	ldx CPU_DATA
+	cpx #$30
+	bne @HOHO
+	ldx #IO_IN
+	stx CPU_DATA
+@HOHO:
 .ifdef wheels_screensaver
 .import RunScreensaver
 	bit saverStatus
@@ -76,4 +82,3 @@ _MNLP:	jsr CallRoutine
 .ifdef bsw128 ; XXX junk
 	.byte $88, $88
 .endif
-

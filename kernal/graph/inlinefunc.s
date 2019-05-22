@@ -83,7 +83,13 @@ _i_RecoverRectangle:
 ;---------------------------------------------------------------
 _i_ImprintRectangle:
 	jsr __GetInlineDrwParms
+.ifdef mega65
+	LoadB	CPU_DATA, RAM_64K
 	jsr _ImprintRectangle
+	LoadB	CPU_DATA, IO_IN
+.else
+	jsr _ImprintRectangle
+.endif
 .ifdef wheels_size
 	jmp DoInlineReturn7
 .else
@@ -103,12 +109,13 @@ _i_ImprintRectangle:
 _i_FrameRectangle:
 	jsr __GetInlineDrwParms
 	iny
-	lda (returnAddress),Y
 .ifdef mega65
 	LoadB	CPU_DATA, RAM_64K
+	lda (returnAddress),Y
 	jsr _FrameRectangle
 	LoadB	CPU_DATA, IO_IN
 .else
+	lda (returnAddress),Y
 	jsr _FrameRectangle
 .endif
 	php

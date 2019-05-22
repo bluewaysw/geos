@@ -95,7 +95,7 @@ _HR_PosSprite:
 	adc spriteYPosOff
 	;sta r6L
 	sta mob0ypos,Y
-	
+
 	lda r5H
 	ldy $D077
 	ldx #1
@@ -106,7 +106,7 @@ _HR_PosSprite:
 	ldy $D078
 	jsr @2_
 	sta $D078
-		
+
 .ifdef bsw128
 	lda graphMode
 	bpl @X
@@ -142,7 +142,7 @@ tay
 
 	ldy	msbxpos
 	ldx	#1
-	
+
 	jsr	@2__
 	sta msbxpos
 	lda #2
@@ -165,7 +165,7 @@ tay
 	rts
 
 @2_clear:
-	tya 
+	tya
 	eor #$ff
 	ora BitMaskPow2,x
 	eor #$ff

@@ -64,6 +64,7 @@ DlgBoxPrep2:
 .endif
 
 DrawDlgBox:
+
 	LoadB dispBufferOn, ST_WR_FORE | ST_WRGS_FORE
 	ldy #0
 	lda (DBoxDesc),y
@@ -128,11 +129,20 @@ DrwDlgSpd1:
 .endif
 	jsr Rectangle
 .endif
-@1:	lda #0
+@1:
+
+	lda #0
 	jsr SetPattern
 	clc
 	jsr CalcDialogCoords
-	MoveW r4, rightMargin
+	lda rightMargin+1
+	and #%11110000
+	sta rightMargin
+	lda r4H
+	and #%00001111
+	ora rightMargin
+	sta rightMargin+1
+	MoveB r4L, rightMargin
 	jsr Rectangle
 .ifndef wheels_size_and_speed ; redundant
 	clc
@@ -230,4 +240,3 @@ Dialog_2:
 	END_IO
 	rts
 .endif
-

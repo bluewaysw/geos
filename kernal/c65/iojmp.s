@@ -19,7 +19,6 @@
 .global __io_FrameRectangle
 .global __io_GraphicsString
 .global __io_SetPattern
-.global __io_GetRealSize
 
 .import _HorizontalLine
 .import _InvertLine
@@ -37,10 +36,10 @@
 
 .segment "iojmp"
 
-; DBIcPicOK                 00CFA2 RLA    
-; BSWFont                   00D5AC RLA 
+; DBIcPicOK                 00CFA2 RLA
+; BSWFont                   00D5AC RLA
 ; BSWFont80                 00D894 RLA
-; InitRamTab                00DC39 RLA  
+; InitRamTab                00DC39 RLA
 
 __io_HorizontalLine:
     tax
@@ -115,19 +114,3 @@ __io_SetPattern:
     LoadB CPU_DATA, RAM_64K
     jsr _SetPattern
     jmp __io_ret
-
-__io_GetRealSize:
-    ldy     CPU_DATA
-    sty     @1 +1
-    ldy     #RAM_64K
-    sty     CPU_DATA
-    jsr _GetRealSize
-    pha
-@1:
-    lda #0
-    sta CPU_DATA
-    pla
-    rts
-
-
-

@@ -376,6 +376,8 @@
 .else
 .ifdef mega65
 .macro START_IO
+ASSERT_NOT_BELOW_IO
+	LoadB CPU_DATA, IO_IN
 .endmacro
 .macro END_IO
 .endmacro

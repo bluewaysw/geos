@@ -212,7 +212,7 @@ IsDeviceValid:
 	eor curDrive
 	and #1
 	beq @5
-	jsr _SwapDiskDriver
+	;jsr _SwapDiskDriver
 @5:	ldx #$00
 	rts
 @7:	ldx #DEV_NOT_FOUND
@@ -344,4 +344,3 @@ GetHeaderFileName:
 	rts
 @3:	ldy #$ff
 @4:	rts
-

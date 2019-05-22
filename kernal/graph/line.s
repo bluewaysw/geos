@@ -181,7 +181,7 @@ _InvertLine:
 @1:
 .else
 	bbrf	7, graphMode, @11
-    ldy #0
+	ldy #0
 	bra	@12
 @11:
 	ldy r3L
@@ -216,7 +216,7 @@ _InvertLine:
 @4:	bit WheelsTemp
 	bpl @5
 	eor #$FF
-@5:	
+@5:
 	sta (r6),y
 	sta (r5),y
 	tya
@@ -237,11 +237,11 @@ _InvertLine:
 	bra @9
 @8:
 .ifdef mega65
-    lda r4H
-    cmp #0
-    beq @9b
-    dec r4H
-    bra @4
+	lda r4H
+	cmp #0
+ 	beq @9b
+	dec r4H
+	bra @4
 @9b:
 .endif
     lda r8H
@@ -303,8 +303,11 @@ _HorizontalLine:
 	SubW r3, r4
 	lsr r4H
 	ror r4L
-	lsr r4L
-	lsr r4L
+	lsr r4H
+	ror r4L
+	lsr r4H
+	ror r4L
+
 	lda r8L
 .endif
 	jsr HLineHelp
@@ -586,7 +589,7 @@ ImprintLine:
 	beq @3
 	inc r5H
 	inc r6H
-@3:	
+@3:
 .else
 	bbrf	7, graphMode, @11
     ldy #0

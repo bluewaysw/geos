@@ -10,7 +10,7 @@
 .include "kernal.inc"
 .include "c64.inc"
 
-.import _GetRealSize
+.import GetRealSize
 .import FontPutChar
 .import DoESC_RULER
 .import _GraphicsString
@@ -19,6 +19,7 @@
 .import Ddec
 .import CallRoutine
 .import NormalizeX
+.import NormalizeY
 
 .global DoBACKSPC
 .global _PutChar
@@ -47,6 +48,9 @@ _PutChar:
 	pha
 	ldx #r11
 	jsr NormalizeX
+	ldx #r11
+	ldy #r1H
+	jsr NormalizeY
 	pla
 .endif
 	cmp #$20
@@ -61,7 +65,7 @@ _PutChar:
 	ldy r11L
 	sty r13L
 	ldx currentMode
-	jsr _GetRealSize
+	jsr GetRealSize
 	dey
 	tya
 	add r13L
@@ -71,11 +75,17 @@ _PutChar:
 @2:
 .if .defined(bsw128) || .defined(mega65)
 	ldx #rightMargin
+	ldy #windowBottom
+	jsr NormalizeY
+	ldx #rightMargin
 	jsr NormalizeX
 .endif
 	CmpW rightMargin, r13
 	bcc @5
 .if .defined(bsw128) || .defined(mega65)
+	ldx #leftMargin
+	ldy #windowTop
+	jsr NormalizeY
 	ldx #leftMargin
 	jsr NormalizeX
 .endif
@@ -210,7 +220,7 @@ DoPLAINTEXT:
 
 DoBACKSPC:
 	ldx currentMode
-	jsr _GetRealSize
+	jsr GetRealSize
 	sty PrvCharWidth
 DoBACKSPACE:
 	SubB PrvCharWidth, r11L

@@ -15,16 +15,19 @@
 .global _SwapDiskDriver
 _SwapDiskDriver:
 .ifdef mega65
+@HOHO:
+inc $d020
+jmp @HOHO
 	; use DMAgic for swapping memory
 	START_IO
-	
+
 	lda #0
 	sta	$d702
 	lda #>swapdddmalist
 	sta $d701
 	lda	#<swapdddmalist
 	sta $d700
-	
+
 	; wait until done
 
 	END_IO

@@ -86,19 +86,24 @@ _GetScanLine:
 @_2:
 .endif
 .ifdef mega65
-	bbrf 7, graphMode, @X
-;;	ora #$20
+	;bit grapeMode
+	;bne @X	; branch  if not mode 0
+	;bbrf 7, graphMode, @X
+	;ora #$20
 @X:
 .endif
 	tax		; scan line in x now
 
 	bbrf 7, dispBufferOn, @2 ; ST_WR_FORE
+
+
 .ifdef bsw128
 	bvs @1
 .else
-	bbsf 6, dispBufferOn, @1 ; ST_WR_BACK
+	bbrf 6, dispBufferOn, @3 ; ST_WR_BACK
 .endif
-
+	jmp @1
+@3:
 ;
 ; 	foreground only
 ;
@@ -127,28 +132,33 @@ _GetScanLine:
 	pha
 
 	; a/x lower, y/z highter
-	lda r5H
-	bbsf 7, graphMode, @X1
-	;;and	#%11100000
+	lda	r5H
+	ldx	graphMode
+	bne	@X1
+	and	#%11100000
 @X1:
 	add	#$60
-	ror
+	bcc	@Y2
 	clc
-	ldx	#0
-	add 	#$00
-	bcc 	@Y1
-	;ldx	#2
-	ldx	#0
+	ror
+	ldx 	#2
+	bra	@Y1
+
+@Y2:
+	sec
+	ror
+	ldx	#1
 @Y1:
     	jsr	_MapHigh
 
 	lda	r5H
 	and	#%00011111
-	;;bbrf 7, graphMode, @X2
-	and #%00000001
+	ldx	graphMode
+	beq	@X2
+	and	#%00000001
 @X2:
 	add	#$a0
-	sta r5H
+	sta 	r5H
 	sta	r6H
 
 	pla
@@ -170,54 +180,87 @@ _GetScanLine:
 ; background only
 ;
 @2:
-.ifdef bsw128
-	bvc @3
-.else
-	bbrf 6, dispBufferOn, @3 ; ST_WR_BACK
-.endif
-	lda LineTabL,x
-	ora r6H
-	sta r6L
+	lda 	LineTabL,x
+	ora 	r6H
+	sta 	r5L
 .ifdef wheels_size_and_speed
-	sta r5L
+	sta 	r6L
 .endif
-	lda LineTabH,x
-	subv >(SCREEN_BASE-BACK_SCR_BASE)
-	sta r6H
+	lda 	LineTabH,x
+	sta 	r5H
 .ifdef bsw128
-	jmp GSC80_5
+	jmp 	GSC80_6
 .else
 .ifdef wheels_size_and_speed
-	sta r5H
+	sta 	r6H
 .else
-	MoveW r6, r5
+	MoveW 	r5, r6
 .endif
+
+.ifdef mega65
+; map foregroud and translate ptrs
+	tya
+	pha
+	tza
+	pha
+
+; a/x lower, y/z highter
+	lda	r5H
+	ldx	graphMode
+	bne	@X2___
+	and	#%11100000
+@X2___:
+	add	#$00
+	bcc	@Y2__
+	clc
+	ror
+	ldx 	#0
+	bra	@Y1__
+
+@Y2__:
+	sec
+	ror
+	ldx	#0
+@Y1__:
+	jsr	_MapLow
+
+	lda	r5H
+	and	#%00011111
+	ldx	graphMode
+	beq	@X2__
+	and	#%00000001
+@X2__:
+	add	#$60
+	sta 	r5H
+	sta	r6H
+
 	pla
-	tax
-	rts
+	taz
+	pla
+	tay
+
 .endif
-@3:	LoadB r5L, <$AF00
-	sta r6L
-	LoadB r5H, >$AF00
-	sta r6H
+
 	pla
 	tax
 .ifdef mega65
 	PopB	CPU_DATA
 .endif
 	rts
+.endif
+
 
 ;
 ;  background and foreground
 ;
 
-@1:	lda LineTabL,x
+@1:
+	lda LineTabL,x
 	ora r6H
 	sta r5L
 	sta r6L
 	lda LineTabH,x
 	sta r5H
-	subv >(SCREEN_BASE-BACK_SCR_BASE)
 	sta r6H
 
 .ifdef mega65
@@ -228,33 +271,53 @@ _GetScanLine:
 	pha
 
 	; a/x lower, y/z highter
-	lda r5H
-	bbsf 7, graphMode, @X1_
-	;;and	#%11100000
+	lda	r5H
+	ldx	graphMode
+	bne	@X1_
+	and	#%11100000
 @X1_:
 	pha
-	sub	#$60
-	lsr
 
-	ldx	#$FC
-    	jsr 	_MapHigh
+	add	#$60
+	bcc	@Y2_
+	clc
+	ror
+	ldx 	#2
+	bra	@Y1_
+
+@Y2_:
+	sec
+	ror
+	ldx	#1
+@Y1_:
+	jsr	_MapHigh
+
 	;sub #$40
 	;lsr
 	pla
-	lsr
-	add #$90		; back buffer is at $18000
+	add	#$80
+	bcc	@Y2___
+	clc
+	ror
+	ldx 	#0
+	bra	@Y1___
 
-	ldx 	#4
+@Y2___:
+	sec
+	ror
+	ldx	#0
+@Y1___:
     	jsr 	_MapLow
 
 	lda	r5H
 	and	#%00011111
-	;bbrf 7, graphMode, @X2_
-	and #%00000001
+	ldx	graphMode
+	beq	@X2_
+	and 	#%00000001
 @X2_:
 	add	#$a0
-	sta r5H
-	sub #$40
+	sta 	r5H
+	sub 	#$40
 	sta	r6H
 
 	pla

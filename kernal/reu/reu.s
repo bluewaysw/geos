@@ -23,12 +23,16 @@
 
 _StashRAM:
 	START_IO_X
+	;LDA #$A5      ; C65: VIC-III enable sequence
+	;STA $D02F
+	;LDA #$96
+	;STA $D02F     ; C65: VIC-III enabled
+
 	MoveW r2, opLength
 	MoveW r0, opFromAddr
 	lda r1L
 	sta	opToAddr
 	lda r1H
-	and #$7f
 	sta opToAddr+1
 
 	lda #>opddmalist
@@ -39,17 +43,12 @@ _StashRAM:
 _FetchRAM:
 	START_IO_X
 
-	LDA #$A5      ; C65: VIC-III enable sequence
-	STA $D02F
-	LDA #$96
-	STA $D02F     ; C65: VIC-III enabled
 
 	MoveW r2, opLength_fetch
 	MoveW r0, opToAddr_fetch
 	lda r1L
 	sta	opFromAddr_fetch
 	lda r1H
-	and #$7f
 	sta opFromAddr_fetch+1
 
 	lda #>opddmalist_fetch
@@ -73,7 +72,7 @@ opddmalist:
 	; enchanced dma mode header
 	.byte	$0a
 	.byte	$80, $00
-	.byte	$81, $FF
+	.byte	$81, $00
 	.byte 	0
 	.byte	0	; swap
 opLength:
@@ -89,7 +88,7 @@ opToAddr:
 opddmalist_fetch:
 	; enchanced dma mode header
 	.byte	$0a
-	.byte	$80, $ff
+	.byte	$80, $00
 	.byte	$81, $00
 	.byte	0
 	.byte	0	; swap

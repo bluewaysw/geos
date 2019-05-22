@@ -13,8 +13,8 @@
 .global RcvrMnu0
 .global ResetMseRegion
 
-.import screenMaxX
-.import screenMaxY
+;.import screenMaxX
+;.import screenMaxY
 
 .segment "mouse3"
 
@@ -50,4 +50,3 @@ ResetMseRegion:
 .endif
 	rts
 .endif
-

@@ -48,23 +48,25 @@ next:	.WORD	0
 	SEE	; just to be sure: 8 bit stack
 	EOM
 
+	; 10113/10114 clear device numbers of the f011 drive, we will
+	; manage those independent of dos
 	lda	#$10
-	sta $02
-	lda #$01
-	sta $03
-	lda #$01
-	sta $04
+	sta 	$02
+	lda 	#$01
+	sta 	$03
+	lda 	#$01
+	sta 	$04
 	lda	#$00
-	sta $05
+	sta 	$05
 
 	lda	#$18
-	LDZ	#2
+	LDZ	#3
 	EOM
-	sta ($02), Z
-	lda #$19
+	sta 	($02), Z
+	lda 	#$19
 	INZ
 	EOM
-	sta ($02), Z
+	sta 	($02), Z
 
 	; Just to be sure, enable newVic mode, to access eg VIC-3 register $30
 	; We don't need Mega65 fast mode here at any price, let's do that
@@ -87,7 +89,10 @@ next:	.WORD	0
 	lda	#$80
 	sta	$d06f
 
-	LDA   $D054
+	LDA	#$00
+	sta	$D710
+
+	LDA   $D054	;40 mhz
 	ORA   #$40
 	STA   $D054
 	lda   #$40
@@ -115,7 +120,6 @@ next:	.WORD	0
 	 STA $D069
 	 LDA #1
 	 STA $D06A
-
 
 	 ; Setup foreground/background colours
 .if 1

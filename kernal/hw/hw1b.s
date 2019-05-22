@@ -108,7 +108,7 @@ ASSERT_NOT_BELOW_IO
 .if 0
 	LDA #39
 	STA $D05C
-	LDA #$80
+	LDA #$00
 	STA $D05D
 	LDA #1
 	sta $D076

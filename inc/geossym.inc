@@ -213,3 +213,5 @@ RESET_VECTOR            =       $fffc ; ---
 IRQ_VECTOR              =       $fffe ; ---
 
 scrFullCardsX		=	$886E
+screenMaxX              =       $8870
+screenMaxY              =       $8874

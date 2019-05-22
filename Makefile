@@ -2,6 +2,7 @@
 VARIANT     ?= mega65
 DRIVE       ?= drvf011
 INPUT       ?= joydrv
+\INPUT       ?= mse1531
 
 AS           = ca65
 LD           = ld65
@@ -260,9 +261,9 @@ DRIVER_SOURCES= \
 # code that is in MEGA65 compiled with 4502 cpu
 ifeq ($(VARIANT), mega65)
 DRIVER_SOURCES += \
-	drv/drvf011.bin 
-endif	
-	
+	drv/drvf011.bin
+endif
+
 DEPS= \
 	config.inc \
 	inc/c64.inc \
@@ -301,13 +302,13 @@ ALL_BINS= \
 	$(BUILD_DIR)/input/mse1531.bin \
 	$(BUILD_DIR)/input/koalapad.bin \
 	$(BUILD_DIR)/input/pcanalog.bin
-	
+
 
 # code that is in MEGA65 compiled with 4502 cpu
 ifeq ($(VARIANT), mega65)
 ALL_BINS += \
 	$(BUILD_DIR)/drv/drvf011.bin
-endif	
+endif
 
 ifeq ($(VARIANT), bsw128)
 	ALL_BINS += \
@@ -360,6 +361,7 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite GW64.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite gpt64.cvt | $(C1541) $@ >/dev/null; \
 		if [ -e $(DESKTOP_CVT) ]; then echo geoswrite $(DESKTOP_CVT) | $(C1541) $@; fi >/dev/null; \
 		echo \*\*\* Created fresh $@.; \
 	fi;
@@ -397,7 +399,7 @@ $(BUILD_DIR)/config.cvt: $(BUILD_DIR)/configure/configure.o $(BUILD_DIR)/configu
 								$(BUILD_DIR)/configure/r6.o $(BUILD_DIR)/configure/r1.o
 	$(LD) -C configure/configure.cfg -o $@ $(BUILD_DIR)/configure/configure.o -m $(BUILD_DIR)/configure.map $(BUILD_DIR)/configure/r0.o \
 			$(BUILD_DIR)/configure/r2.o $(BUILD_DIR)/configure/r3.o $(BUILD_DIR)/configure/r4.o \
-			$(BUILD_DIR)/configure/r5.o $(BUILD_DIR)/configure/r6.o $(BUILD_DIR)/configure/r1.o 
+			$(BUILD_DIR)/configure/r5.o $(BUILD_DIR)/configure/r6.o $(BUILD_DIR)/configure/r1.o
 
 $(BUILD_DIR)/topdesk.cvt: $(BUILD_DIR)/topdesk/topdesk.o $(BUILD_DIR)/topdesk/Main/DeskTop.main.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub.o \
 											$(BUILD_DIR)/topdesk/Main/DeskTop.sub2.o \
@@ -408,13 +410,13 @@ $(BUILD_DIR)/topdesk.cvt: $(BUILD_DIR)/topdesk/topdesk.o $(BUILD_DIR)/topdesk/Ma
 											$(BUILD_DIR)/topdesk/Main/DeskTop.sub7.o \
 											$(BUILD_DIR)/topdesk/Main/DeskTop.sub8.o \
 											$(BUILD_DIR)/topdesk/Main/DeskTop.sub9.o \
-											$(BUILD_DIR)/topdesk/Main/DeskTop.sub10.o 
+											$(BUILD_DIR)/topdesk/Main/DeskTop.sub10.o
 	$(LD) -C topdesk/topdesk.cfg -o $@ $(BUILD_DIR)/topdesk/topdesk.o -m $(BUILD_DIR)/topdesk.map $(BUILD_DIR)/topdesk/Main/DeskTop.main.o \
 								$(BUILD_DIR)/topdesk/Main/DeskTop.sub.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub2.o \
 								$(BUILD_DIR)/topdesk/Main/DeskTop.sub3.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub4.o \
 								$(BUILD_DIR)/topdesk/Main/DeskTop.sub5.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub6.o \
 								$(BUILD_DIR)/topdesk/Main/DeskTop.sub7.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub8.o \
-								$(BUILD_DIR)/topdesk/Main/DeskTop.sub9.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub10.o 
+								$(BUILD_DIR)/topdesk/Main/DeskTop.sub9.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub10.o
 
 ifeq ($(VARIANT), mega65)
 $(BUILD_DIR)/compressed.bin: $(BUILD_DIR)/kernal_combined.prg
@@ -423,7 +425,7 @@ $(BUILD_DIR)/compressed.bin: $(BUILD_DIR)/kernal_combined.prg
 $(BUILD_DIR)/compressed_mega65.prg: $(BUILD_DIR)/compressed.bin $(BUILD_DIR)/loader/uncrunch.o $(BUILD_DIR)/loader/loader.o
 	$(LD) -C loader/loader.cfg $(BUILD_DIR)/loader/loader.o -m $(BUILD_DIR)/kernel.map $(BUILD_DIR)/loader/uncrunch.o -o $@
 endif
-	
+
 ifeq ($(VARIANT), mega65)
 $(BUILD_DIR)/kernal_compressed.prg: $(BUILD_DIR)/compressed_mega65.prg
 else
@@ -526,5 +528,5 @@ $(BUILD_DIR)/kernal/relocator.bin: $(PREFIXED_RELOCATOR_OBJS) kernal/relocator_$
 	$(LD) -C kernal/relocator_$(VARIANT).cfg $(PREFIXED_RELOCATOR_OBJS) -o $@ -m $(BUILD_DIR)/kernal/relocator.map  -Ln $(BUILD_DIR)/kernal/relocator.lab
 
 # a must!
-love:	
+love:
 	@echo "Not war, eh?"
