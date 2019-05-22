@@ -137,7 +137,7 @@ DispThisInfo:	; File-Info des Files Name darstellen
 	lda	#(FIB_RECHTS-FIB_LINKS)/2-10
 	sec
 	sbc	r1L
-	sta	@titelpos+1	
+	sta	@titelpos+1
 	LoadW___	a1,$8100+77
 	LoadW___	a3,$8100+97
 	LoadW___	a4,@ta

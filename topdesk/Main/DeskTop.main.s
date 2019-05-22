@@ -2038,10 +2038,16 @@ GetStartPos: ldx	#00
 	clc
 	adc	#21
 	sta	r2H,x
+
+	ldx	#r3
+	jsr 	NormalizeX
+	ldx	#r4
+	jsr 	NormalizeX
+
 	rts
-@xL:	.byte	<(STARTA_X*8),<(STARTB_X*8),<(STARTC_X*8),<(STARTD_X*8)
-@xH:	.byte	>(STARTA_X*8),>(STARTB_X*8),>(STARTC_X*8),>(STARTD_X*8)
-@y:	.byte	STARTA_Y,STARTB_Y,STARTC_Y,STARTD_Y
+@xL:	.byte	<(SC_FROM_END|(4*8)),<(STARTB_X*8),<(STARTC_X*8),<(STARTD_X*8)
+@xH:	.byte	>(SC_FROM_END|(4*8)),>(STARTB_X*8),>(STARTC_X*8),>(STARTD_X*8)
+@y:	.byte	100,STARTB_Y,STARTC_Y,STARTD_Y
 .endif
 
 ReLoad2:
@@ -2370,15 +2376,41 @@ PrintDiskInfo:	PushW	r0
 	jsr	GetWorkArea
 	bcs	@10
 	jsr	RestoreTextWin
-@10:	SubVW_	10,r4
-	ldx	r2H
-	inx
-	inx
-	stx	r2L
-	txa
+@10:
+	SubVW_	10,r4
+
+	lda	r4H
+	and	#%11110000
+	sta	r0L
+	sta     r0H
+
+	lda	r2H
+	clc
+	adc	#2
+	sta	r2L
+	bcc 	@11
+	lda	r0L
+	adc	#16
+	sta	r0L
+	sta	r0H
+@11:
 	clc
 	adc	#8
 	sta	r2H
+	bcc	@12
+	lda	r0H
+	adc	#16
+	sta	r0H
+@12:
+	lda	r3H
+	and	#%00001111
+	ora	r0L
+	sta	r3H
+	lda	r4H
+	and	#%00001111
+	ora	r0H
+	sta	r4H
+
 	lda	r3L
 	clc
 	adc	#10
@@ -2386,9 +2418,11 @@ PrintDiskInfo:	PushW	r0
 	lda	r3H
 	adc	#00
 	sta	r11H
+
 	ldx	r2H
-	dex
+	;dex
 	stx	r1H
+
 	jsr	SetTextWin
 	bcs	@21
 	lda	messageBuffer+1
@@ -2650,7 +2684,7 @@ Handler:	ldx	messageBuffer+1	; File/Icontabellenadresse nach r0
 	ldx	messageBuffer+1
 	jsr	GetWorkArea
 	bcs	@05a
-	jsr	DispSizeRectangle
+	;jsr	DispSizeRectangle
 	jsr	MyDispFiles
 	txa
 	beq	@05a

@@ -401,3 +401,5 @@ SC_FROM_CENTER          =   %010000000000
 SC_SCALE                =   %110000000000
 
 scrFullCardsX		=	$886E
+screenMaxX              =       $8870
+screenMaxY              =       $8874

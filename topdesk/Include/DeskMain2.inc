@@ -130,12 +130,12 @@ GetPos:
     ldy curDrive
     lda @xL-8,y
     sta r3L,x
-    clc
-    adc #21
+    sec
+    sbc #21
     sta r4L,x
     lda @xH-8,y
     sta r3H,x
-    adc #0
+    sbc #0
     sta r4H,x
     lda @y-8,y
     sta r2L,x
@@ -143,12 +143,12 @@ GetPos:
     adc #21
     sta r2H,x
     rts
-@xL:    .byte   <(STARTA_X*8),<(STARTB_X*8),<(STARTC_X*8),<(STARTD_X*8)
-@xH:    .byte   (>(STARTA_X*8))
-        .byte   (>(STARTB_X*8))
-        .byte   (>(STARTC_X*8))
-        .byte   (>(STARTD_X*8))
-@y:     .byte   STARTA_Y, STARTB_Y, STARTC_Y, STARTD_Y
+@xL:    .byte   <(SC_FROM_END|(4*8)),<(SC_FROM_END|(4*8)),<(SC_FROM_END|(4*8)),<(SC_FROM_END|(4*8))
+@xH:    .byte   (>(SC_FROM_END|(4*8)))
+        .byte   (>(SC_FROM_END|(4*8)))
+        .byte   (>(SC_FROM_END|(4*8)))
+        .byte   (>(SC_FROM_END|(4*8)))
+@y:     .byte   STARTA_Y*8, STARTB_Y*8, STARTC_Y*8, STARTD_Y*8
 .endif
 
 SetWindows:	jsr	GotoFirstMenu

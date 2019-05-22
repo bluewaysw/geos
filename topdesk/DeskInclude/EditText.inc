@@ -24,14 +24,14 @@ EditText:	; Text-Editierung
 @codeok:	dey
 	bpl	@testcodeloop
 .ifdef topdesk128
-    LoadW___    r3, $8000+80
-    ldx #r3
-    jsr NormalizeX
-    MoveW_  r3, PositionXL
-    LoadW___    r3, $8000 + 80 + 160
-    ldx #r3
-    jsr NormalizeX
-    MoveW_  r3, PositionXR
+    	;LoadW___    r3, $8000+80
+    	;ldx #r3
+    	;jsr NormalizeX
+    	;MoveW_  r3, PositionXL
+    	;LoadW___    r3, $8000 + 80 + 160
+    	;ldx #r3
+    	;jsr NormalizeX
+    	;MoveW_  r3, PositionXR
 .endif
 
 	ldy	#5
@@ -449,6 +449,6 @@ Pointer:
 	.repeat	MaxZeilen+1
 	.byte 0
 	.endrep
-	
+
 ; Pointer enth{lt f}r jede Zeile einen Offset auf das erste Zeichen der Zeile
 ; max. 22 Zeilen

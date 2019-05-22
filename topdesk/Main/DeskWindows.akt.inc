@@ -12,7 +12,6 @@
 ;	t	"CiMac"
 ;endif
 
-
 Grenze_oben	= 15
 GD_CLOSE	= $02
 GD_HIDE	= $40
@@ -476,17 +475,32 @@ WindowData:	; LinienEndpunkte in Abh{ngigkeit von den Endpunkten
 	Punkt	-1,0,0,0,0	; Ende
 
 MaxTextWin:	; Ret: x unver{ndert
+	txa
+	pha
 	ldy	#5
 @10:	lda	@b,y
 	sta	windowTop,y
 	dey
 	bpl	@10
+
+	ldx	#leftMargin
+	jsr	NormalizeX
+	ldx	#rightMargin
+	jsr	NormalizeX
+	ldx 	#leftMargin
+	ldy	#windowTop
+	jsr 	NormalizeY
+	ldx 	#rightMargin
+	ldy	#windowBottom
+	jsr 	NormalizeY
+	pla
+	tax
 	rts
 @b:
 	ByteCY	0, 0
-	ByteCY	751|0, 400
+	ByteCY  SC_FROM_END|0, SC_FROM_END|0
 	WordCX	0, 0
-	WordCX  751|0, 400
+	WordCX  SC_FROM_END|0, SC_FROM_END|0
 SetTextWin:	; Par: r2-r4 zu setzendes Textfenster
 	;jsr	GetClipRec
 	;jsr	CutRec
@@ -614,7 +628,8 @@ DrawWindowC:	lda	#1
 	rts
 @num:	.byte	0
 @flag:	.byte	0
-PutTitle:	jmp	NewPutString
+PutTitle:
+	jmp	NewPutString
 .if 0
 	stx	r14L
 	PushB	r1H
@@ -749,7 +764,7 @@ RestoreRectangle:	; Wiederstellung des Bereichs r2-r4 durch evtl. teilweises Ein
 	tax
 	lda	windowsOpen,x
 	beq	@nicht
-	jsr	DrawWindow
+	;jsr	DrawWindow
 @nicht:	pla
 	tay
 	dey
@@ -820,7 +835,8 @@ DoMove:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinaten
 	; linker Rand = 319-(xr-xl)+MausXOffset
 	; 	= 319-xr+xl+MausXOffSet
 .ifdef topdesk128
-	MoveW_   RightMax, mouseRight
+	MoveW_  screenMaxX, mouseRight
+	;MoveW_   RightMax, mouseRight
 .else
 	LoadW___	mouseRight,319
 .endif
@@ -836,7 +852,7 @@ DoMove:	; Bewegung eines Rahmens an Abh{ngigkeit der Mauszeiger-Koordinaten
 
 	; unterer Rand = 199 - (yu-yo) + MausYOffSet
 	;	  = 199 - yu + yo + MausYOffSet
-	LoadW	r12, 479
+	MoveW	screenMaxY, r12
 
 	lda	moveKoords+5
 	lsr
@@ -1022,15 +1038,18 @@ DoRubber:	; Gr|~enver{nderung eines Rahmens an Abh{ngigkeit der
 	sta	r2H
 	; unterer Rand und rechter Rand auf Maximum
 .ifdef topdesk128
-    MoveW_   RightMax, mouseRight
+    	MoveW   screenMaxX, mouseRight
 .else
 	LoadW___	mouseRight,319
 .endif
-        ; 479 => $1DF
-	LoadB	mouseBottom, $DF
-	lda	mouseRight+1
-	adc	#16
-	sta	mouseRight+1
+	MoveB	screenMaxY, mouseBottom
+	lda	screenMaxY + 1
+	asl
+	asl
+	asl
+	asl
+	ora	mouseRight + 1
+	sta	mouseRight + 1
 
 	; linker Rand = ml + 40
 	lda	moveKoords+2
@@ -1168,7 +1187,7 @@ SendActivate:	lda	#WN_ACTIVATE
 	jmp	SendMessage2
 oldMsVec:	.word	0
 NewMouseService:
-    lda	mouseData	; Maus-Release?
+	lda	mouseData	; Maus-Release?
 	bpl	@10	; >nein
 @05:	jmp	@35
 @10:	lda	menuNumber	; Men} downgepullt ?
@@ -1195,10 +1214,15 @@ NewMouseService:
 	dey
 	bpl	@29
 .ifdef topdesk128
-    MoveW_   RightMax, mouseRight
-    lda	mouseRight+1
-    ora #16
-    sta mouseRight+1
+	MoveW_	screenMaxX, mouseRight
+	MoveB	screenMaxY, mouseBottom
+	lda	screenMaxY
+	asl
+	asl
+	asl
+	asl
+	ora	mouseRight+1
+	sta	mouseRight+1
 .endif
 	lda	moveVector
 	ldx	moveVector+1
@@ -1222,9 +1246,9 @@ NewMouseService:
 	lda	oldMsVec
 	ldx	oldMsVec+1
 	jmp	CallRoutine
-@d:	.byte	0,$df
+@d:	.byte	0,$4b
 .ifdef topdesk128
-    .byte  0, 0
+	.byte	0, 0
 .else
 	.word	0,319
 .endif
@@ -1400,10 +1424,22 @@ CheckScroll_UD:	jsr	GetWinRec
 	ldx	activeWindow
 	jmp	SendMessage2
 CheckMove:	jsr	GetWinRec
+	lda	r4H
+	and	#%00001111
+	sta	r4H
+	lda	r3H
+	and	#%11110000
+	ora	r4H
+	sta	r4H
 	lda	r2L
 	clc
 	adc	#BREITEY
 	sta	r2H
+	bcc	@04
+	lda	r4H
+	add	#16
+	sta	r4H
+@04:
 	jsr	IsMseInRegion	; Move-Balken angeklickt
 	bne	@10	; >ja
 @05:	rts
@@ -1673,7 +1709,8 @@ CutRec:	; Schnittfl{che zwischen zwei Rechtecken berechnen
 	clc
 	rts
 DrawShadow:
-RemoveShadow:	PushW	a0
+RemoveShadow:
+	PushW	a0
 	ldx	activeWindow
 	lda	windowsOpen,x
 	beq	@01
@@ -1707,15 +1744,25 @@ GetWorkArea:	; Ermittlung des Arbeitsbereiches von Window x (0-3)
 @sub:	jsr	GetWinAdrRec	; WindowRechteck holen
 	IncW	r3	; Rand abziehen
 	DecW	r4
-	dec	r2H
+	;dec	r2H
 	lda	r2L	; MoveBalken abziehen
 	clc
 	adc	#BREITEY+1
 	sta	r2L
+	bcc     @sub1
+	lda	r3H
+	add	#16
+	sta	r3H
+@sub1:
 	lda	r2H
 	sec
-	sbc	#BREITEY
+	sbc	#BREITEY+1
 	sta	r2H
+	bcs	@sub2
+	lda	r3H
+	sub	#16
+	sta	r3H
+@sub2:
 	SubVW_	BREITEX,r4	; rechten Scrollrand abziehen
 @19:	rts
 ToggleTitel:	; Anbringen bzw. Entfernen eines Stricherasters im Titelbalken des
@@ -2617,6 +2664,7 @@ MaxWindow:	; actives Window auf Maximalgr|~e setzen / bzw. zur}ck
 	.word	100,219
 
 NewPutString:
+@11:
 .ifdef topdesk128
     	ldx 	#r11
     	jsr 	NormalizeX
@@ -2634,7 +2682,7 @@ NewPutString:
 @03:	lda	#'*'
 @04:	jsr	SmallPutChar
 @05:	IncW	r0
-	jmp	NewPutString
+	jmp	@11
 @10:
 	rts
 oldRecoverVec:	.word	0
