@@ -2007,21 +2007,39 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	;sta r2H
 
 @norm:
+	ldx	r13L
+
+	lda	leftMargin+1
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r13L
+
 	sec
-	lda r2L
+	lda 	r2L
 	sbc	windowTop
 	lda	r2H
-	sbc	#00
+	sbc	r13L
 	bmi	@02	; >nein
+
+	lda	rightMargin+1
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r13L
+
 	sec		; Zeile }ber windowBottom
-	lda r2L
+	lda 	r2L
 	sbc	windowBottom
 	lda	r2H
-	sbc	#00
+	sbc	r13L
 	bmi	@03	; >ja
 ;	LoadB	r13H,1	; Anzeige anbrechen
-@02:	LoadB	winOutFlag,0	; Zeile nicht anzeigen
-@03:	PushW	r13
+@02:	LoadB	winOutFlag,1	; Zeile nicht anzeigen
+@03:	stx	r13L
+	PushW 	r13
 	PushB	r14L
 	PushB	r15L
 	jsr	@sub	; Zeile ggf. darstellen
