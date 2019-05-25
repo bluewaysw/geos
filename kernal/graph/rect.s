@@ -42,10 +42,10 @@ _Rectangle:
 	PushB	r4H
 	PushB	r5H
 
-	ldx #r3
+	ldx	#r3
 	ldy	#r2L
 	jsr 	_NormalizeY
-	ldx #r4
+	ldx 	#r4
 	ldy	#r2H
 	jsr 	_NormalizeY
 
@@ -109,12 +109,51 @@ _Rectangle:
 ; Destroyed: a, x, y, r5 - r8
 ;---------------------------------------------------------------
 _InvertRectangle:
-	MoveB r2L, r11L
-@1:	jsr _InvertLine
-	lda r11L
-	inc r11L
-	cmp r2H
-	bne @1
+	PushW	r2
+	PushB	r3H
+	PushB	r4H
+	PushB	r5H
+
+	ldx	#r3
+	ldy	#r2L
+	jsr 	_NormalizeY
+	ldx	#r4
+	ldy	#r2H
+	jsr 	_NormalizeY
+
+	MoveB	r2L, r11L
+@1:	jsr	_InvertLine
+
+	lda	r11L
+	cmp 	r2H
+	bne 	@3_
+	beq	@3
+
+	lda	r4H
+	and	#$F0
+	sta	r5H
+	lda	r3H
+	and	#$F0
+	cmp	r5H
+	beq 	@3
+@3_:
+	inc 	r11L
+	bne	@2
+
+	lda 	r3H
+	add 	#16
+	sta 	r3H
+	;lda 	r4H
+	;add 	#16
+	;sta 	r4H
+@2:
+	bra	@1
+
+@3:
+	PopB  	r5H
+	PopB  	r4H
+	PopB	r3H
+	PopW	r2
 	rts
 
 .segment "graph2e"

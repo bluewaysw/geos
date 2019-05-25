@@ -67,14 +67,22 @@ PrepareXCoord:
 	ldx #r4
 	jsr _NormalizeX
 
-	lda r4L
-	ldx r4H
-	cpx r3H
+	ldy r3H
+	tya
+	and #$0F
+	sta r3H
+	lda r4H
+	and #$0F
+	cmp r3H
+	sty r3H
 	bne @1
+	lda r4L
 	cmp r3L
 @1:	bcs @2
 ; swap coordintaes
-	ldy r3H
+	lda r4L
+	ldx r4H
+	;ldy r3H
 	sty r4H
 	ldy r3L
 	sty r4L
