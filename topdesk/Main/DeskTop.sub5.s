@@ -249,6 +249,12 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	adc	#27
 .endif
 	sta	r1H
+	bcc	@19
+	clc
+	lda	r11H
+	adc	#16
+	sta	r11H
+@19:
 	lda	r11L
 	sta	r3L
 	clc
@@ -281,6 +287,16 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	and	#%11	; durch 4 teilbar ?
 	bne	@10	; >nein
 	AddVB	33,a3H	; yk=yk+33
+	bcc 	@11
+	clc
+	lda	a4H
+	adc	#16
+	sta	a4H
+	clc
+	lda	a5H
+	adc	#16
+	sta	a5H
+@11:
 	jsr	@sub1	; xk auf Zeilenanfang
 	jmp	@20
 @10:	AddvW	60,a4
@@ -439,15 +455,7 @@ _GetFileRect:	; Ermittlung des Iconrechtecks eines Files einer DispFile-Darstell
 	adc	#10
 	sta	r2L
 	; Jetzt steht in r2L die obere y-Koordinate
-.ifndef topdesk128
-	AddW	a3,r3
-.endif
-	AddB_	a2L,r2L
-	bcs	@err	; y-Koordinate zu gro~!
-	clc
-	adc	#20
-	sta	r2H
-	; Jetzt steht in r2H die untere y-Koordinate
+
 	lda	r3L
 	clc
 	adc	#23
@@ -456,26 +464,54 @@ _GetFileRect:	; Ermittlung des Iconrechtecks eines Files einer DispFile-Darstell
 	adc	#00
 	sta	r4H
 	; Jetzt steht in r4 die rechte x-Koordinate
-.ifdef topdesk128
-    lda SchmalFlag
-    cmp #'*'
-    beq @sc10
+
+.ifndef topdesk128
+	AddW	a3,r3
+.else
+	lda SchmalFlag
+    	cmp #'*'
+    	beq @sc10
 .if 0
-    lda r3H
-    ora #$80
-    sta r3H
-    lda r4H
-    ora #$a0
-    sta r4H
-    ldx #r3
-    jsr NormalizeX
-    ldx #r4
-    jsr NormalizeX
+    	lda r3H
+    	ora #$80
+    	sta r3H
+    	lda r4H
+    	ora #$a0
+    	sta r4H
+    	ldx #r3
+    	jsr NormalizeX
+    	ldx #r4
+    	jsr NormalizeX
 .endif
 @sc10:
-    AddW    a3, r3
-    AddW    a3, r4
+    	AddW    a3, r3
+    	AddW    a3, r4
 .endif
+
+	AddB_	a2L,r2L
+	;bcs	@err	; y-Koordinate zu gro~!
+	bcc	@11
+	clc
+	lda	r3H
+	adc	#16
+	sta	r3H
+	clc
+	lda	r4H
+	adc	#16
+	sta	r4H
+@11:
+	clc
+	lda	r2L
+	adc	#20
+	sta	r2H
+	bcc 	@12
+	clc
+	lda	r4H
+	adc	#16
+	sta	r4H
+@12:
+
+	; Jetzt steht in r2H die untere y-Koordinate
 	jsr	GetClipRec
 	jsr	CutRec	; Schnittfl{che berechnen, Ende
 	pla
