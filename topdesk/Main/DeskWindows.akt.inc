@@ -1774,8 +1774,14 @@ ToggleTitel:	; Anbringen bzw. Entfernen eines Stricherasters im Titelbalken des
 	clc
 	adc	#BREITEY
 	sta	r2H
-	inc	r2L
-	inc	r2L
+	lda	r2L
+	add	#2
+	sta	r2L
+	bcc	@11
+	lda	r3H
+	add	#16
+	sta	r3H
+@11:
 	IncW	r3
 	DecW	r4
 	AddVW__	BREITEX,r3
@@ -1819,10 +1825,14 @@ ToggleTitel:	; Anbringen bzw. Entfernen eines Stricherasters im Titelbalken des
 	DecW	r3
 	DecW	r3
 	PopW	r4
-	ldx	r11L
-	inx
-	inx
-	stx	r11L
+	lda	r11L
+	add	#2
+	sta	r11L
+	bcc	@12
+	lda	r3H
+	add	#16
+	sta	r3H
+@12:	ldx	r11L
 	cpx	r2H
 	bne	@33
 	rts
