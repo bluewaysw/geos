@@ -102,6 +102,17 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	jsr	SetTextWin
 	LoadB	a3L,0	; a3L = Nummer des aktl. Files
 	AddVB	10,a3H	; a3H = n{chste y-Koordinate
+	bcc	@09
+	clc
+	lda	a4H
+	adc	#16
+	sta	a4H
+	clc
+	lda	a5H
+	adc	#16
+	sta	a5H
+
+@09:
 	PushW	r0
 	LoadW___	r0,University
 	jsr	LoadCharSet

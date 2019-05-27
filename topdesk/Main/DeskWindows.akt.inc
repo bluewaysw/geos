@@ -675,7 +675,8 @@ PutTitle:
 	bne	@ploop
 @ganz:	jmp	NewPutString
 .endif
-NewRectangle:	jsr	GetClipRec
+NewRectangle:
+	jsr	GetClipRec
 	jsr	CutRec
 	bcs	@nicht
 	jsr	Rectangle
@@ -1759,12 +1760,13 @@ GetWorkArea:	; Ermittlung des Arbeitsbereiches von Window x (0-3)
 	sbc	#BREITEY+1
 	sta	r2H
 	bcs	@sub2
-	lda	r3H
+	lda	r4H
 	sub	#16
-	sta	r3H
+	sta	r4H
 @sub2:
 	SubVW_	BREITEX,r4	; rechten Scrollrand abziehen
-@19:	rts
+@19:
+	rts
 ToggleTitel:	; Anbringen bzw. Entfernen eines Stricherasters im Titelbalken des
 	; aktiven Windows
 	jsr	GetWinRec

@@ -2193,6 +2193,15 @@ MyDCFilesSub:	ldx	messageBuffer+1
 	sec
 	sbc	#5
 	sta	r2L
+	bcs	@1
+
+	lda	r3H
+	sub     #16
+	sta	r3H
+	lda	a5H
+	sub     #16
+	sta	a5H
+@1:
 	AddVW__	6,r3
 	rts
 
