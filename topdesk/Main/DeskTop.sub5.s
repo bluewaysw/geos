@@ -403,6 +403,11 @@ DispNumber:	; Darstellung der aktuellen Filenummer an der Position a4-20/a3H+6
 	clc
 	adc	#10
 	sta	r1H
+	bcc	@10b
+	lda	r11H
+	add	#16
+	sta	r11H
+@10b:
 	lda	#%11000000
 	jmp	PutDecimal
 

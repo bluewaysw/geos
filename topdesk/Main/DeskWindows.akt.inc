@@ -544,6 +544,7 @@ DrawWindowC:	lda	#1
 	rts
 @geht:
 	lda	a5H
+	and	#%11110000
 	sta	a1L
 
 	MoveB	a4L,r2L	; Textfenster f}r Titelstring setzen
@@ -566,6 +567,7 @@ DrawWindowC:	lda	#1
 	and	#%00001111
 	ora	a1L
 	sta	r3H
+
 	lda	a6L
 	sec
 	sbc	#1+BREITEX*2

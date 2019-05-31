@@ -14,10 +14,8 @@
 
 .global _SwapDiskDriver
 _SwapDiskDriver:
+.if 0
 .ifdef mega65
-@HOHO:
-inc $d020
-jmp @HOHO
 	; use DMAgic for swapping memory
 	START_IO
 
@@ -42,9 +40,11 @@ jmp @HOHO
 	and #$FE
 	sta config ; enable I/O
 .endif
+.endif
 	rts
 
 .ifdef mega65
+.if 0
 swapdddmalist:
 	.byte	4	; swap
 	.word	DISK_DRV_LGH
@@ -69,6 +69,7 @@ swapdddmalist:
 	.word	DISK_SWAPBASE
 	.byte	1				; bank 1
 	.word	0				; unsued mod
+.endif
 .endif
 
 .if !.defined(mega65)

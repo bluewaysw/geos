@@ -2399,7 +2399,7 @@ PrintDiskInfo:	PushW	r0
 	sta	r2L
 	bcc 	@11
 	lda	r0L
-	adc	#16
+	add	#16
 	sta	r0L
 	sta	r0H
 @11:
@@ -2408,7 +2408,7 @@ PrintDiskInfo:	PushW	r0
 	sta	r2H
 	bcc	@12
 	lda	r0H
-	adc	#16
+	add	#16
 	sta	r0H
 @12:
 	lda	r3H
@@ -2428,9 +2428,16 @@ PrintDiskInfo:	PushW	r0
 	adc	#00
 	sta	r11H
 
-	ldx	r2H
+	lda	r2L
+	add	#7
+	sta	r1H
+	bcc	@13
+	lda 	r11H
+	add	#16
+	sta	r11H
+@13:
 	;dex
-	stx	r1H
+	;stx	r1H
 
 	jsr	SetTextWin
 	bcs	@21

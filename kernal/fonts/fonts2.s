@@ -217,12 +217,29 @@ Font_1:
 .endif
 	sta r5H
 	SubB r5H, r1H
+	bcs @11
+	lda	r11H
+	sub	#16
+	sta	r11H
+@11:
 	stx r10H
 	tya
 	pha
-	lda r11H
-	bmi @3
-	CmpW rightMargin, r11
+	lda #%00001000
+	bit r11H
+	bne @3
+	;bmi @3
+	ldx r10H
+        lda r11H
+	and #$0F
+	sta r10H
+	lda rightMargin + 1
+	and #$0F
+	cmp r10H
+	stx r10H
+	bne @3b
+	CmpB rightMargin, r11L
+@3b:
 	bcc Font_16
 @3:	lda currentMode
 	and #SET_ITALIC
@@ -437,12 +454,20 @@ Font_2:
 	sta r9L
 	ldy r11L
 	dey
-	ldx rightMargin+1
-	lda rightMargin
-	cpx r11H
+
+	lda rightMargin+1
+	and #$0F
+	sta r4H
+
+	lda r11H
+	and #$0F
+	cmp r4H
 	bne @8
-	cmp r11L
-@8:	bcs @9
+	lda r11L
+	cmp rightMargin
+@8:	bcc @9
+	;beq @9
+	lda rightMargin
 	tay
 @9:	tya
 	and #%00000111
@@ -946,6 +971,7 @@ FontPutChar:
 	LoadB	CPU_DATA, RAM_64K
 .endif
 	PushB r1H
+	PushB r11H
 	tya
 	jsr Font_1 ; put pointer in r13
 	bcc @9_ ; return
@@ -1046,10 +1072,22 @@ FontPutChar:
 .endif
 
 @8:	inc r1H
+	bne @8b
+	lda r11H
+	add #16
+	sta r11H
+@8b:
 	dec r10H
 	beq @9
 	jmp @1
-@9:	PopB r1H
+@9:	lda  r11H
+	and	#$0F
+	sta	r11H
+	pla
+	and	#$F0
+	ora	r11H
+	sta	r11H
+	PopB r1H
 .ifdef mega65
 	PopB	CPU_DATA
 .endif
