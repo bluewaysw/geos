@@ -160,6 +160,11 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	clc
 	adc	#21
 	sta	r2H
+	bcc	@009
+	lda	r4H
+	add	#16
+	sta	r4H
+@009:
 	jsr	GetClipRec
 .if 0
 .ifdef topdesk128
@@ -213,7 +218,7 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	; Darstellung des Filenames, auf dessen Text a1 zeigt, zentriert
 	; an der Position a4+12, a3H+27
 @005:
-    lda	a4L
+    	lda	a4L
 	clc
 	adc	#12
 	sta	r11L
@@ -275,13 +280,30 @@ _DispFiles:	; Darstellung von FILE_ANZ Fileintr{gen im Textwindow
 	sta	r3H
 	adc	r4H
 	sta	r4H
+
 	lda	r1H
 	clc
 	adc	#1
 	sta	r2H
+	bcc	@019
+	lda	r3H
+	add	#16
+	sta	r3H
+	lda	r4H
+	add	#16
+	sta	r4H
+@019:
+	lda	r2H
 	sec
 	sbc	#6
 	sta	r2L
+	bcs	@020
+	sec
+	lda	r3H
+	sbc	#16
+	sta	r3H
+@020:
+
 	jsr	GetClipRec
 	jsr	CutRec
 	bcs	@nicht

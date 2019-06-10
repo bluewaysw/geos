@@ -262,7 +262,15 @@ DrawWindow2:	; Par: a4-a6: Window-Rechteck
 	lda	#1
 	sta	cutDebug
 	jsr	CutRec
+
+	php
+	MoveW r2, $88ee
+	MoveW r3, $88ee+2
+	MoveW r4, $88ee+4
+	plp
+
 	bcc	@n10
+	inc $d020
 	lda	#0
 	sta	cutDebug
 	rts
@@ -767,7 +775,7 @@ RestoreRectangle:	; Wiederstellung des Bereichs r2-r4 durch evtl. teilweises Ein
 	tax
 	lda	windowsOpen,x
 	beq	@nicht
-	;jsr	DrawWindow
+	jsr	DrawWindow
 @nicht:	pla
 	tay
 	dey
@@ -1649,7 +1657,7 @@ CutRec:	; Schnittfl{che zwischen zwei Rechtecken berechnen
 	sta	r0L
 	lda	cutDebug
 	beq	@20
-	inc $d021
+	;inc $d021
 @20:	; r4 = MIN (r4,r7)
 	lda	r7L
 	sec
@@ -1694,13 +1702,8 @@ CutRec:	; Schnittfl{che zwischen zwei Rechtecken berechnen
 	sbc	r2L
 	lda	r0H
 	sbc	r0L
-	bpl	@60
-	lda	cutDebug
-	beq	@60
-@61:
-	inc $d021
-	jmp @61
-@60:
+	bmi	@49
+
 	lda	r3H
 	ora	r0L
 	sta	r3H
@@ -2525,7 +2528,9 @@ NewDoDlgBox:	inc	DialBoxFlag
 BackgroundRectangle:	; Wiederherstellung des Hintergrundes im Rechteck r2-r4
 	lda	backPattern
 	jsr	SetPattern
+
 	jsr	Rectangle
+
 	; Einzeichnen der Icons der iconTab nur innerhalb des Rechtecks r2-r4
 	ldy	#05	; Rette Textwindow
 @10:	lda	windowTop,y	; Textwindow := r2-r4
