@@ -187,13 +187,13 @@ IsDeviceValid:
 	lda _driveType,y
 	sta curType
 	;beq @7
-.if .defined(bsw128) || .defined(mega65)
+.if .defined(bsw128)
 	ldx curDrive
 .endif
 	cpy curDrive
 	beq @3
 	sty curDrive
-.if .defined(bsw128) || .defined(mega65)
+.if .defined(bsw128)
 	bbrf 6, sysRAMFlg, @4
 .else
 	bbrf 6, sysRAMFlg, @3
@@ -207,7 +207,7 @@ IsDeviceValid:
 	jsr PrepForFetch
 @3:	ldx #NULL
 	rts
-.if .defined(bsw128) || .defined(mega65)
+.if .defined(bsw128)
 @4:	txa
 	eor curDrive
 	and #1

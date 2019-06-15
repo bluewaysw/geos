@@ -15,6 +15,7 @@
 .global InitScanLineTab
 .global LineTabH
 .global LineTabL
+.global _GetScanLine_HR
 .endif
 
 .segment "graph2n"
@@ -28,6 +29,37 @@ BACK_SCR_BASE65         =       $9000
 .import _MapLow
 .endif
 
+;---------------------------------------------------------------
+; GetScanLine_HR
+;
+; Function:  Returns the address of the beginning of a scanline
+
+; Pass:      r11L lower byte of y coordinates
+;            r3H  upper 4 bits are high bit of y coordinate
+; Return:    r5  add of 1st byte of foreground scr
+;            r6  add of 1st byte of background scr
+; Destroyed: a, r11L
+;---------------------------------------------------------------
+_GetScanLine_HR:
+	lda	r11L
+	pha
+	lda r3H
+	lsr
+	lsr
+	lsr
+	lsr
+	ldx #5
+@21:
+	asl r11L
+	rol
+	dex
+	bne @21
+	tay
+	pla
+	sta	r11L
+	and #$07
+	ora #$f8
+	tax
 
 ;---------------------------------------------------------------
 ; GetScanLine                                             $C13C

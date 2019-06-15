@@ -310,21 +310,48 @@ sta	cutDebug
 	bvs	@rechts
 @links:	AddW	a5,a3
 	jmp	@10
-@rechts:	lda	a6L
+@rechts:
+	lda	a6L
 	sec
 	sbc	a3L
 	sta	a3L
 	lda	a6H
 	sbc	a3H
 	sta	a3H
+
 @10:	bit	a2L
 	bmi	@unten
-@oben:	AddB_	a4L,a2H
+@oben:
+	AddB_	a4L,a2H
+	lda	a3H
+	and	#%00001111
+	sta	a3H
+	lda	a5H
+	and	#%11110000
+	ora	a3H
+	bcc	@oben2
+	clc
+	adc	#16
+@oben2:
+	sta	a3H
 	jmp	@20
-@unten:	lda	a4H
+@unten:
+	lda	a4H
 	sec
 	sbc	a2H
 	sta	a2H
+	lda	a3H
+	and	#%00001111
+	sta	a3H
+	lda	a6H
+	and	#%11110000
+	ora	a3H
+	bcs	@unten2
+	sec
+	sbc	#16
+@unten2:
+	sta	a3H
+
 @20:	lda	a2L
 	and	#%00100000
 	bne	@line
@@ -371,11 +398,11 @@ sta	cutDebug
 	bne	@l40
 	lda	#0
 	sec
-	;jsr	DrawPoint
+	jsr	DrawPoint
 	jmp	@weiter
 @l40:	lda	#0
 	sec
-	;jsr	DrawLine
+	jsr	DrawLine
 @weiter:	lda	a1L
 	clc
 	adc	#3

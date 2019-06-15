@@ -36,6 +36,7 @@
 .ifdef mega65
 .import GetLeftXAddress
 .import _NormalizeY
+.import _GetScanLine_HR
 .endif
 
 .global ImprintLine
@@ -91,29 +92,29 @@ PrepareXCoord:
 @2:
 .endif
 .ifdef mega65
-	lda	r11L
-	pha
-	lda r3H
-	lsr
-	lsr
-	lsr
-	lsr
-	asl r11L
-	rol
-	asl r11L
-	rol
-	asl r11L
-	rol
-	asl r11L
-	rol
-	asl r11L
-	rol
-	tay
-	pla
-	sta	r11L
-	and #$07
-	ora #$f8
-	tax
+	;lda	r11L
+	;pha
+	;lda r3H
+	;lsr
+	;lsr
+	;lsr
+	;lsr
+	;asl r11L
+	;rol
+	;asl r11L
+	;rol
+	;asl r11L
+	;rol
+	;asl r11L
+	;rol
+	;asl r11L
+	;rol
+	;tay
+	;pla
+	;sta	r11L
+	;and #$07
+	;ora #$f8
+	;tax
 .else
 	lda r11L
 	pha
@@ -135,7 +136,7 @@ PrepareXCoord:
 	ora #$f8
 	tax
 .endif
-	jsr _GetScanLine
+	jsr _GetScanLine_HR
 	lda r4L
 	and #%00000111
 	tax

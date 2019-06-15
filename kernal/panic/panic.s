@@ -111,8 +111,6 @@ _Panic:
 .ifdef mega65
 	LoadB CPU_DATA, IO_IN
 @13:
-	inc $d020
-	jmp @13
 	lda countHighMap
 	beq @12
 	jsr UnmapUnderlay

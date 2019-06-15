@@ -45,14 +45,17 @@ _InitMachine2:
 InitGEOEnv:
 	LoadW r0, InitRamTab
 .if .defined(bsw128) || .defined(mega65)
-	LoadB	CPU_DATA, RAM_64K
-	jsr _InitRam
-	LoadB	CPU_DATA, IO_IN
 .ifdef mega65
-	jsr MapUnderlay
-	jsr SetRightMargin
-	jmp UnmapUnderlay
+	jsr    MapUnderlay
+        LoadB  CPU_DATA, RAM_64K
+	jsr    _InitRam
+	LoadB  CPU_DATA, IO_IN
+	jsr    SetRightMargin
+	jmp    UnmapUnderlay
 .else
+LoadB	CPU_DATA, RAM_64K
+jsr _InitRam
+LoadB	CPU_DATA, IO_IN
 	jmp SetRightMargin
 .endif
 .else

@@ -32,6 +32,8 @@
 .import LF4A7
 .import GetLeftXAddress
 .import _NormalizeX
+.import UncompactXY
+.import _GetScanLine_HR
 
 .global _TestPoint
 .global _DrawPoint
@@ -56,39 +58,76 @@
 _DrawLine:
 	php
 .if .defined(bsw128) || .defined(mega65)
-	bmi @Y
-	lda r11L
-	cmp r11H
-	bne @Y
-	lda #$FF
+	ldx #r3
+	jsr _NormalizeX
+	ldx #r4
+	jsr _NormalizeX
+.endif
+	;
+	CmpB r11L, r11H
+	bne @Y2
+	lda r3H
+	and #%11110000
+	sta r14L
+	lda r4H
+	and #%11110000
+	cmp r14L
+	bne @Y2
+
 	plp
+	php
+	bmi @Y2
+	bne @Y2
+	lda #$FF
 	bcs @X
 	lda #0
-@X:	
+@X:
+	plp
 .ifdef mega65
 	jmp __io_HorizontalLine
 .else
 	jmp _HorizontalLine
 .endif
-@Y:	ldx #r3
-	jsr _NormalizeX
-	ldx #r4
-	jsr _NormalizeX
-.endif
-	LoadB r7H, 0
-	lda r11H
+
+@Y2:
+	plp
+	PushW r14
+	php
+	; uncompact x coordinates
+	lda r4H
+	jsr UncompactXY
+	sta r4H
+	sty r14H
+	MoveB r11H, r14L
+	lda r3H
+	tax
+	jsr UncompactXY
+	sta r3H
+	sty r11H
+
+	lda r14L
 	sub r11L
 	sta r7L
+	lda r14H
+	sbc r11H
+	sta r7H
 	bcs @1
-	lda #0
-	sub r7L
-	sta r7L
-@1:	lda r4L
+
+	; neg?
+	ldx #r7
+.ifdef bsw128
+	jsr _Dabs
+.else
+	jsr Dabs
+.endif
+@1:
+	lda r4L
 	sub r3L
 	sta r12L
 	lda r4H
 	sbc r3H
 	sta r12H
+
 	ldx #r12
 .ifdef bsw128
 	jsr _Dabs
@@ -228,27 +267,29 @@ _DrawLine:
 	sta r10H
 	asl r10L
 	rol r10H
-	LoadB r13L, $ff
-	CmpW r3, r4
+	LoadW r13L, $ffff
+	jsr CmpWR3R4
 	bcc @4
-	CmpB r11L, r11H
+	CmpW r11, r14
 	bcc @3
-	LoadB r13L, 1
+	LoadW r13, 1
 @3:	ldy r3H
 	ldx r3L
 	MoveW r4, r3
 	sty r4H
 	stx r4L
-	MoveB r11H, r11L
+	MoveW r14, r11
 	bra @5
-@4:	ldy r11H
-	cpy r11L
+@4:	CmpW r11, r14
 	bcc @5
-	LoadB r13L, 1
-@5:	plp
+	LoadW r13, 1
+@5:	jsr @99
+	plp
 	php
+	pha
 	jsr _DrawPoint
-	CmpW r3, r4
+	PopB r3H
+	jsr CmpWR3R4
 	bcs @8
 	inc r3L
 	bne @6
@@ -256,11 +297,10 @@ _DrawLine:
 @6:	bbrf 7, r8H, @7
 	AddW r9, r8
 	bra @5
-@7:	AddB_ r13L, r11L
+@7:	AddW r13, r11
 	AddW r10, r8
 	bra @5
-@8:	plp
-	rts
+@8:	jmp @E
 @9:	lda r12L
 	asl
 	sta r9L
@@ -282,26 +322,35 @@ _DrawLine:
 	asl r10L
 	rol r10H
 	LoadW r13, $ffff
-	CmpB r11L, r11H
+
+	CmpW r11, r14
 	bcc @B
-	CmpW r3, r4
+
+	jsr CmpWR3R4
 	bcc @A
 	LoadW r13, 1
-@A:	MoveW r4, r3
+@A:
+	MoveW r4, r3
 	ldx r11L
-	lda r11H
-	sta r11L
-	stx r11H
+	ldy r11H
+	MoveW r14, r11
+	stx r14L
+	sty r14H
 	bra @C
-@B:	CmpW r3, r4
+@B:
+	jsr CmpWR3R4
 	bcs @C
 	LoadW r13, 1
-@C:	plp
+@C:	jsr @99
+	plp
 	php
+	pha
 	jsr _DrawPoint
-	CmpB r11L, r11H
+	PopB r3H
+
+	CmpW r11, r14
 	bcs @E
-	inc r11L
+	IncW r11
 	bbrf 7, r8H, @D
 	AddW r9, r8
 	bra @C
@@ -309,6 +358,18 @@ _DrawLine:
 	AddW r10, r8
 	bra @C
 @E:	plp
+	PopW r14
+	rts
+@99:	ldx r3H
+	txa
+	lda r11H
+	asl
+	asl
+	asl
+	asl
+	ora r3H
+	sta r3H
+	txa
 	rts
 .endif
 
@@ -328,24 +389,32 @@ _DrawPoint:
 	ldx #r3
 	jsr _NormalizeX
 .endif
+
+.ifdef mega65
+.else
 	ldx r11L
-	jsr _GetScanLine
+.endif
+	jsr _GetScanLine_HR
 .ifdef bsw128
 	bbsf 7, graphMode, DrwPoi80
 .endif
-	lda r3L
-	and #%11111000
 .ifdef mega65
-    ldy r3H
+ 	lda r3H
+ 	and #%00001111
+	tay
+.endif
+.ifdef mega65
 @1c:
-    beq @1b
-    inc r5H
-    inc r6H
-    dey
-    bra @1c
+	beq @1b
+	inc r5H
+	inc r6H
+	dey
+ 	bra @1c
 
 @1b:
-    tay
+	lda r3L
+	and #%11111000
+    	tay
 .else
 	tay
 	lda r3H
@@ -453,6 +522,7 @@ TestPoi80:
 	rts
 LF29F:	clc
 	rts
+.endif
 
 CmpWR3R4:
 	lda r3H
@@ -461,4 +531,3 @@ CmpWR3R4:
 	lda r3L
 	cmp r4L
 LF2AB:	rts
-.endif

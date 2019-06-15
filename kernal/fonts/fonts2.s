@@ -48,6 +48,7 @@ PrvCharWidth = $880D
 .import GetScanLine
 .import GetRealSize
 .endif
+.import _GetScanLine_HR
 
 .global Font_9
 .global FontPutChar
@@ -303,16 +304,12 @@ Font_2:
 	lsr
 	lsr
 	lsr
+	ldx #5
+@11:
 	asl r1H
 	rol
-	asl r1H
-	rol
-	asl r1H
-	rol
-	asl r1H
-	rol
-	asl r1H
-	rol
+	dex
+	bne @11
 	tay
 	pla
 	sta r1H
@@ -322,9 +319,9 @@ Font_2:
 
 	;ldx r1H
 .ifdef bsw128
-	jsr _GetScanLine
+	jsr _GetScanLine_HR
 .else
-	jsr GetScanLine
+	jsr _GetScanLine
 .endif
 	lda leftMargin+1
 	tay

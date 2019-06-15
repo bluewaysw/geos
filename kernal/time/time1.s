@@ -142,6 +142,8 @@ ConvertBCD:
 @2:	rts
 
 DoClockAlarm:
+; TODO, bring back to life in the underlay
+.if 0
 	lda alarmWarnFlag
 	bne @3
 .ifdef bsw128
@@ -167,5 +169,6 @@ DoClockAlarm:
 	lda #$1e
 	sta alarmWarnFlag
 	dec alarmSetFlag
-@3:	rts
-
+@3:
+.endif
+	rts
