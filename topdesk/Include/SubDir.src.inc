@@ -4,10 +4,10 @@
 ; r10L - Nummer des Verzeichnisses
 ;      - b7=1 alle Verzeichnisse
 ; r11L - Anzahl der einzulesenden Files im akt. Dir
-;        
+;
 ; r11H - Anzahl der zu }berlesenden Eintr{ge
 ;        0 f}r keinen Eintrag }berlesen
-; r12L - b7=1 b6=1 gel|schte Files und Leereintr{ge 
+; r12L - b7=1 b6=1 gel|schte Files und Leereintr{ge
 ;                  }berlesen
 ;      - b7=1 b6=0 gel|schte Files einlesen,
 ;                  Leereintr{ge }berlesen
@@ -57,7 +57,7 @@ FindDirFiles:
 .ifdef topdesk13
 	MoveW_	r3,@r3	; Kn 22.9.91
 .endif
-@10:	
+@10:
 .ifdef topdesk13
 	MoveW_	@r3,r3
 .endif
@@ -145,13 +145,13 @@ SortInBuffer:
 	bcc	@16
 	ldx	#11
 	rts
-@16:	
+@16:
 ;	MoveW_	r3,r0
 	bit	r10L
 	bmi	@15
 
 .ifdef topdesk13
-	ldy	#1	; Kn 22.9.91: autom. l|schen von 
+	ldy	#1	; Kn 22.9.91: autom. l|schen von
 	lda	(r5),y	; tempor{r-Dateien
 	beq	@16a
 	ldy	#23
@@ -175,7 +175,7 @@ SortInBuffer:
 	cpy	#16+4
 	bne	@16c
 	beq	@16d
-@16a:	
+@16a:
 .endif
 	ldy	#$00
 	lda	(r5),y
@@ -194,7 +194,7 @@ SortInBuffer:
 	bpl	@11
 	bvs	@1000
 	ldy	#4
-	lda	(r5),y	; Filename = 0 
+	lda	(r5),y	; Filename = 0
 	bne	@11
 	beq	@1000
 @11:	lda	r11H
@@ -245,7 +245,7 @@ DiskInitTurboIO:
 ; Internal Routine
 ; - Kopiert TrSc nach r1
 ; - ReadBlock
-; - setzt TrSc neu, falls x <> 0 
+; - setzt TrSc neu, falls x <> 0
 ; Achtung!!!
 ; EnterTurbo und InitForIO m}ssen gesetzt sein !!
 
@@ -271,7 +271,7 @@ ReadTrScBlock:
 ; y	Count-1 (0 = 256)
 ;
 ; Destroys
-; a,y, 
+; a,y,
 
 CopyFW:
 	sty	@10+1
@@ -328,7 +328,7 @@ FormString:
 ;
 ; Returns
 ; x = 0 No Error
-; r1   - Track und Sector des Directoryblocks der den 
+; r1   - Track und Sector des Directoryblocks der den
 ;        Fileeintrag enth{lt
 ; r5   - Zeiger auf den Directoryeintrag
 ;        ohne (!) Dir-Ebene
@@ -388,7 +388,7 @@ ChangeDrive:	sta	@a
 @15:	tya		; RAM-Disk vor}bergehend inaktivieren
 	jsr	SetDevice
 	jsr	i_MoveData	; RAM-Driver merken
-	.word	$9000,$7ff0-$d80,$d80	
+	.word	$9000,$7ff0-$d80,$d80
 	ldy	curDrive
 	lda	driveType-8,y
 	sta	@ramdrivetyp
@@ -472,11 +472,11 @@ Change:	pha
 	jsr	SetDevice
 .ifndef topdesk13
 	ldy	curDrive
-	lda	driveType,y	
+	lda	driveType,y
 	sta	curType
 .endif
 	jmp	@RAM
-@NoRAM:	
+@NoRAM:
     lda	r0L
 	jsr	ChangeDiskDevice
 @RAM:	ldy	curDrive
@@ -510,7 +510,7 @@ DriverLow:	.byte	$00,$80,$00,$80
 ; x = 0  No_Error
 ;        REKURSIV
 ;        NO_DIR_FREE
-;        sonst x-Fehler durch 
+;        sonst x-Fehler durch
 ;        - FindFile
 ;        - GetBlock
 ; r10L - Verzeichnisnummer (undefiniert, wenn Fehler!)
@@ -575,7 +575,7 @@ UpperDir:
 	sta	(r0),y
 	dey
 	lda	(r0),y
-@1000:	
+@1000:
 	sta	r10L
 	rts
 
@@ -608,7 +608,7 @@ ClearList:
 ; Returns
 ; x = 0  No_Error
 ; r10L - Verzeichnisnummer (undefiniert, wenn Fehler!)
-; 
+;
 ; Destroys
 ; a,y
 ; r1,r4,r6,
@@ -658,7 +658,7 @@ SetNumDrives:
 	jsr	GetMaxDrives
 	sta	numDrives
 	rts
-	
+
 ; GetMaxDrives
 ; Parameter - keine
 ; R}ckgabewert
@@ -694,7 +694,7 @@ GetMaxDrives:	ldy	numDrives
 	iny
 	bne	@30
 	rts
-	
+
 TestNumDrives:
 	lda	DiskDriverFlag
 	beq	@10
@@ -768,7 +768,7 @@ XDispErr:	jsr	MaxTextWin
 	LoadW___	r0,XErrorDial
 	jsr	NewDoDlgBox
 	rts
-	
+
 XErrorDial:
 	.byte	$81
 	.byte	OK
@@ -816,7 +816,7 @@ XSubDir:	MoveW_	r15,r6
 	bne	XError1
 	ldx	#SUB_DIR
 	rts
-	
+
 XInput64:	lda	c128Flag
 	bpl	XPrinter
 	jmp	XDispErr
@@ -970,11 +970,11 @@ XDocErr:	MoveB	curDrive,XMycurDrive
 	cmp	#1
 	beq	XDocErr1
 	lda	#8
-	jsr	XSearchDrive		
+	jsr	XSearchDrive
 	lda	r7H
 	beq	XApplLoad0
 	lda	#9
-	jsr	XSearchDrive		
+	jsr	XSearchDrive
 	lda	r7H
 	beq	XApplLoad0
 	lda	#10
@@ -1088,17 +1088,35 @@ TestGraphMode:
 ;	lda	#$c0
 ;	bne	@06
 ;@05a:	lda	#$00
-@06:	cmp	#$00
+@06:	cmp	#$00	; col40 support only
 	bne	@07
+
 	lda	graphMode
-	bpl	@10
+	cmp	#0
+	beq	@10
+	ldx	#19	; force col40
+	rts
 @06a:	ldx	#INCOMPATIBLE
 	rts
 @07:	cmp	#$c0
 	bne	@10
+	; force col80
 	lda	graphMode
-	bpl	@06a
-@10:	ldx	#0
+	cmp	#$80
+	beq	@10
+	ldx	#20
+	rts
+@10:	and	#%00000001
+	bne	@10a			; scalable app, so just fine
+	; ensure we are col40 or col80
+	lda	graphMode
+	beq	@10a
+	cmp	#$80
+	beq	@10a
+	ldx	#21
+	rts
+@10a:
+	ldx	#0
 	rts
 
 CLS:	ldy	#r15H-r0L
@@ -1120,7 +1138,7 @@ CLS:	ldy	#r15H-r0L
 	bpl	@64
 	jsr	i_Rectangle
 	.byte	0,199
-	.word	0,319|DOUBLE_W|ADD1_W
+	.word	0,319  ;|DOUBLE_W|ADD1_W
 	rts
 @64:	jsr	i_Rectangle
 	.byte	0,199
@@ -1129,5 +1147,3 @@ CLS:	ldy	#r15H-r0L
 
 ChangeDiskFlag:
 	.byte	$ff
-
-	

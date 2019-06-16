@@ -3219,7 +3219,7 @@ OpenFile:	jsr	ClearMultiFile2
 @10:
 @14:	rts
 @15:	cmp	#14	; INCOMPATIBLE
-	bne	@16
+	bne	@16b
 	jsr	StashMain
 	jsr	TestTopDesk
 	bcs	@18
@@ -3228,6 +3228,37 @@ OpenFile:	jsr	ClearMultiFile2
 	sta	graphMode
 	jsr	SetNewMode
 	jmp	@04
+
+@16b:	cmp	#19	; force col40
+	bne	@16c
+	lda	#0
+	sta	graphMode
+	jsr	SetNewMode
+	jmp	@04
+
+@16c:	cmp	#20	; force col80
+	bne	@16d
+	lda	#$80
+	sta	graphMode
+	jsr	SetNewMode
+	jmp	@04
+
+@16d:
+	cpx	#21	; force col40 or col80 (one of the compatibility modes)
+	bne	@16
+
+	lda	graphMode
+	cmp	#$40
+	bne	@16e
+	lda	#$00
+@16f:
+	sta	graphMode
+	jsr	SetNewMode
+	jmp	@04
+@16e:
+	lda	#$80
+	bra	@16f
+
 @16:	cpx	#15
 	bne	@17
 	jsr	SetNumDrives
