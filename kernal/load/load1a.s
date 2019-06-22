@@ -55,6 +55,8 @@ _EnterDeskTop:
 .endif
 	txs
 	jsr _InitMachine
+	lda #$41
+	sta graphMode
 	jsr ClrScr
 .ifdef useRamExp
 	MoveW DeskTopStart, r0
@@ -138,9 +140,8 @@ _StartAppl:
 	lda r7L
 .ifdef bsw128
 	jsr CallRoutine
-	cli                
+	cli
 	jmp MainLoop
 .else
 	jmp _MNLP
 .endif
-

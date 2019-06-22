@@ -148,8 +148,8 @@ PrepareXCoord:
 	lda BitMaskLeadingSet,x
 	sta r8L
 .if .defined(bsw128) || .defined(mega65)
-	bbrf 7, graphMode, @3
-	jsr GetLeftXAddress
+	;bbrf 7, graphMode, @3
+	;jsr GetLeftXAddress
 @3:
 .endif
 	lda r3L
@@ -189,9 +189,9 @@ _InvertLine:
 	inc r6H
 @1:
 .else
-	bbrf	7, graphMode, @11
-	ldy #0
-	bra	@12
+	;bbrf	7, graphMode, @11
+	;ldy #0
+	;bra	@12
 @11:
 	ldy r3L
 	lda r3H

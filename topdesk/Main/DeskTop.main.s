@@ -639,7 +639,8 @@ G80:
     jmp Doppeln
 SetMyNewMode:
     lda graphMode
-    bpl @40
+    cmp #$41
+    bne @40
 @80:
     LoadW___   r0, @tab2
     jmp @10
@@ -1613,11 +1614,42 @@ RedrawHead:
 	jmp	InitClock
 
 mode_Menue:
+	ldx #35
+	ldy #7
+@1:	lda modetab,x
+        sta r1L
+	lda modetab+1,x
+	sta r1H
+
+	tya
+	pha
+	lda graphMode
+	and #%00111111
+	sta r2L
+	lda #' '
+	cpy r2L
+	bne @2
+	lda #'*'
+@2:
+
+	ldy #0
+	sta (r1),y
+	dex
+	dex
+	dex
+	dex
+	dex
+	pla
+	tay
+	dey
+	bpl @1
+
 	jsr	MySubMenuDA2
 modeoben:	.byte 13+13+1
 modeunten:	.byte 8*14+13+13+1+1		; wird berechnet!
 		.word 80,171
 		.byte 8 | VERTICAL
+modetab:
 		mpt	Mode40Text,MENU_ACTION,Mode_Call
 		mpt	Mode80Text,MENU_ACTION, Mode_Call
 		mpt	ModeNSText,MENU_ACTION,Mode_Call
@@ -1628,20 +1660,24 @@ modeunten:	.byte 8*14+13+13+1+1		; wird berechnet!
 		mpt	ModeHCText,MENU_ACTION,Mode_Call
 Mode40Text:	.byte "  40-cols",0
 Mode80Text:	.byte "  80-cols",0
-ModeNSText:	.byte ITALICON, "  nice scale",PLAINTEXT,0
+ModeNSText:	.byte " ", ITALICON, " nice scale",PLAINTEXT,0
 ModeHRText:	.byte "* high-res",0
-ModeHRSText:	.byte ITALICON, "  high-res scaled",PLAINTEXT,0
-ModeSRText:	.byte ITALICON, "  super-res",PLAINTEXT,0
-ModeSRSText:	.byte ITALICON, "  super-res scaled",PLAINTEXT,0
-ModeHCText:	.byte ITALICON, "  high-color",PLAINTEXT,0
+ModeHRSText:	.byte " ", ITALICON, " high-res scaled",PLAINTEXT,0
+ModeSRText:	.byte "  super-res",PLAINTEXT,0
+ModeSRSText:	.byte " ", ITALICON, " super-res scaled",PLAINTEXT,0
+ModeHCText:	.byte " ", ITALICON, " high-color",PLAINTEXT,0
 
 Mode_Call:
+	cmp	#2
+	beq	@11
+	cmp	#4
+	beq	@11
+	cmp	#6
+	beq	@11
+	cmp	#7
+	beq	@11
+	ora	#$40
 	sta	graphMode
-	cmp	#1
-	bne     @10
-	lda     #$80
-	sta	graphMode
-
 @10:
 	jsr	GotoFirstMenu
 
@@ -1654,8 +1690,8 @@ Mode_Call:
         jsr DispMultiCount
         ;jsr SwitchWin
         jmp RedrawAll
-
-	rts
+@11:
+	jmp	GotoFirstMenu
 
 
 geos_Menue:

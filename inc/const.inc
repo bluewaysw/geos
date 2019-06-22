@@ -432,9 +432,9 @@ USELAST                 =       127
 SHORTCUT                =       128
 
 ; C128 640 support
-ADD1_W                  =       $0000
+ADD1_W                  =       $2000
 ADD1_B                  =       $20
-DOUBLE_W                =       $0000
+DOUBLE_W                =       $8000
 DOUBLE_B                =       $80
 
 ; C128 bsw128

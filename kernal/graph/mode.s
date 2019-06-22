@@ -163,9 +163,13 @@ SetNewMode0:
 ;    	rts
 @1:
 	lda graphMode
-	cmp #3
+	cmp #3|64
 	beq @12
-	jmp @11
+        cmp #1|64
+	bne @11b
+	jmp @_1
+@11b:
+        jmp @11
 @12:
 	LoadW r0, VIC_IniTbl
 	.assert * - VIC_IniTbl_end - VIC_IniTbl < 256, error, "VIC_IniTbl must be < 256 bytes"
@@ -263,7 +267,7 @@ SetNewMode0:
 	rts
 @11:
 	lda graphMode
-	cmp #5
+	cmp #5|64
 	beq @13
 	jmp @14
 @13:
@@ -450,6 +454,9 @@ SetNewMode0:
 	LDA   $D054
 	AND   #$EF
 	STA   $D054
+
+        LDA #0
+	STA $D05D
 
 	LoadW	r5, 320
 	jsr	InitScanLineTab

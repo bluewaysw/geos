@@ -23,6 +23,9 @@
 
 .ifdef mega65
 _NormalizeY:
+	bbsf 6, graphMode, @10
+	jmp _NormalizeX
+@10:
 	lda zpage+1,x
 	and #%11000000
 	cmp	#%10000000
@@ -65,11 +68,11 @@ _NormalizeY:
 .endif
 
 _NormalizeX:
-.ifdef scalable_coords
+	bbrf 6, graphMode, @10
 	lda zpage+1,x
 	and #%00001100
 	cmp	#%00001000
-	bne	@4
+	bne	@5
 	lda zpage+1,x
 	pha
 	and #$03
@@ -86,11 +89,12 @@ _NormalizeX:
 	ora zpage+1,x
 	sta zpage+1,x
 	rts
-@4:
+@5:
 	lda zpage+1,x
 	and #$F3
 	sta zpage+1,x
-.else
+	rts
+@10:
 	lda zpage+1,x
 	bpl @2
 	rol
@@ -114,7 +118,6 @@ _NormalizeX:
 @3:	ora #$E0
 	sta zpage+1,x
 @4:
-.endif
 	rts
 
 .ifdef mega65

@@ -41,7 +41,10 @@ PrvCharWidth = $880D
 
 _UseSystemFont:
 .if .defined(bsw128) || .defined(mega65)
-	bbsf 7, graphMode, @X
+	lda graphMode
+	bmi @X
+	cmp #$41
+	beq @X
 	LoadW r0, BSWFont
 	bra _LoadCharSet
 @X:	LoadW r0, BSWFont80
@@ -110,4 +113,3 @@ GetChWdth1:
 @2:	lda PrvCharWidth
 	rts
 .endif
-

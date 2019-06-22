@@ -65,7 +65,8 @@ _DoUpdateTime:
 	beq @5
 	jmp (alarmTmtVector)
 @5:	bbrf 6, alarmSetFlag, @6
-	jsr DoClockAlarm
+	; TODO
+	;jsr DoClockAlarm
 @6:	cli
 	rts
 
@@ -170,5 +171,5 @@ DoClockAlarm:
 	sta alarmWarnFlag
 	dec alarmSetFlag
 @3:
-.endif
 	rts
+	.endif

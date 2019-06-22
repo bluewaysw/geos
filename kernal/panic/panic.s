@@ -186,7 +186,7 @@ _PanicDB_DT:
 _PanicDB_Str:
 	.byte BOLDON
 .ifdef wheels_size
-	.byte "Error near "
+	.byte "ar "
 .else
 	.byte "System error near "
 .endif

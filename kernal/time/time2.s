@@ -15,11 +15,14 @@
 
 .segment "time2"
 
+
 pingTab:
+.if 0
 	.byte $00, $10, $00, $08, $40, $08, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $00, $00, $00, $00, $00, $00, $00, $00
 	.byte $0f
+.endif
 pingTabEnd:
 
 .if (!.defined(remove_dead_bytes)) && (!.defined(bsw128))

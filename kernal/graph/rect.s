@@ -38,20 +38,16 @@
 ;---------------------------------------------------------------
 _Rectangle:
 	PushW	r2
-	PushB	r3H
-	PushB	r4H
-	PushB	r5H
+	PushW	r3
+	PushW	r4
+	;PushB	r5H
 
-	ldx	#r3
-	ldy	#r2L
-	jsr 	_NormalizeY
-	ldx 	#r4
-	ldy	#r2H
-	jsr 	_NormalizeY
+	jsr _NormRect
 
 	MoveB r2L, r11L
 
-@1:	lda r11L
+@1:
+	lda r11L
 	and #$07
 	tay
 .ifdef bsw128
@@ -92,9 +88,9 @@ _Rectangle:
 	bra	@1
 
 @3:
-	PopB  	r5H
-	PopB  	r4H
-	PopB	r3H
+	;PopB  	r5H
+	PopW  	r4
+	PopW	r3
 	PopW	r2
 	rts
 
@@ -114,12 +110,7 @@ _InvertRectangle:
 	PushB	r4H
 	PushB	r5H
 
-	ldx	#r3
-	ldy	#r2L
-	jsr 	_NormalizeY
-	ldx	#r4
-	ldy	#r2H
-	jsr 	_NormalizeY
+	jsr _NormRect
 
 	MoveB	r2L, r11L
 @1:	jsr	_InvertLine
@@ -200,6 +191,17 @@ _ImprintRectangle:
 
 .segment "graph2i1"
 
+_NormRect:
+	ldx	#r3
+	ldy	#r2L
+	jsr 	_NormalizeY
+	ldx	#r4
+	ldy	#r2H
+	jmp 	_NormalizeY
+
+	.repeat	13
+		.byte 0
+	.endrep
 ;---------------------------------------------------------------
 ; FrameRectangle                                          $C127
 ;
@@ -213,8 +215,12 @@ _ImprintRectangle:
 ;---------------------------------------------------------------
 _FrameRectangle:
 	sta r9H
+
+	jsr _NormRect
+
 	ldy r2L
 	sty r11L
+	lda r9H
 	jsr _HorizontalLine
 	MoveB r2H, r11L
 	lda r9H
