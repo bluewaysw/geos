@@ -199,7 +199,7 @@ _NormRect:
 	ldy	#r2H
 	jmp 	_NormalizeY
 
-	.repeat	13
+	.repeat	5
 		.byte 0
 	.endrep
 ;---------------------------------------------------------------

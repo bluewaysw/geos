@@ -52,10 +52,12 @@ _BitmapUp:
 .endif
 	sta r3L
 	sta r4L
+	bbrf 6, graphMode, @5
 
 	ldx #$F8	; y high part
 	bit r1L
 	bpl @5
+
 	bit r1H
 	bvc @2	; not neg
 
@@ -119,6 +121,7 @@ BitmapUpHelp:
 
 	ldy #3  ; by 8
 	lda r1L
+	bbrf 6, graphMode, @42
 	bit r1L
 	bpl @41
 	bvc @41
@@ -128,6 +131,7 @@ BitmapUpHelp:
 	adc scrFullCardsX
 @41:
 	and #$7f
+@42:
 	bpl @4
 	bbrf 7, graphMode, @4
 	ldy #4  ; by 16
