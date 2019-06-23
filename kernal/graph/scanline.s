@@ -246,7 +246,7 @@ _GetScanLine:
 	bcc	@Y2__
 	clc
 	ror
-	ldx 	#0
+	ldx 	#1
 	bra	@Y1__
 
 @Y2__:
@@ -327,15 +327,15 @@ _GetScanLine:
 	;sub #$40
 	;lsr
 	pla
-	add	#$80
+	add	#$c0
 	bcc	@Y2___
-	clc
+	sec
 	ror
 	ldx 	#0
 	bra	@Y1___
 
 @Y2___:
-	sec
+	clc
 	ror
 	ldx	#0
 @Y1___:
@@ -351,7 +351,6 @@ _GetScanLine:
 	sta 	r5H
 	sub 	#$40
 	sta	r6H
-
 	pla
 	taz
 	pla
