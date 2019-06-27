@@ -100,6 +100,8 @@ StackPtr:
 ; Return:    does not return
 ;---------------------------------------------------------------
 _Panic:
+	inc $d020
+	bra _Panic
 .ifdef wheels
 	sec
 	pla
@@ -109,12 +111,12 @@ _Panic:
 	sbc #0
 .else
 .ifdef mega65
-	LoadB CPU_DATA, IO_IN
+	;LoadB CPU_DATA, IO_IN
 @13:
-	lda countHighMap
-	beq @12
-	jsr UnmapUnderlay
-	bra @13
+	;lda countHighMap
+	;beq @12
+	;jsr UnmapUnderlay
+	;bra @13
 @12:
 .endif
 .ifdef bsw128
@@ -127,7 +129,7 @@ _Panic:
 	pla
 	pla
 .endif
-	PopW r0
+	;PopW r0
 .ifdef bsw128
 	ldx #r0
 	jsr Ddec
@@ -136,9 +138,9 @@ _Panic:
 .else
 	SubVW 2, r0
 .endif
-	lda r0H
+	;lda r0H
 .endif
-	ldx #0
+	;ldx #0
 	jsr @1
 .ifdef wheels
 	tya
@@ -151,8 +153,8 @@ _Panic:
 .ifdef wheels
 	jmp EnterDeskTop
 .endif
-@1:	pha
-	lsr
+@1:	;pha
+	;lsr
 	lsr
 	lsr
 	lsr
@@ -184,9 +186,9 @@ _PanicDB_DT:
 .segment "panic3"
 
 _PanicDB_Str:
-	.byte BOLDON
+	;.byte BOLDON
 .ifdef wheels_size
-	.byte "ar "
+	;.byte ""
 .else
 	.byte "System error near "
 .endif

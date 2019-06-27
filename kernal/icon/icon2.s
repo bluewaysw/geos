@@ -178,6 +178,7 @@ FindClkIcon:
 	iny
 	; in GEOS6 scalable mode
 	lda (IconDescVec),y
+	bbrf 6, graphMode, @111
 	bit #%01000000
 	beq @23
 

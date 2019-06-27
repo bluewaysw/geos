@@ -305,8 +305,22 @@ BitmapDecode2:
 	ora #1
 	sta config
 .endif
-	ldy #0
-	lda (r0),y
+	;lda r0H
+	;cmp #$a0
+	;bcc @11
+
+	; get image from UNDERLAY
+	PushW r1
+	LoadW r1, 0
+	LDZ	#0
+	EOM
+	lda 	(r0L), Z
+	taz
+	PopW	r1
+	tza
+
+	;ldy #0
+	;lda (r0),y
 .ifdef bsw128
 	pha
 	lda config
