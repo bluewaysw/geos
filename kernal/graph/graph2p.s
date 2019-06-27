@@ -17,6 +17,7 @@
 ; out: r5, r6   card address
 ;      X        bit number
 .global GetLeftXAddress
+.if 0
 GetLeftXAddress:
 	PushB r3H
 	lda r3L
@@ -49,3 +50,4 @@ GetLeftXAddress:
 	tax
 	PopB r3H
 	rts
+.endif

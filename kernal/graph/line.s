@@ -600,10 +600,10 @@ ImprintLine:
 	inc r6H
 @3:
 .else
-	bbrf	7, graphMode, @11
-    ldy #0
-	bra	@12
-@11:
+	;bbrf	7, graphMode, @11
+	;ldy #0
+	;bra	@12
+;@11:
 	ldy r3L
 	lda r3H
 	beq @12
