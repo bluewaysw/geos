@@ -156,7 +156,7 @@ OrigResetHandle:
 	sei
 	cld
 .ifdef mega65
-	lda #5|64
+	lda #8|64
 	sta graphMode
 	LoadW	r5, 720
 	jsr InitScanLineTab

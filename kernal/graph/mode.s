@@ -269,6 +269,8 @@ SetNewMode0:
 	lda graphMode
 	cmp #5|64
 	beq @13
+        cmp #8|64
+	beq @13
 	jmp @14
 @13:
 	LoadW r0, VIC_IniTbl
@@ -277,8 +279,15 @@ SetNewMode0:
 	jsr SetVICRegs
 
         ; left boarder size
-	LDA    #5
-	STA    $D05C
+        LDx    #0
+        LDA    graphMode
+        cmp     #8|64
+        beq     @13a
+        LDx    #5
+
+@13a:
+	STx    $D05C
+
 	LDA    #128
 	STA    $D05D
 	LDA    #$FF
@@ -298,9 +307,14 @@ SetNewMode0:
 	lda #$C8
     	sta $d031
 
-	LDA   #94
-	STA   $D058
-	STA   $D05E
+	LDx   #100
+        LDA    graphMode
+        cmp     #8|64
+        beq     @13b
+        LDx   #94
+@13b:
+	STx   $D058
+	STx   $D05E
         LDA #0
 	STA $D05D
 
@@ -344,7 +358,11 @@ SetNewMode0:
 	LDA #$8F
 	STA $d06D
 
-	lda #<5
+
+        LDA    graphMode
+        cmp     #8|64
+        beq @13c
+        lda #<5
 	sta $d048
 	lda #>5
 	sta $d049
@@ -366,8 +384,32 @@ SetNewMode0:
 	LoadB scrFullCardsX+1, 74
 	LoadB spriteXPosOff, VIC_X_POS_OFF_800
 	LoadB spriteYPosOff, VIC_Y_POS_OFF_800
+        LoadW	r5, 752
+        bra @13d
+@13c:
+        lda #<60
+        sta $d048
+        lda #>60
+        sta $d049
+        lda #<540
+        sta $D04A
+        lda #>540
+        sta $d04b
 
-	LoadW	r5, 752
+        lda #<60
+        sta $d04e
+        lda #>60
+        sta $d04f
+        LoadW screenNextLine, 792
+        LoadW screenMaxX, 773
+        LoadW screenMaxY, 479
+        LoadW screenCardsX, 100
+        LoadB scrFullCardsX, 96
+        LoadB scrFullCardsX+1, 60
+        LoadB spriteXPosOff, VIC_X_POS_OFF_800B
+        LoadB spriteYPosOff, VIC_Y_POS_OFF_800B
+        LoadW	r5, 800
+@13d:
 	jsr	InitScanLineTab
 	END_IO
 	rts

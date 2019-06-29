@@ -359,7 +359,8 @@ ChangeC:	ldx	#10
 ; ChangeDrive	; tauscht Drive a gegen x
 	; Par:	a,x    - DriveNummer (8,9,10,11)
 	; Bem:	mind. 1. RAM-Disk bei 4 Laufwerken
-ChangeDrive:	sta	@a
+ChangeDrive:
+	sta	@a
 	stx	@x
 	lda	numDrives
 	cmp	#4
@@ -696,11 +697,14 @@ GetMaxDrives:	ldy	numDrives
 	rts
 
 TestNumDrives:
+.if 0
+; stange causes 2nd drive to appear
 	lda	DiskDriverFlag
 	beq	@10
 	LoadB	numDrives,1
 	rts
 @10:	LoadB	numDrives,2
+.endif
 	rts
 
 ; NewGetFile

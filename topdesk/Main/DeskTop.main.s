@@ -1614,8 +1614,8 @@ RedrawHead:
 	jmp	InitClock
 
 mode_Menue:
-	ldx #35
-	ldy #7
+	ldx #40
+	ldy #8
 @1:	lda modetab,x
         sta r1L
 	lda modetab+1,x
@@ -1646,9 +1646,9 @@ mode_Menue:
 
 	jsr	MySubMenuDA2
 modeoben:	.byte 13+13+1
-modeunten:	.byte 8*14+13+13+1+1		; wird berechnet!
+modeunten:	.byte 9*14+13+13+1+1		; wird berechnet!
 		.word 80,171
-		.byte 8 | VERTICAL
+		.byte 9 | VERTICAL
 modetab:
 		mpt	Mode40Text,MENU_ACTION,Mode_Call
 		mpt	Mode80Text,MENU_ACTION, Mode_Call
@@ -1658,6 +1658,7 @@ modetab:
 		mpt	ModeSRText,MENU_ACTION,Mode_Call
 		mpt	ModeSRSText,MENU_ACTION,Mode_Call
 		mpt	ModeHCText,MENU_ACTION,Mode_Call
+		mpt	ModeMPText,MENU_ACTION,Mode_Call
 Mode40Text:	.byte "  40-cols",0
 Mode80Text:	.byte "  80-cols",0
 ModeNSText:	.byte " ", ITALICON, " nice scale",PLAINTEXT,0
@@ -1666,6 +1667,7 @@ ModeHRSText:	.byte " ", ITALICON, " high-res scaled",PLAINTEXT,0
 ModeSRText:	.byte "  super-res",PLAINTEXT,0
 ModeSRSText:	.byte " ", ITALICON, " super-res scaled",PLAINTEXT,0
 ModeHCText:	.byte " ", ITALICON, " high-color",PLAINTEXT,0
+ModeMPText:	.byte "  MEGAphone",PLAINTEXT,0
 
 Mode_Call:
 	cmp	#2
