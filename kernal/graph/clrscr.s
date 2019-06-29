@@ -29,6 +29,16 @@ SC_SCALE                =   %110000000000
 ;---------------------------------------------------------------
 ClrScr:
 .ifdef mega65
+	ldx #$41
+	lda graphMode
+	bmi @2
+	asl
+	bmi @1
+	dex
+@2:
+	stx graphMode
+
+@1:
 	LoadB dispBufferOn, ST_WR_FORE
 .else
 .ifdef bsw128

@@ -155,10 +155,10 @@ _Panic:
 .endif
 @1:	;pha
 	;lsr
-	lsr
-	lsr
-	lsr
-	jsr @2
+	;lsr
+	;lsr
+	;lsr
+	;jsr @2
 	inx
 	pla
 	and #%00001111

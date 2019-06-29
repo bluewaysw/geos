@@ -90,12 +90,12 @@ GRBANK3                 =       %00
 ; screen
 VIC_X_POS_OFF           =       24
 VIC_Y_POS_OFF           =       50
-VIC_X_POS_OFF_640      =       97
+VIC_X_POS_OFF_640      =       60
 VIC_Y_POS_OFF_640      =       50
-VIC_X_POS_OFF_720       =       56
+VIC_X_POS_OFF_720       =       20
 VIC_Y_POS_OFF_720       =       74
-VIC_X_POS_OFF_800       =       37
-VIC_Y_POS_OFF_800       =       11
+VIC_X_POS_OFF_800       =       6
+VIC_Y_POS_OFF_800       =       5
 SC_BYTE_WIDTH           =       40
 SC_PIX_HEIGHT           =       200
 SC_PIX_WIDTH            =       720

@@ -55,8 +55,15 @@ _EnterDeskTop:
 .endif
 	txs
 	jsr _InitMachine
-	lda #$41
-	sta graphMode
+;	ldx #$41
+;	lda graphMode
+;	bmi @2
+;	;asl
+;	;bmi @1
+;	;dex
+;@2:
+;	stx graphMode
+@1:
 	jsr ClrScr
 .ifdef useRamExp
 	MoveW DeskTopStart, r0

@@ -91,7 +91,7 @@ SetNewMode0:
 	lda #$09
 	sta $d016
 
-        LDA #79
+        LDA #59
 	STA $D05C
 	LDA #128
 	STA $D05D
@@ -176,7 +176,7 @@ SetNewMode0:
 	ldy #<(VIC_IniTbl_end - VIC_IniTbl)
 	jsr SetVICRegs
 
-        LDA #39
+        LDA #19
 	STA $D05C
 	LDA #128
 	STA $D05D
@@ -276,15 +276,16 @@ SetNewMode0:
 	ldy #<(VIC_IniTbl_end - VIC_IniTbl)
 	jsr SetVICRegs
 
-	LDA #20
-	STA $D05C
-	LDA #128
-	STA $D05D
-	LDA #$FF
-	sta $D076
-	LDA   $D054
-	ORA   #$10
-	STA   $D054
+        ; left boarder size
+	LDA    #5
+	STA    $D05C
+	LDA    #128
+	STA    $D05D
+	LDA    #$FF
+	sta    $D076
+	LDA    $D054
+	ORA    #$10
+	STA    $D054
 
 	lda #$c9
 	sta grcntrl2
@@ -343,18 +344,18 @@ SetNewMode0:
 	LDA #$8F
 	STA $d06D
 
-	lda #<11
+	lda #<5
 	sta $d048
-	lda #>11
+	lda #>5
 	sta $d049
-	lda #<604
+	lda #<593
 	sta $D04A
-	lda #>604
+	lda #>593
 	sta $d04b
 
-	lda #<11
+	lda #<5
 	sta $d04e
-	lda #>11
+	lda #>5
 	sta $d04f
 
 	LoadW screenNextLine, 744
