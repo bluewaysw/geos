@@ -1,7 +1,7 @@
 
 VARIANT     ?= mega65
 DRIVE       ?= drvf011
-INPUT       ?= joydrv
+INPUT       ?= megaphn
 \INPUT       ?= mse1531
 
 AS           = ca65
@@ -252,6 +252,7 @@ DRIVER_SOURCES= \
 	drv/drv1571ram.bin \
 	drv/drv1581ram.bin \
 	input/joydrv.bin \
+	input/megaphn.bin \
 	input/amigamse.bin \
 	input/lightpen.bin \
 	input/mse1531.bin \
@@ -297,6 +298,7 @@ ALL_BINS= \
 	$(BUILD_DIR)/drv/drv1571ram.bin \
 	$(BUILD_DIR)/drv/drv1581ram.bin \
 	$(BUILD_DIR)/input/joydrv.bin \
+	$(BUILD_DIR)/input/megaphn.bin \
 	$(BUILD_DIR)/input/amigamse.bin \
 	$(BUILD_DIR)/input/lightpen.bin \
 	$(BUILD_DIR)/input/mse1531.bin \
@@ -360,7 +362,7 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo write $< $(GEOS_OUT) | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
-		echo geoswrite GW64.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite GW128.CVT | $(C1541) $@ >/dev/null; \
 		echo geoswrite gpt64.cvt | $(C1541) $@ >/dev/null; \
 		if [ -e $(DESKTOP_CVT) ]; then echo geoswrite $(DESKTOP_CVT) | $(C1541) $@; fi >/dev/null; \
 		echo \*\*\* Created fresh $@.; \
@@ -498,6 +500,9 @@ $(BUILD_DIR)/input/amigamse.bin: $(BUILD_DIR)/input/amigamse.o input/amigamse.cf
 
 $(BUILD_DIR)/input/joydrv.bin: $(BUILD_DIR)/input/joydrv.o input/joydrv.cfg $(DEPS)
 	$(LD) -C input/joydrv.cfg $(BUILD_DIR)/input/joydrv.o -o $@
+
+$(BUILD_DIR)/input/megaphn.bin: $(BUILD_DIR)/input/megaphn.o input/megaphn.cfg $(DEPS)
+	$(LD) -C input/megaphn.cfg $(BUILD_DIR)/input/megaphn.o -o $@
 
 $(BUILD_DIR)/input/lightpen.bin: $(BUILD_DIR)/input/lightpen.o input/lightpen.cfg $(DEPS)
 	$(LD) -C input/lightpen.cfg $(BUILD_DIR)/input/lightpen.o -o $@
