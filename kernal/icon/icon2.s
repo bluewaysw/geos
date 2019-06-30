@@ -301,6 +301,7 @@ LFCCC:	pha
 
 .if .defined(bsw128) || .defined(mega65)
 LFCCC_:
+	bbrf 6, graphMode, LFCCC
 	pha
 	and #%11000000
 

@@ -81,6 +81,8 @@ DrwDlgSpd0:
 	lda (DBoxDesc),y
 	bpl DrwDlgSpd1
 	LoadW DBoxDesc, DBDefinedPos-1
+	bbrf 6, graphMode, DrwDlgSpd1
+	LoadW DBoxDesc, DBDefinedPosScalable-1
 DrwDlgSpd1:
 	ldy #1
 	lda (DBoxDesc),y
@@ -135,6 +137,7 @@ DrwDlgSpd1:
 	jsr SetPattern
 	clc
 	jsr CalcDialogCoords
+	bbrf 6, graphMode, @11
 	lda rightMargin+1
 	and #%11110000
 	sta rightMargin
@@ -143,6 +146,10 @@ DrwDlgSpd1:
 	ora rightMargin
 	sta rightMargin+1
 	MoveB r4L, rightMargin
+	bra @12
+@11:
+	MoveW r4, rightMargin
+@12:
 	jsr Rectangle
 .ifndef wheels_size_and_speed ; redundant
 	clc
@@ -183,6 +190,8 @@ CalcDialogCoords:
 	lda (DBoxDesc),y
 	bpl @2
 	LoadW DBoxDesc, DBDefinedPos-1
+	bbrf 6, graphMode, @2
+	LoadW DBoxDesc, DBDefinedPosScalable-1
 @2:	ldx #0
 	ldy #1
 @3:	lda (DBoxDesc),y
@@ -220,6 +229,12 @@ MSB = 0
 	.byte DEF_DB_BOT
 	.word MSB | DEF_DB_LEFT
 	.word MSB | DEF_DB_RIGHT
+
+DBDefinedPosScalable:
+	.byte DEF_DB_TOP
+	.byte DEF_DB_BOT
+	.word DEF_DB_LEFT
+	.word DEF_DB_RIGHT
 
 _RstrFrmDialogue:
 	jsr Dialog_2
