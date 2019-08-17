@@ -49,6 +49,10 @@
 .import UnmapUnderlay
 .endif
 
+.ifdef debugger 
+.global _DebugStart
+.endif
+
 .segment "start"
 
 ; The original version of GEOS 2.0 has purgeable init code
@@ -135,9 +139,13 @@ ASSERT_NOT_BELOW_IO
 	sta year,y
 	dey
 	bpl @6
-
 	;
 	jsr FirstInit
+
+.ifdef debugger 
+_DebugStart:
+  brk
+.endif
 	jsr MouseInit
 	lda #currentInterleave
 	sta interleave

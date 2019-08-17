@@ -35,6 +35,7 @@ next:	.WORD	0
 
 .CODE
 .PROC main
+
 	SEI
 	CLD
 	LDA	#0
@@ -80,6 +81,8 @@ next:	.WORD	0
 	STA	0
 	LDA	#$37
 	STA	1
+
+
 	; Various VIC register stuffs
 	STZ	$D030	; turn ROM mappings / etc OFF
 	STZ $D031
@@ -89,14 +92,16 @@ next:	.WORD	0
 	lda	#$80
 	sta	$d06f
 
-	LDA	#$00
-	sta	$D710
+; not working with xemu
+;	LDA	#$00
+;	sta	$D710
 
 	LDA   $D054	;40 mhz
 	ORA   #$40
 	STA   $D054
 	lda   #$40
 	sta	  $d031
+
 
 	 ; Set screen ram that has 100x60 cells x 2 bytes per cell = 12,000 bytes of colour
 	 ; information for bitmap mode.

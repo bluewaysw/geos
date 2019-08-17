@@ -15,6 +15,9 @@
 .import Ddec
 .import EnterDeskTop
 .import UnmapUnderlay
+.import DebugMain
+.import _MapLow
+.import tempIRQAcc
 
 ; syscall
 .global _Panic
@@ -100,6 +103,46 @@ StackPtr:
 ; Return:    does not return
 ;---------------------------------------------------------------
 _Panic:
+.ifdef debugger
+
+  pha   ; flags
+  lda tempIRQAcc
+  pha
+  txa
+  pha
+  tya
+  pha
+  tza
+  pha
+
+  lda lowMap
+  pha
+  lda lowMapBnk
+  pha
+
+  lda #$00
+  tax
+  jsr _MapLow
+
+  ; unmap to $6000
+  jsr DebugMain
+
+  pla
+  tax
+  pla
+  jsr _MapLow 
+
+  pla
+  taz
+  pla
+  tay
+  pla
+  tax
+  pla
+
+  rti
+
+.else
 	inc $d020
 	bra _Panic
 .ifdef wheels
@@ -182,6 +225,7 @@ _PanicDB_DT:
 	.byte DBSYSOPV
 .endif
 	.byte NULL
+.endif
 
 .segment "panic3"
 

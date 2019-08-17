@@ -103,6 +103,8 @@ config_inc = 1
 ;
 ;.setcpu "4510"
 
+  debugger = 1
+
 	; make use of all reusable Wheels optimizations and fixes
 	wheels_size = 1
 	wheels_size_and_speed = 1

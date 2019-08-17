@@ -117,7 +117,8 @@ KERNAL_SOURCES= \
 	kernal/time/time1.s \
 	kernal/time/time2.s \
 	kernal/tobasic/tobasic2.s \
-	kernal/vars/vars.s
+	kernal/vars/vars.s \
+	kernal/debug/main.s \
 
 # code that is in front bank of C64 only
 ifneq ($(VARIANT), bsw128)
