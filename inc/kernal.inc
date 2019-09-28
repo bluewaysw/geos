@@ -142,6 +142,7 @@ highMap = $8898
 highMapBnk = $8893
 lastHighMap = $8899
 countHighMap = $8894
+lastHighMapBnk = $889A
 
 uncompactedY0 = $888D
 uncompactedY1 = $888E

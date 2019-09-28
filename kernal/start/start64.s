@@ -47,6 +47,7 @@
 .import InitScanLineTab
 .import MapUnderlay
 .import UnmapUnderlay
+.import _MapLow
 .endif
 
 .ifdef debugger 
@@ -142,6 +143,11 @@ ASSERT_NOT_BELOW_IO
 	;
 	jsr FirstInit
 
+	; start with bank $6000-$8000 swapped out so we prevent debugger from beeing destroyed
+	ldx #$00
+	lda #$60
+	jsr _MapLow
+
 .ifdef debugger 
 _DebugStart:
   brk
@@ -164,7 +170,8 @@ OrigResetHandle:
 	sei
 	cld
 .ifdef mega65
-	lda #8|64
+	lda #5|64
+	;lda #1|64
 	sta graphMode
 	LoadW	r5, 720
 	jsr InitScanLineTab

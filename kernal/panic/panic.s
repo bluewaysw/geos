@@ -102,8 +102,14 @@ StackPtr:
 ; Pass:      nothing
 ; Return:    does not return
 ;---------------------------------------------------------------
+  .byte 0, 0, 0, 0, 0, 0, 0, 0
+  .byte 0, 0, 0, 0, 0, 0, 0, 0
+  .byte 0, 0, 0, 0, 0, 0, 0, 0
+  .byte 0, 0, 0, 0, 0, 0, 0, 0
+
 _Panic:
 .ifdef debugger
+
 
   pha   ; flags
   lda tempIRQAcc

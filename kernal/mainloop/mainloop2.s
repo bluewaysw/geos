@@ -19,17 +19,17 @@
 
 .if (!.defined(wheels)) && (!.defined(bsw128))
 _MainLoop2:
-;	START_IO_X
-;	lda grcntrl1
-;	and #%01111111
-;	;sta grcntrl1
-;	END_IO_X
+	;START_IO_X
+  ;lda grcntrl1
+	;and #%01111111
+	;sta grcntrl1
+	;END_IO_X
 
   ; map $50000-$52000 to $06000
   ; x = bank, a=offset
-  ldx #$02
-  lda #$50
-  jsr _MapLow
+  	;ldx #$02
+  	;lda #$50
+  	;jsr _MapLow
 
 	jmp _MainLoop
 .endif

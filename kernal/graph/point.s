@@ -281,7 +281,7 @@ _DrawLine:
 	MoveW r14, r11
 	bra @5
 @4:	CmpW r11, r14
-	bcc @5
+	bcs @5
 	LoadW r13, 1
 @5:	jsr @99
 	plp

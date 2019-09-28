@@ -67,6 +67,8 @@ saveD021:
   .byte 0
 saveD015:
   .byte 0
+saveR0:
+  .word 0
 
 u_cl:
   .word 0
@@ -104,19 +106,37 @@ DebugMain:
   sta $107+STACK_OFFSET,y
   sta u_cl+1
 
+  PushB CPU_DATA
+  LoadB CPU_DATA, IO_IN
+
   PushW r0
+  MoveW r0, saveR0
   PushW r1
   PushW r2
   PushW r3
 
+  jsr ResetSingleStep
+  jsr UpdatePCBreakpoint
+
+  lda initialized
+  bne @2
+  LoadB initialized, $FF
   jsr ClearConsole
   LoadW r0, welcome
   jsr PutString
+@2:
+  ;jsr PrintRegs
 
-  jsr PrintRegs
+  ldy stackPointer
+  lda $107+STACK_OFFSET, y
+  sta r0H
+  lda $106+STACK_OFFSET, y
+  sta r0L
+  jsr DebugOpcode_Print
 
 @HOHO:
   LoadW r0, promptBuf
+  LoadB promptLen, 0
   ldx #100
   jsr Prompt 
 
@@ -137,11 +157,13 @@ DebugMain:
   PopW r1
   PopW r0
 
+  PopB CPU_DATA
+
   MoveW saveIRQ_VECTOR, IRQ_VECTOR
 
   rts
 
-welcome:  .byte "SuperDebugger V6.0",13,"Copyright (C) 2019 blueway.Softworks", 13, 13, 0
+welcome:  .byte "SuperDebugger V6.0",13,"(C) 2019", 13, 13, 0
 
 ClearConsole:
   ldx #0
@@ -345,7 +367,6 @@ HandleScroll:
 Prompt:
   lda #'>'
   jsr PutChar
-
   jsr EnterConsole
 
   MoveB promptLen, promptLenOld
@@ -472,9 +493,111 @@ UpdateCursor:
 @1:
   rts
 
+ProcessTrace:
+
+  LoadW r0, trace
+  jsr PutString
+
+  jsr ResetSingleStep
+
+  ; calc next break address
+  ; move PC to r1
+  ldy stackPointer
+  lda $107+STACK_OFFSET, y
+  sta r0H
+  lda $106+STACK_OFFSET, y
+  sta r0L
+
+  ldy #0
+  ;lda (r0), y     ; get opcode at PC
+	jsr	GetByte
+
+	; special opcode handling for single step
+	cmp	#$4C	; JMP
+	bne	@1
+
+	ldy	#1
+	lda	(r0), y     ; get jmp address low
+	tax
+	iny
+	lda	(r0), y     ; get jmp address high
+	sta	r0H
+	stx	r0L
+
+	bra	@2
+
+@1:
+	jsr	DebugOpcode_GetLen
+
+	clc
+	adc	r0L
+	sta	r0L
+	lda	r0H
+	adc	#0
+	sta	r0H
+@2:
+	MoveW 	r0, r1
+
+
+	jsr	SetupSingleStep
+
+	sec	
+	rts
+
+
+; pass: r1 address to break next
+SetupSingleStep:
+
+  ldy #0
+  lda (r1),y
+  tax
+  ldy #18
+  lda r1L
+  sta breakList,y
+  lda r1H
+  sta breakList+1,y
+  tya
+  lsr
+  tay
+  txa
+  sta breakOpList, y
+  ldy #0
+  tya
+  sta (r1), y
+  rts
+
+ResetSingleStep:
+  ldy #18
+  lda breakList,y
+  ora breakList+1,y
+  beq @1
+  
+  lda breakList,y
+  sta r1L
+  lda breakList+1,y
+  sta r1H
+
+  tya
+  lsr
+  tay
+  lda breakOpList, y
+  ldy #0
+  sta (r1), y
+
+  tya
+  ldy #18
+  sta breakList,y
+  sta breakList+1,y
+
+@1:
+  rts
+
+
 ProcessPrompt:
 
   ldy promptLen
+  lda #0
+  sta promptBuf, y
   cpy #1
   bcc @1
 
@@ -495,9 +618,20 @@ ProcessPrompt:
   beq @5
 
   cmp #'d'
-  beq @6
-
-  bra @1
+  bne @6d
+  jmp @6
+@6d:
+  cmp #'D'
+  bne @8
+	jmp	ProcessDump
+@8:
+  cmp #'t'
+  bne @7
+  jmp ProcessTrace
+@7:
+	cmp	#'m'
+	bne	@1
+	jmp	ProcessMap
 
 @2:
   jmp PrintRegs
@@ -509,6 +643,11 @@ ProcessPrompt:
 @3:
   jmp PrintBreakpoints
 @4:
+  LoadW r0, promptBuf
+  LoadW r1, stackCommand
+  jsr StrBeginsWith
+	beq	@4b
+
   LoadW r0, promptBuf
   LoadW r1, setbCommand
   jsr StrBeginsWith
@@ -532,7 +671,25 @@ ProcessPrompt:
 @5:
   sec
   rts
+@4b:
+	LoadW	r0, currentStack
+	jsr	PutString
 
+	ldx	#0
+	ldy	stackPointer
+	tya
+	clc
+	adc	#6+STACK_OFFSET
+	tay
+@4c:
+	jsr	DumpStackFromOffset
+	iny
+	inx
+	cpx	#20
+	bne	@4c
+
+	clc
+	rts
 @6:
   ldy promptLen
   cpy #1
@@ -568,6 +725,103 @@ ProcessPrompt:
 
   clc
   rts
+
+DumpStackFromOffset:
+	txa
+	pha
+	tya
+	pha
+	LoadB	r0H, $01
+	sty	r0L
+	lda	#'$'
+	jsr	PutChar
+	lda	r0H
+	jsr	PrintByteHex
+	lda	r0L
+	jsr	PrintByteHex
+	lda	#' '
+	jsr	PutChar
+	lda	#' '
+	jsr	PutChar
+
+	lda	#'$'
+	jsr	PutChar
+	ldy	#0
+	lda	(r0), y
+	jsr	PrintByteHex
+
+	lda	#' '
+	jsr	PutChar
+
+	lda	#'$'
+	jsr	PutChar
+	ldy	#1
+	lda	(r0), y
+	jsr	PrintByteHex
+	ldy	#0
+	lda	(r0), y
+	jsr	PrintByteHex
+
+
+	lda	#13
+	jsr	PutChar
+	pla
+	tay
+	pla
+	tax
+	rts
+
+ProcessDump:
+	ldy promptLen
+	cpy #1
+	beq @6c
+	LoadW r0, promptBuf
+	clc
+	lda #1
+	adc r0L
+	sta r0L
+	lda r0H
+	adc #0
+	sta r0H
+
+	jsr EvalAddrExpr
+	bcs @6c
+	MoveW r1, u_cl
+@6c:
+	MoveW u_cl, r0 
+
+	lda	#'$'
+	jsr	PutChar
+	lda	r0H
+	jsr	PrintByteHex
+	lda	r0L
+	jsr	PrintByteHex
+	lda	#' '
+	jsr	PutChar
+
+	ldx #0
+@6b:
+	txa
+	pha
+	tay
+	;lda	(r0), y
+	jsr	GetByte
+	jsr	PrintByteHex
+	lda	#' '
+	jsr	PutChar
+	pla
+	tax
+	inx
+	cpx	#20
+	bne	@6b
+
+	lda	#13
+	jsr	PutChar
+
+	MoveW r0, u_cl
+
+	clc
+	rts
 
 PrintRegs:
   LoadW r0, regsHeader
@@ -870,7 +1124,6 @@ EvalAddrExpr:
   rts
 
 @1:
-  jsr PutChar
   sec
   rts
 
@@ -880,7 +1133,9 @@ EvalHexWord:
   lda (r0), y
   beq @5
   cmp #$30
+  beq @7
   bcc @1
+@7:
   cmp #$3a
   bcs @3
   sec
@@ -980,11 +1235,46 @@ RestorePCBreakpoint:
   bne @2
   rts
 
+UpdatePCBreakpoint:
+
+  ldx #0
+@2:
+  lda breakList,x
+  ora breakList+1,x
+  beq @1
+
+  lda breakList,x
+  sta r1L
+  lda breakList+1,x
+  sta r1H
+
+  ldy #0
+  tya
+  sta (r1), y
+  
+@1:
+  inx
+  inx
+  cpx #16
+  bne @2
+  rts
+
+trace:
+  .byte "Trace!", 13, 0
+
 syntaxError:
   .byte "Syntax Error!", 13, 0
+currentStack:
+	.byte	"Current Stack:", 13, "addr   byte word  return address", 13, 0
+lowMapLabel:
+	.byte	"Low map:  ", 0
+highMapLabel:
+	.byte	"High map: ", 0
 setbCommand:
   .byte "setb", 0
-  .byte "superdebugger!"
+stackCommand:
+  .byte "stack", 0
+  .byte "sup!"
 foundAndSet:
   .byte "found and set", 13, 0
 
@@ -1056,7 +1346,6 @@ DebugOpcode_GetLen:
 ; in: r0 - address of opcode
 ; out: r0 - point to next opcode
 DebugOpcode_Print:
-
   lda #'$'
   jsr PutChar
   lda r0H
@@ -1069,7 +1358,8 @@ DebugOpcode_Print:
   LoadB r2H,0
 
   ldy #0
-  lda (r0), Y
+  ;lda (r0), Y
+  jsr GetByte
   iny
   pha
 
@@ -1118,11 +1408,13 @@ DebugOpcode_Print:
   jsr PutChar
 
   ldy #2
-  lda (r0), Y
+  ;lda (r0), Y
+  jsr GetByte
   jsr PrintByteHex
 
   ldy #1
-  lda (r0), Y
+  ;lda (r0), Y
+  jsr GetByte
   jsr PrintByteHex
 
   jmp @done
@@ -1135,7 +1427,8 @@ DebugOpcode_Print:
   lda #'$'
   jsr PutChar
   ldy #1
-  lda (r0), Y
+  ;lda (r0), Y
+  jsr GetByte
   jsr PrintByteHex
   jmp @done
 @3:
@@ -1146,7 +1439,8 @@ DebugOpcode_Print:
   jsr PutChar
 
   ldy #1
-  lda (r0), Y
+  ;lda (r0), Y
+  jsr GetByte
   jsr PrintByteHex
 
   jmp @done
@@ -1159,7 +1453,8 @@ DebugOpcode_Print:
   jsr PutChar
 
   ldy #1
-  lda (r0), Y
+  ;lda (r0), Y
+  jsr GetByte
   jsr PrintByteHex
   lda #','
   jsr PutChar
@@ -1176,7 +1471,8 @@ DebugOpcode_Print:
   jsr PutChar
 
   ldy #1
-  lda (r0), Y
+  ;lda (r0), Y
+  jsr GetByte
   jsr PrintByteHex
   lda #','
   jsr PutChar
@@ -1192,11 +1488,13 @@ DebugOpcode_Print:
   jsr PutChar
 
   ldy #2
-  lda (r0), Y
+  ;lda (r0), Y
+  jsr GetByte
   jsr PrintByteHex
 
   ldy #1
-  lda (r0), Y
+  ;lda (r0), Y
+  jsr GetByte
   jsr PrintByteHex
   lda #','
   jsr PutChar
@@ -1213,11 +1511,13 @@ DebugOpcode_Print:
   jsr PutChar
 
   ldy #2
-  lda (r0), Y
+  ;lda (r0), Y
+  jsr GetByte
   jsr PrintByteHex
 
   ldy #1
-  lda (r0), Y
+  ;lda (r0), Y
+  jsr GetByte
   jsr PrintByteHex
   lda #','
   jsr PutChar
@@ -1239,8 +1539,82 @@ DebugOpcode_Print:
   lda r0H
   adc #0
   sta r0H
-
   rts
+
+GetByte:
+  PushW r0
+  clc 
+  tya
+  adc r0L
+  sta r0L
+  lda r0H
+  adc #0
+  sta r0H
+
+  CmpWI r0, r0
+  bne @a1
+  lda saveR0
+  bra @3
+@a1:
+  CmpWI r0, r0+1
+  bne @a2
+  lda saveR0+1
+  bra @3
+@a2:
+
+	CmpWI	r0, $800
+	bcc	@a3	
+	CmpWI	r0, $800+80*25
+	beq	@a3
+	bcs	@a3
+
+	SubVW	$800, r0
+	lda	#<consoleBuf
+	clc
+	adc	r0L
+	sta	r0L
+	lda	#>consoleBuf
+	adc	r0H
+	sta	r0H
+	ldy	#0
+	lda	(r0), y
+	bra	@3
+@a3:
+  ; check mapped area $6000-$7FFF
+
+
+  ldy #0
+@2:
+  lda breakList, y
+  ora breakList+1,y
+  beq @1
+
+  lda breakList+1, y
+  cmp r0H
+  bne @1
+  lda breakList, y
+  cmp r0L
+  bne @1
+
+  tya
+  lsr
+  tay
+  lda breakOpList, Y
+  bra @3
+
+@1:
+  iny
+  iny
+  cpy #16
+  bne @2
+
+  ldy #0
+  lda (r0), Y
+@3:
+  tay
+  PopW r0
+  tya
+  rts 
 
 Opcodes:
   .byte "BRK", 0
@@ -1514,3 +1888,66 @@ Opcodes:
   .byte "SBC", ABSX
   .byte "INC", ABSX
   .byte "BBS", ZP         ; BBS7
+
+ProcessMap:
+	LoadW	r0, lowMapLabel
+	jsr	PutString
+
+	ldy	stackPointer
+	lda	$101+STACK_OFFSET-2, y
+	sta	r0H
+
+
+	ldy	stackPointer
+	lda	$102+STACK_OFFSET-2, y
+	sta	r0L
+
+	lda	#$60
+	jsr	@1
+
+	LoadW	r0, highMapLabel
+	jsr	PutString
+
+	MoveB	highMapBnk, r0H
+	MoveB	highMap, r0L
+	lda	#$A0
+
+@1:
+	pha
+	lda	r0H
+	jsr	PrintByteHex
+
+	lda	#' '
+	jsr	PutChar
+
+	lda	r0L
+	jsr	PrintByteHex
+
+	lda	#' '
+	jsr	PutChar
+
+	asl	r0L
+	rol	r0H
+
+	pla
+	clc
+	adc	r0L
+	sta	r0L
+	lda	r0H
+	adc	#0
+	sta	r0H
+
+	lda	#'$'
+	jsr	PutChar
+	lda	r0H
+	jsr	PrintByteHex
+	lda	r0L
+	jsr	PrintByteHex
+	lda	#0
+	jsr	PrintByteHex
+
+	lda	#13
+	jsr	PutChar
+
+	clc
+	rts

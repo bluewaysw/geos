@@ -345,6 +345,8 @@ MapUnderlay:
     bne @1
     lda highMap
     sta lastHighMap
+    lda highMapBnk
+    sta lastHighMapBnk
     lda #0
     ldx #0
     jsr _MapHigh
@@ -374,11 +376,9 @@ UnmapUnderlay:
     tza
     pha
     dec countHighMap
-    lda countHighMap
-    cmp #0
     bne @1
     lda lastHighMap
-    ldx #0
+    ldx lastHighMapBnk
     jsr _MapHigh
     lda #0
     sta lastHighMap

@@ -242,15 +242,15 @@ _GetScanLine:
 	bne	@X2___
 	and	#%11100000
 @X2___:
-	add	#$00
+	add	#$c0
 	bcc	@Y2__
-	clc
+	sec
 	ror
-	ldx 	#1
+	ldx 	#0
 	bra	@Y1__
 
 @Y2__:
-	sec
+	clc
 	ror
 	ldx	#0
 @Y1__:
