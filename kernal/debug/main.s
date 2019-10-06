@@ -69,6 +69,24 @@ saveD015:
   .byte 0
 saveR0:
   .word 0
+saveD060:
+	.byte 0
+saveD061:
+	.byte 0
+saveD062:
+	.byte 0
+saveD063:
+	.byte 0
+saveD068:
+	.byte 0
+saveD069:
+	.byte 0
+saveD06A:
+	.byte 0
+saveD058:
+	.byte 0
+saveD05E:
+	.byte 0
 
 u_cl:
   .word 0
@@ -86,13 +104,13 @@ consoleBuf:
 	.endrep
 DebugMain:
 
-  ; on any entry?
-  tsx
-  stx stackPointer
-
-  MoveW IRQ_VECTOR, saveIRQ_VECTOR
-	LoadW IRQ_VECTOR, IRQHandler
-  cli
+	; on any entry?
+	tsx
+	stx	stackPointer
+	
+	MoveW	IRQ_VECTOR, saveIRQ_VECTOR
+	LoadW	IRQ_VECTOR, IRQHandler
+	
 
   ; correct PC after BRK
   ldy stackPointer
@@ -122,10 +140,12 @@ DebugMain:
   bne @2
   LoadB initialized, $FF
   jsr ClearConsole
+
   LoadW r0, welcome
   jsr PutString
 @2:
   ;jsr PrintRegs
+
 
   ldy stackPointer
   lda $107+STACK_OFFSET, y
@@ -133,12 +153,10 @@ DebugMain:
   lda $106+STACK_OFFSET, y
   sta r0L
   jsr DebugOpcode_Print
+  cli
 
 @HOHO:
-  LoadW r0, promptBuf
-  LoadB promptLen, 0
-  ldx #100
-  jsr Prompt 
+  jsr Prompt
 
   ; handle the entry
   jsr ProcessPrompt
@@ -163,7 +181,7 @@ DebugMain:
 
   rts
 
-welcome:  .byte "SuperDebugger V6.0",13,"(C) 2019", 13, 13, 0
+welcome:  .byte "SuperDebugger V6.0",13,"(C) 2019 blueway.Softworks", 13, 13, 0
 
 ClearConsole:
   ldx #0
@@ -369,6 +387,7 @@ Prompt:
   jsr PutChar
   jsr EnterConsole
 
+	
   MoveB promptLen, promptLenOld
   LoadB promptLen, 0
 
@@ -427,46 +446,52 @@ GetKeyPress:
   ; wait to receive next key press from buffer
   jsr _GetNextChar
 
-
   rts
 
 IRQHandler:
-
 	cld
-  pha
+	pha
 	txa
 	pha
 	tya
 	pha
 
+	PushB CPU_DATA
+	LoadB CPU_DATA, IO_IN
 	ldx #0
 @2:	
-  lda r0,x
+	lda r0,x
 	pha
 	inx
 	cpx #32
 	bne @2
 
-  jsr _DoKeyboardScan
 
-  lda cursorCount
-  beq @7
-  dec cursorCount
+ 	jsr _DoKeyboardScan
+
+	lda #1
+	sta $D019
+	
+	lda cursorCount
+	beq @7
+	ldx #0
+	dec cursorCount
 @7:
-
 	ldx #31
 @6:	
-  pla
+	pla
 	sta r0,x
 	dex
 	bpl @6
 
-  pla
-  tay
-  pla
-  tax
-  pla
-  rti
+	PopB	CPU_DATA
+	pla
+	tay
+	pla
+	tax
+	pla
+
+	rti
 
 CursorOn:
   LoadB cursorBlinks, $FF
@@ -991,44 +1016,80 @@ colloop:
   bne @do
   rts
 @do:
-  ; video ram @ 0800, chargen @1800
-  MoveB $d018, saveD018
-  lda #$26
-  sta $d018
+	MoveB	$D063, saveD063
+	MoveB	$D060, saveD060
+	MoveB	$D061, saveD061
+	MoveB	$D062, saveD062
 
-  ;; Set DDR on CIA2 for IEC bus, VIC-II banking
-  MoveB $DD00, saveDD00
-  lda $DD00
-  and #%11111100
-  ora #%00000011 ; bank in $0000-$4000
-  sta $DD00
+	LDA	#<$0800
+	STA	$D060
+	LDA	#>$0800
+	STA	$D061
+	LDA	#<0
+	STA	$D062
+	LDA	#>0
+	STA	$D063
+
+	MoveB	$D068, saveD068
+	MoveB	$D069, saveD069
+	MoveB	$D06A, saveD06A
+
+	LDA	#<$0800
+	STA	$D068
+	LDA	#>$0800
+	STA	$D069
+	LDA	#0
+	STA	$D06A
+		
+	MoveB	$D058, saveD058
+	MoveB	$D05E, saveD05E
+
+	LDA   #80
+	STA   $D058
+	STA   $D05E
+	
+	; video ram @ 0800, chargen @1800
+	MoveB $d018, saveD018
+	lda #$26
+	sta $d018
+
+	;; Set DDR on CIA2 for IEC bus, VIC-II banking
+	MoveB $DD00, saveDD00
+	lda $DD00
+	and #%11111100
+	ora #%00000011 ; bank in $0000-$4000
+	sta $DD00
 
 	;; Set up default IO values (Compute's Mapping the 64 p215)
-  MoveB $d011, saveD011
+	MoveB $d011, saveD011
 	lda #$1b    		; Enable text mode
 	sta $d011
-  MoveB $d016, saveD016
+	MoveB $d016, saveD016
 	lda #$c8		; 40 column etc
 	sta $d016
-  
-  MoveB $d031, saveD031
-  lda #%11000000
-  sta $d031
+
+	MoveB $d031, saveD031
+	lda #%11000000
+	sta $d031
 
 	;; Compute's Mapping the 64, p156
 	;; We use a different colour scheme of white text on all blue
-  
-  MoveB $d020, saveD020
-  MoveB $d021, saveD021
-  lda #$06
+
+	MoveB $d020, saveD020
+	MoveB $d021, saveD021
+	lda #$06
 	sta $D020
 	sta $D021
 
 	;; Turn off sprites
 	;; (observed hanging around after running programs and resetting)
-  MoveB $d015, saveD015
+	MoveB $d015, saveD015
 	lda #$00
 	sta $D015
+
+	lda	$D05D
+	and	#%01111111
+	sta	$D05D
 
   jsr SwapConsoleBuf
   LoadW consoleBufAddr, $0800
@@ -1050,6 +1111,16 @@ ExitConsole:
   MoveB saveD020, $d020
   MoveB saveD021, $d021
   MoveB saveD015, $d015
+
+  MoveB	saveD060, $D060 
+  MoveB	saveD061, $D061 
+  MoveB	saveD062, $D062 
+  MoveB	saveD063, $D063 
+  MoveB	saveD068, $D068 
+  MoveB	saveD069, $D069 
+  MoveB	saveD06A, $D06A 
+  MoveB	saveD058, $D058 
+  MoveB	saveD05E, $D05E 
 
   jsr SwapConsoleBuf
   LoadW consoleBufAddr, consoleBuf
