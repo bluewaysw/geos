@@ -150,7 +150,7 @@ ASSERT_NOT_BELOW_IO
 
 .ifdef debugger 
 _DebugStart:
-  brk
+        brk
 .endif
 	jsr MouseInit
 	lda #currentInterleave

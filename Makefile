@@ -3,7 +3,7 @@ VARIANT     ?= mega65
 DRIVE       ?= drvf011
 #INPUT       ?= megaphn
 #INPUT       ?= mse1531
-INPUT				?= joydrv
+INPUT      ?= joydrv
 
 AS           = ca65
 LD           = ld65

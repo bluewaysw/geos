@@ -11,6 +11,7 @@
 .include "c64.inc"
 
 .global _GetScanLine
+.global _GetScanLineExt
 .ifdef mega65
 .global InitScanLineTab
 .global LineTabH
@@ -27,8 +28,31 @@ BACK_SCR_BASE65         =       $9000
 
 .import _MapHigh
 .import _MapLow
+.import MapUnderlay
+.import UnmapUnderlay
 .endif
 
+; API call of this function in 80 col GEOS 128 compatibility
+; mode, should map $A000-$C000 to second background buffer
+; area.
+
+_GetScanLineExt:
+	bit	graphMode
+	bpl	_GetScanLine
+	
+	; if 80 col compat mode
+	jsr	MapUnderlay
+	jsr	GSC80
+	jsr	UnmapUnderlay
+	txa	
+	pha
+	ldx	#$00
+	lda	#$70
+	jsr	_MapHigh
+	pla
+	tax
+	rts
+	
 ;---------------------------------------------------------------
 ; GetScanLine_HR
 ;
@@ -126,6 +150,14 @@ _GetScanLine:
 .endif
 	tax		; scan line in x now
 
+	lda LineTabL,x
+	ora r6H
+	sta r5L
+	sta r6L
+	lda LineTabH,x
+	sta r5H
+	sta r6H
+
 	bbrf 7, dispBufferOn, @2 ; ST_WR_FORE
 
 
@@ -139,6 +171,7 @@ _GetScanLine:
 ;
 ; 	foreground only
 ;
+.if 0
 	lda LineTabL,x
 	ora r6H
 	sta r5L
@@ -147,13 +180,16 @@ _GetScanLine:
 .endif
 	lda LineTabH,x
 	sta r5H
+.endif
 .ifdef bsw128
 	jmp GSC80_6
 .else
+.if 0
 .ifdef wheels_size_and_speed
 	sta r6H
 .else
 	MoveW r5, r6
+.endif
 .endif
 
 .ifdef mega65
@@ -212,6 +248,7 @@ _GetScanLine:
 ; background only
 ;
 @2:
+.if 0
 	lda 	LineTabL,x
 	ora 	r6H
 	sta 	r5L
@@ -220,13 +257,16 @@ _GetScanLine:
 .endif
 	lda 	LineTabH,x
 	sta 	r5H
+.endif
 .ifdef bsw128
 	jmp 	GSC80_6
 .else
+.if 0
 .ifdef wheels_size_and_speed
 	sta 	r6H
 .else
 	MoveW 	r5, r6
+.endif
 .endif
 
 .ifdef mega65
@@ -287,6 +327,7 @@ _GetScanLine:
 ;
 
 @1:
+.if 0
 	lda LineTabL,x
 	ora r6H
 	sta r5L
@@ -294,6 +335,7 @@ _GetScanLine:
 	lda LineTabH,x
 	sta r5H
 	sta r6H
+.endif
 
 .ifdef mega65
 	; map foregroud and translate ptrs
@@ -366,7 +408,8 @@ _GetScanLine:
 	rts
 
 
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
+.segment "graph2nu"
 GSC80:
 	txa
 	pha

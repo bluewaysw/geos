@@ -98,7 +98,7 @@ next:	.WORD	0
 
 	LDA   $D054	;40 mhz
 	ORA   #$40
-	STA   $D054
+	;STA   $D054
 	lda   #$40
 	sta	  $d031
 

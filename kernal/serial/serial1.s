@@ -23,7 +23,8 @@ SerialNumber:
 	.word $FD8D
 .else
 	; This matches the serial in the cbmfiles.com GEOS64.D64
-	.word $58B5
+	;.word $58B5
+        .word $FD8D
 .endif
 .endif
 

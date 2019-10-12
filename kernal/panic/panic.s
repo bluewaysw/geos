@@ -110,7 +110,6 @@ StackPtr:
 _Panic:
 .ifdef debugger
 
-
   pha   ; flags
   lda tempIRQAcc
   pha

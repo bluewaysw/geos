@@ -1532,7 +1532,7 @@ DebugOpcode_Print:
   lda #'X'
   jsr PutChar
 
-  bra @done
+  jmp @done
 
 @5:
   cmp #ZPY
@@ -1550,7 +1550,7 @@ DebugOpcode_Print:
   lda #'Y'
   jsr PutChar
 
-  bra @done
+  jmp @done
 @6:
   cmp #ABSY
   bne @7
@@ -1572,11 +1572,11 @@ DebugOpcode_Print:
   lda #'Y'
   jsr PutChar
 
-  bra @done
+  jmp @done
 
 @7:
   cmp #ABSX
-  bne @done
+  bne @8
 
   lda #'$'
   jsr PutChar
@@ -1596,7 +1596,78 @@ DebugOpcode_Print:
   jsr PutChar
 
   bra @done
+@8:
+  cmp #BREL
+  bne @9
+  lda #'$'
+  jsr PutChar
 
+	PushW	r0
+
+
+	ldy #1
+        ;lda (r0), Y
+        jsr GetByte
+	pha
+	
+	clc
+	adc	r0L
+	sta	r0L
+	lda	r0H
+	adc	#0
+	sta	r0H
+
+	lda	r0L
+	clc
+	adc	#2
+	sta	r0L
+	lda	r0H
+	adc	#0
+	sta	r0H
+
+	pla
+	bpl	@8a
+	dec	r0H
+@8a:
+	lda	r0H
+	jsr	PrintByteHex
+	lda	r0L
+	jsr	PrintByteHex
+
+	PopW	r0
+
+	bra @done
+
+@9:
+	ldy	#'Y'
+	cmp	#INDY
+	beq	@9a
+	ldy	#'X'
+	cmp	#INDX
+	beq	@9a
+	ldy	#'Z'
+	cmp	#INDZ
+	bne	@10
+@9a:
+	tya
+	pha
+	lda	#'('
+	jsr	PutChar
+	lda	#'$'
+	jsr	PutChar
+
+	ldy 	#1
+	;lda 	(r0), Y
+	jsr 	GetByte
+	jsr	PrintByteHex
+	lda	#')'
+	jsr	PutChar
+	lda	#','
+	jsr	PutChar
+	pla
+	jsr	PutChar
+	bra 	@done
+@10:
 @done:
   lda #13
   jsr PutChar
