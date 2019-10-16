@@ -131,19 +131,24 @@ BitmapUpHelp:
 	adc scrFullCardsX
 @41:
 	and #$7f
+	bra @43
 @42:
-	bpl @4
+	lda r1L
+@43:
+	bpl @4	; not DOUBLE_B
 	bbrf 7, graphMode, @4
-	ldy #4  ; by 16
+	ldy #4  ; by 16, if DOBULE_B on C80
 @4:
     	and #$7F
+
+	; pure x in cards in
 @5:
 	asl a
 	rol r5H
 	dey
 	bne @5
 
-	pha
+	pha	; low offset
 	lda r5H
 	stx r5H
 	pha
