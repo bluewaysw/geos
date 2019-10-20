@@ -165,10 +165,10 @@ DebugMain:
 
   ; GO situation
 
+  jsr ExitConsole
+
   ; restore breakpoint at current PC
   jsr RestorePCBreakpoint
-
-  jsr ExitConsole
 
   PopW r3
   PopW r2
@@ -564,7 +564,9 @@ ProcessTrace:
 	MoveW 	r0, r1
 
 
+	jsr 	ExitConsole
 	jsr	SetupSingleStep
+	jsr 	EnterConsole
 
 	sec	
 	rts
@@ -688,8 +690,9 @@ ProcessPrompt:
 
   jsr EvalAddrExpr
   bcs @1
-
+  jsr ExitConsole
   jsr SetBreakpoint
+  jsr EnterConsole
 
   clc
   rts
@@ -1696,33 +1699,13 @@ GetByte:
   CmpWI r0, r0
   bne @a1
   lda saveR0
-  bra @3
+  jmp @3
 @a1:
   CmpWI r0, r0+1
   bne @a2
   lda saveR0+1
   bra @3
 @a2:
-
-	CmpWI	r0, $800
-	bcc	@a3	
-	CmpWI	r0, $800+80*25
-	beq	@a3
-	bcs	@a3
-
-	SubVW	$800, r0
-	lda	#<consoleBuf
-	clc
-	adc	r0L
-	sta	r0L
-	lda	#>consoleBuf
-	adc	r0H
-	sta	r0H
-	ldy	#0
-	lda	(r0), y
-	bra	@3
-@a3:
-  ; check mapped area $6000-$7FFF
 
 
   ldy #0
@@ -1749,6 +1732,28 @@ GetByte:
   iny
   cpy #16
   bne @2
+
+	CmpWI 	consoleBufAddr, $800
+	bne     @a3
+	CmpWI	r0, $800
+	bcc	@a3	
+	CmpWI	r0, $800+80*25
+	beq	@a3
+	bcs	@a3
+
+	SubVW	$800, r0
+	lda	#<consoleBuf
+	clc
+	adc	r0L
+	sta	r0L
+	lda	#>consoleBuf
+	adc	r0H
+	sta	r0H
+	ldy	#0
+	lda	(r0), y
+	bra	@3
+@a3:
+  ; check mapped area $6000-$7FFF
 
   ldy #0
   lda (r0), Y

@@ -777,7 +777,11 @@ PutDirHead:
 NxtBlkAlloc:
 	jmp (_NxtBlkAlloc)
 ImprintRectangle:
+.ifdef mega65
+	jmp __io_ImprintRectangle
+.else
 	jmp _ImprintRectangle
+.endif
 i_ImprintRectangle:
 	jmp _i_ImprintRectangle
 DoDlgBox:
@@ -989,6 +993,12 @@ ColorRectangle:
 .elseif .defined(mega65)
 
 .macro UNIMPLEMENTED
+	brk
+	nop
+	nop
+.endmacro
+
+.macro UNIMPLEMENTED_NO_ACTION
 	rts
 	nop
 	nop
@@ -996,7 +1006,7 @@ ColorRectangle:
 
 ; C128 syscalls
 TempHideMouse:
-	UNIMPLEMENTED
+	UNIMPLEMENTED_NO_ACTION
 SetMsePic:
 	UNIMPLEMENTED
 SetNewMode:
@@ -1005,7 +1015,7 @@ SetNewMode:
 NormalizeX:
 	jmp _NormalizeX
 MoveBData:
-	UNIMPLEMENTED
+	jmp _MoveBData
 SwapBData:
 	UNIMPLEMENTED
 VerifyBData:
@@ -1015,7 +1025,7 @@ DoBOp:
 AccessCache:
 	UNIMPLEMENTED
 HideOnlyMouse:
-	UNIMPLEMENTED
+	UNIMPLEMENTED_NO_ACTION
 SetColorMode:
 	UNIMPLEMENTED
 ColorCard:

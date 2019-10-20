@@ -17,6 +17,7 @@
 .global LineTabH
 .global LineTabL
 .global _GetScanLine_HR
+.global _EndScanLine
 .endif
 
 .segment "graph2n"
@@ -45,12 +46,19 @@ _GetScanLineExt:
 	jsr	GSC80
 	jsr	UnmapUnderlay
 	txa	
+_EndScanLine:
+	bit	graphMode
+	bpl	@1
 	pha
 	ldx	#$00
 	lda	#$70
 	jsr	_MapHigh
+	ldx #$00
+	lda #$60
+	jsr _MapLow
 	pla
 	tax
+@1:
 	rts
 	
 ;---------------------------------------------------------------
@@ -171,26 +179,9 @@ _GetScanLine:
 ;
 ; 	foreground only
 ;
-.if 0
-	lda LineTabL,x
-	ora r6H
-	sta r5L
-.ifdef wheels_size_and_speed
-	sta r6L
-.endif
-	lda LineTabH,x
-	sta r5H
-.endif
 .ifdef bsw128
 	jmp GSC80_6
 .else
-.if 0
-.ifdef wheels_size_and_speed
-	sta r6H
-.else
-	MoveW r5, r6
-.endif
-.endif
 
 .ifdef mega65
 	; map foregroud and translate ptrs
@@ -227,47 +218,23 @@ _GetScanLine:
 @X2:
 	add	#$a0
 	sta 	r5H
-	sta	r6H
-
-	pla
-	taz
-	pla
-	tay
-
-.endif
+	bra	gslend
+.else
 
 	pla
 	tax
-.ifdef mega65
 	PopB	CPU_DATA
-.endif
 	rts
+.endif
 .endif
 
 ;
 ; background only
 ;
 @2:
-.if 0
-	lda 	LineTabL,x
-	ora 	r6H
-	sta 	r5L
-.ifdef wheels_size_and_speed
-	sta 	r6L
-.endif
-	lda 	LineTabH,x
-	sta 	r5H
-.endif
 .ifdef bsw128
 	jmp 	GSC80_6
 .else
-.if 0
-.ifdef wheels_size_and_speed
-	sta 	r6H
-.else
-	MoveW 	r5, r6
-.endif
-.endif
 
 .ifdef mega65
 ; map foregroud and translate ptrs
@@ -304,21 +271,13 @@ _GetScanLine:
 @X2__:
 	add	#$60
 	sta 	r5H
-	sta	r6H
-
-	pla
-	taz
-	pla
-	tay
-
-.endif
+	bra 	gslend
+.else
 
 	pla
 	tax
-.ifdef mega65
-	PopB	CPU_DATA
-.endif
 	rts
+.endif
 .endif
 
 
@@ -327,16 +286,6 @@ _GetScanLine:
 ;
 
 @1:
-.if 0
-	lda LineTabL,x
-	ora r6H
-	sta r5L
-	sta r6L
-	lda LineTabH,x
-	sta r5H
-	sta r6H
-.endif
-
 .ifdef mega65
 	; map foregroud and translate ptrs
 	tya
@@ -392,20 +341,24 @@ _GetScanLine:
 	add	#$a0
 	sta 	r5H
 	sub 	#$40
+gslend:	
 	sta	r6H
+
 	pla
 	taz
 	pla
 	tay
 
-.endif
+	pla
+	tax
+	PopB	CPU_DATA
+	rts
+.else
 
 	pla
 	tax
-.ifdef mega65
-	PopB	CPU_DATA
-.endif
 	rts
+.endif
 
 
 .if .defined(bsw128) || .defined(mega65)

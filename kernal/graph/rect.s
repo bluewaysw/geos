@@ -199,9 +199,6 @@ _NormRect:
 	ldy	#r2H
 	jmp 	_NormalizeY
 
-	.repeat	5
-		.byte 0
-	.endrep
 ;---------------------------------------------------------------
 ; FrameRectangle                                          $C127
 ;

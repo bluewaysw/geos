@@ -65,6 +65,7 @@
 .import __CRC
 .import _SetNewMode
 .import _GetRealSize
+.import _EndScanLine
 
 .global _map_FollowChain
 .global _map_FindFTypes
@@ -326,7 +327,8 @@ __unmap:
 _map_SetNewMode:
     jsr MapUnderlay
     jsr _SetNewMode
-    bra __unmap
+    jsr UnmapUnderlay
+    jmp _EndScanLine
 _map_GetRealSize:
     jsr MapUnderlay
     jsr _GetRealSize

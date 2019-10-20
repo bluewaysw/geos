@@ -15,6 +15,7 @@
 .ifdef bsw128
 .import _TempHideMouse
 .endif
+.import _EndScanLine
 
 .global _BitOtherClip
 .global _BitmapClip
@@ -113,7 +114,7 @@ BitmClp1:
 .ifdef bsw128
 	PopB rcr
 .endif
-	rts
+	jmp _EndScanLine
 
 BitmHelpClp:
 	cmp #0

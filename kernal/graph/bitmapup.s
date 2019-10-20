@@ -11,6 +11,7 @@
 .include "c64.inc"
 
 .import _GetScanLine
+.import _EndScanLine
 .ifdef bsw128
 .import _TempHideMouse
 ; XXX wrong bank
@@ -95,7 +96,7 @@ _BitmapUp:
 .ifdef bsw128
 	PopB rcr
 .endif
-	rts
+	jmp _EndScanLine
 
 BitmapUpHelp:
 	ldy r1H

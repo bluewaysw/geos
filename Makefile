@@ -181,7 +181,8 @@ ifeq ($(VARIANT), mega65)
 	kernal/graph/graph2p.s \
 	kernal/c65/map.s \
 	kernal/c65/iojmp.s \
-	kernal/128k/swapdiskdriver.s
+	kernal/128k/swapdiskdriver.s \
+	kernal/memory/backram.s 
 endif
 
 # code that is in C128 back bank
@@ -365,7 +366,7 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite GW128.CVT | $(C1541) $@ >/dev/null; \
-		echo geoswrite gpt64.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite GPT128.CVT | $(C1541) $@ >/dev/null; \
 		if [ -e $(DESKTOP_CVT) ]; then echo geoswrite $(DESKTOP_CVT) | $(C1541) $@; fi >/dev/null; \
 		echo \*\*\* Created fresh $@.; \
 	fi;

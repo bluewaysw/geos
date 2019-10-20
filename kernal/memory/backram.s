@@ -2,6 +2,7 @@
 ; reverse engineered by Maciej Witkowiak, Michael Steil
 ;
 ; C128 "Back-RAM" syscalls
+; for C128 M65 GEOS emulates back ram access
 
 .include "const.inc"
 .include "geossym.inc"
@@ -14,6 +15,13 @@
 .global _SwapBData
 .global _VerifyBData
 .global _DoBOp
+
+.ifdef mega65
+.import _StashRAM
+.import _FetchRAM
+.import MapUnderlay
+.import UnmapUnderlay
+.endif
 
 .segment "backram"
 
@@ -30,7 +38,11 @@
 ;---------------------------------------------------------------
 _MoveBData:
 	ldy #0
+.ifdef mega65
+	beq _map_DoBOp
+.else
 	beq _DoBOp
+.endif
 ;---------------------------------------------------------------
 ; SwapBData                                               $C2E6
 ;
@@ -44,7 +56,11 @@ _MoveBData:
 ;---------------------------------------------------------------
 _SwapBData:
 	ldy #2
-	bne _DoBOp
+.ifdef mega65
+	beq _map_DoBOp
+.else
+	beq _DoBOp
+.endif
 ;---------------------------------------------------------------
 ; VerifyBData                                             $C2E9
 ;
@@ -59,7 +75,20 @@ _SwapBData:
 ;---------------------------------------------------------------
 _VerifyBData:
 	ldy #3
-	bne _DoBOp
+.ifdef mega65
+	beq _map_DoBOp
+.else
+	beq _DoBOp
+.endif
+
+.ifdef mega65
+_map_DoBOp:
+    jsr MapUnderlay
+    jsr _DoBOp
+    jmp UnmapUnderlay
+.segment "backram_under"
+.endif
+
 ;---------------------------------------------------------------
 ; DoBOp                                                   $C2EC
 ;
@@ -75,6 +104,65 @@ _VerifyBData:
 ; Destroyed: a, y
 ;---------------------------------------------------------------
 _DoBOp:
+.ifdef mega65
+	cpy	#0
+	beq	@1
+	brk
+@1:
+	PushW r0
+	PushW r1
+	PushW r2
+	PushW r3
+
+	lda	r3L
+	cmp	#0		; bank 1
+	beq	@fetch
+
+	; r0 main mem src
+	; r1 REU address, normalized
+	LoadB	r3L, 5
+
+	lda	r1L
+	sec
+	sbc	#$00
+	sta	r1L
+	lda	r1H
+	sbc	#0
+	sta	r1H
+
+	jsr	_StashRAM
+	bra	@31
+@fetch:
+	; r0 main mem dest
+	; r1 REU address, normalized
+	LoadB	r3L, 5
+
+	ldy	r0L
+	lda	r1L
+	sta	r0L
+	sty	r1L
+	ldy	r0H
+	lda	r1H
+	sta	r0H
+	sty	r1H
+
+	lda	r1L
+	sec
+	sbc	#$00
+	sta	r1L
+	lda	r1H
+	sbc	#0
+	sta	r1H
+
+	jsr	_FetchRAM
+
+@31:	PopW r3
+	PopW r2
+	PopW r1
+	PopW r0
+	rts
+
+.else
 	PushB rcr
 	and #$F0
 	ora #$08
@@ -285,4 +373,5 @@ _DoBOp:
 	PopB config
 	PopB rcr
 	txa
+.endif
 	rts

@@ -95,18 +95,13 @@ StackPtr:
 
 	.byte 0, 0, 0 ; PADDING
 
-.else
+.else ; gateway
 ;---------------------------------------------------------------
 ; Panic                                                   $C2C2
 ;
 ; Pass:      nothing
 ; Return:    does not return
 ;---------------------------------------------------------------
-  .byte 0, 0, 0, 0, 0, 0, 0, 0
-  .byte 0, 0, 0, 0, 0, 0, 0, 0
-  .byte 0, 0, 0, 0, 0, 0, 0, 0
-  .byte 0, 0, 0, 0, 0, 0, 0, 0
-
 _Panic:
 .ifdef debugger
 
@@ -147,7 +142,7 @@ _Panic:
 
   rti
 
-.else
+.else ; debugger
 	inc $d020
 	bra _Panic
 .ifdef wheels
@@ -157,7 +152,7 @@ _Panic:
 	tay
 	pla
 	sbc #0
-.else
+.else ; wheels
 .ifdef mega65
 	;LoadB CPU_DATA, IO_IN
 @13:
@@ -166,7 +161,7 @@ _Panic:
 	;jsr UnmapUnderlay
 	;bra @13
 @12:
-.endif
+.endif ; mega65
 .ifdef bsw128
 	pla
 	pla
@@ -176,31 +171,31 @@ _Panic:
 	pla
 	pla
 	pla
-.endif
+.endif ; bsw128
 	;PopW r0
 .ifdef bsw128
 	ldx #r0
 	jsr Ddec
 	ldx #r0
 	jsr Ddec
-.else
+.else ; bsw128
 	SubVW 2, r0
-.endif
+.endif ; bsw128
 	;lda r0H
-.endif
+.endif ; mega65
 	;ldx #0
 	jsr @1
 .ifdef wheels
 	tya
-.else
+.else ; wheels
 	lda r0L
-.endif
+.endif ; wheels
 	jsr @1
 	LoadW r0, _PanicDB_DT
 	jsr DoDlgBox
 .ifdef wheels
 	jmp EnterDeskTop
-.endif
+.endif ; wheels
 @1:	;pha
 	;lsr
 	;lsr
@@ -228,9 +223,8 @@ _PanicDB_DT:
 	.word _PanicDB_Str
 .ifdef wheels
 	.byte DBSYSOPV
-.endif
+.endif ; wheels
 	.byte NULL
-.endif
 
 .segment "panic3"
 
@@ -247,3 +241,5 @@ _PanicDB_Str:
 _PanicAddr:
 	.byte "xxxx"
 	.byte NULL
+
+.endif ; debugger

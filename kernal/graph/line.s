@@ -37,6 +37,7 @@
 .import GetLeftXAddress
 .import _NormalizeY
 .import _GetScanLine_HR
+.import _EndScanLine
 .endif
 
 .global ImprintLine
@@ -265,7 +266,7 @@ _InvertLine:
 LineEnd:
 	PopW r4
 	PopW r3
-	rts
+	jmp _EndScanLine
 
 LineCommon:
 	sta r11H
@@ -869,7 +870,7 @@ _VerticalLine:
 	beq @1
 	bcc @1
 	PopB r4L
-	rts
+	jmp _EndScanLine
 
 .ifdef bsw128
 VLin80:

@@ -49,6 +49,7 @@ PrvCharWidth = $880D
 .import GetRealSize
 .endif
 .import _GetScanLine_HR
+.import _EndScanLine
 
 .global Font_9
 .global FontPutChar
@@ -1088,7 +1089,7 @@ FontPutChar:
 .ifdef mega65
 	PopB	CPU_DATA
 .endif
-	rts
+	jmp _EndScanLine
 
 .ifdef bsw128
 ; FontPutChar for 80 column mode
