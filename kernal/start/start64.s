@@ -145,7 +145,7 @@ ASSERT_NOT_BELOW_IO
 
 	; start with bank $6000-$8000 swapped out so we prevent debugger from beeing destroyed
 	ldx #$00
-	lda #$60
+	lda #$80
 	jsr _MapLow
 
 .ifdef debugger 

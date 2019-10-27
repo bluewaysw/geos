@@ -54,7 +54,7 @@ _EndScanLine:
 	lda	#$70
 	jsr	_MapHigh
 	ldx #$00
-	lda #$60
+	lda #$80
 	jsr _MapLow
 	pla
 	tax
@@ -261,17 +261,20 @@ _GetScanLine:
 	ror
 	ldx	#0
 @Y1__:
-	jsr	_MapLow
+	ldz	#0
+	bra 	gslend2
 
-	lda	r5H
-	and	#%00011111
-	ldx	graphMode
-	beq	@X2__
-	and	#%00000001
-@X2__:
-	add	#$60
-	sta 	r5H
-	bra 	gslend
+;	jsr	_MapLow
+
+;	lda	r5H
+;	and	#%00011111
+;	ldx	graphMode
+;	beq	@X2__
+;	and	#%00000001
+;@X2__:
+;	add	#$60
+;	sta 	r5H
+;	bra 	gslend
 .else
 
 	pla
@@ -330,6 +333,13 @@ _GetScanLine:
 	ror
 	ldx	#0
 @Y1___:
+	ldz	#$40
+gslend2:
+	stz	r6H
+	ldy	graphMode
+	bne	@Z1
+	lda	#$80
+@Z1:
     	jsr 	_MapLow
 
 	lda	r5H
@@ -338,9 +348,11 @@ _GetScanLine:
 	beq	@X2_
 	and 	#%00000001
 @X2_:
-	add	#$a0
+	add	#$60
+	add	r6H
 	sta 	r5H
-	sub 	#$40
+
+	sub 	r6H
 gslend:	
 	sta	r6H
 

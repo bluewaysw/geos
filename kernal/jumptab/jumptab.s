@@ -1008,7 +1008,7 @@ ColorRectangle:
 TempHideMouse:
 	UNIMPLEMENTED_NO_ACTION
 SetMsePic:
-	UNIMPLEMENTED
+	UNIMPLEMENTED_NO_ACTION
 SetNewMode:
 .import _SetNewMode
 	jmp _map_SetNewMode

@@ -69,6 +69,12 @@ saveD015:
   .byte 0
 saveR0:
   .word 0
+saveR1:
+	.word 0
+saveR2:
+	.word 0
+saveR3:
+	.word 0
 saveD060:
 	.byte 0
 saveD061:
@@ -130,8 +136,11 @@ DebugMain:
   PushW r0
   MoveW r0, saveR0
   PushW r1
+  MoveW r1, saveR1
   PushW r2
+  MoveW r2, saveR2
   PushW r3
+  MoveW r3, saveR3
 
   jsr ResetSingleStep
   jsr UpdatePCBreakpoint
@@ -1704,8 +1713,41 @@ GetByte:
   CmpWI r0, r0+1
   bne @a2
   lda saveR0+1
-  bra @3
+  jmp @3
 @a2:
+
+	CmpWI r0, r1
+	bne @a3_
+	lda saveR1
+	jmp @3
+@a3_:
+	CmpWI r0, r1+1
+	bne @a4
+	lda saveR1+1	
+	jmp @3
+@a4:
+
+	CmpWI r0, r2
+	bne @a5
+	lda saveR2
+	jmp @3
+@a5:
+	CmpWI r0, r2+1
+	bne @a6
+	lda saveR2+1
+	jmp @3
+@a6:
+
+	CmpWI r0, r3
+	bne @a7
+	lda saveR3
+	jmp @3
+@a7:
+	CmpWI r0, r3+1	
+	bne @a8
+	lda saveR3+1
+	jmp @3
+@a8:
 
 
   ldy #0
@@ -1725,7 +1767,7 @@ GetByte:
   lsr
   tay
   lda breakOpList, Y
-  bra @3
+  jmp @3
 
 @1:
   iny
@@ -1753,15 +1795,47 @@ GetByte:
 	lda	(r0), y
 	bra	@3
 @a3:
-  ; check mapped area $6000-$7FFF
+	; check mapped area $6000-$7FFF
+	CmpWI	r0, $6000
+	bcc	@b5	
+	CmpWI	r0, $8000
+	beq	@b5
+	bcs	@b5
 
-  ldy #0
-  lda (r0), Y
+	PushW	r0
+	PushW	r1
+
+	lda	r0L
+	sec
+	sbc	#$00
+	sta	r0L
+	lda	r0H
+	sbc	#$40
+	sta	r0H
+	lda	#1
+	sta	r1L
+	lda	#0
+	sta	r1H
+
+	LDZ	#0
+	EOM
+	lda 	(r0L), Z
+	tay
+	
+	PopW	r1
+	PopW	r0
+
+	tya
+	
+	bra	@3
+@b5:
+	ldy #0
+	lda (r0), Y
 @3:
-  tay
-  PopW r0
-  tya
-  rts 
+	tay
+	PopW r0
+	tya
+	rts 
 
 Opcodes:
   .byte "BRK", 0

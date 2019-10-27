@@ -108,7 +108,7 @@ _InvertRectangle:
 	PushW	r2
 	PushB	r3H
 	PushB	r4H
-	PushB	r5H
+	;PushB	r5H
 
 	jsr _NormRect
 
@@ -141,7 +141,7 @@ _InvertRectangle:
 	bra	@1
 
 @3:
-	PopB  	r5H
+	;PopB  	r5H
 	PopB  	r4H
 	PopB	r3H
 	PopW	r2
@@ -212,6 +212,10 @@ _NormRect:
 ;---------------------------------------------------------------
 _FrameRectangle:
 	sta r9H
+	PushW	r2
+	PushW	r3
+	PushB	r4H
+	;PushB	r5H
 
 	jsr _NormRect
 
@@ -222,7 +226,7 @@ _FrameRectangle:
 	MoveB r2H, r11L
 	lda r9H
 	jsr _HorizontalLine
-	PushW r3
+	;PushW r3
 	PushW r4
 	MoveW r3, r4
 	MoveW r2, r3
@@ -231,5 +235,8 @@ _FrameRectangle:
 	PopW r4
 	lda r9H
 	jsr _VerticalLine
-	PopW r3
+	;PopW r3
+	PopB	r4H
+	PopW	r3
+	PopW	r2
 	rts
