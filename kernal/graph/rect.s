@@ -212,12 +212,12 @@ _NormRect:
 ;---------------------------------------------------------------
 _FrameRectangle:
 	sta r9H
+	
+	jsr _NormRect
 	PushW	r2
 	PushW	r3
 	PushB	r4H
 	;PushB	r5H
-
-	jsr _NormRect
 
 	ldy r2L
 	sty r11L
@@ -236,6 +236,7 @@ _FrameRectangle:
 	lda r9H
 	jsr _VerticalLine
 	;PopW r3
+	
 	PopB	r4H
 	PopW	r3
 	PopW	r2

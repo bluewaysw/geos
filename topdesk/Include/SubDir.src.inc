@@ -1141,8 +1141,11 @@ CLS:	ldy	#r15H-r0L
 	lda	c128Flag
 	bpl	@64
 	jsr	i_Rectangle
-	.byte	0,199
-	.word	0,319  ;|DOUBLE_W|ADD1_W
+;	.byte	0,199
+	.byte	0,0
+;	.word	0,319  ;|DOUBLE_W|ADD1_W
+	.word   0, SC_FROM_END+0 + (((SC_FROM_END|0) >> 8) << 12)  
+
 	rts
 @64:	jsr	i_Rectangle
 	.byte	0,199

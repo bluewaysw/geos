@@ -47,7 +47,7 @@ MyName:	.byte	"Dos",0,0,0,0,0,0,0,0,0,0,0,0,0
 .ifdef topdesk128
 .ifdef topdesk13
 .ifdef mega65
-MyClass:	.byte	"TopDesk65   V1.3",0
+MyClass:	.byte	"TopDesk65   V6.0",0
 .else
 MyClass:	.byte	"TopDesk128  V1.3",0
 .endif

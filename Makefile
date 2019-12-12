@@ -376,7 +376,8 @@ ifeq ($(VARIANT), mega65)
 
 $(BUILD_DIR)/topdesk/topdesk.o:
 	@mkdir -p `dirname $@`
-	$(GRC) -s $(BUILD_DIR)/topdesk/topdesk.s -o $(BUILD_DIR)/topdesk/topdesk.c topdesk/topdesk65.grc
+	$(GRC) -s $(BUILD_DIR)/topdesk/topdesk.s2 -o $(BUILD_DIR)/topdesk/topdesk.c2 topdesk/topdesk65.grc
+	sed 's/192/1/g' $(BUILD_DIR)/topdesk/topdesk.s2 > $(BUILD_DIR)/topdesk/topdesk.s
 	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/topdesk/topdesk.s -o $@
 else
 
@@ -389,7 +390,8 @@ endif
 ifeq ($(VARIANT), mega65)
 $(BUILD_DIR)/configure/configure.o:
 	@mkdir -p `dirname $@`
-	$(GRC) -s $(BUILD_DIR)/configure/configure.s -o $(BUILD_DIR)/configure/configure.c configure/configure65.grc
+	$(GRC) -s $(BUILD_DIR)/configure/configure.s2 -o $(BUILD_DIR)/configure/configure.c2 configure/configure65.grc
+	sed 's/192/1/g' $(BUILD_DIR)/configure/configure.s2 > $(BUILD_DIR)/configure/configure.s
 	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/configure/configure.s -o $@
 
 else

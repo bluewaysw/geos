@@ -82,12 +82,20 @@ vdcdata = $d601
 
 L6819           = $6819
 
+.ifdef mega65
+CFG_DOUBLE_W    = 0
+CFG_ADD1_W      = 0
+.else
+CFG_DOUBLE_W    = DOUBLE_W
+CFG_ADD1_W      = ADD1_W
+.endif
+
 ; ----------------------------------------------------------------------------
 AreaTable:
 ;#0
         .byte   $69, $c4
 .ifdef config128
-        .word   $b4 + DOUBLE_W, $136 + DOUBLE_W
+        .word   $b4 + CFG_DOUBLE_W, $136 + CFG_DOUBLE_W
 .else
         .word   $b4, $136
 .endif
@@ -95,7 +103,7 @@ AreaTable:
 ;#1
         .byte   $85, $8f
 .ifdef config128
-        .word   $011e + DOUBLE_W, $0130 + DOUBLE_W
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
 .else
         .word   $011e, $0130
 .endif
@@ -103,7 +111,7 @@ AreaTable:
 ;#2
         .byte   $A1, $AB
 .ifdef config128
-        .word   $011e + DOUBLE_W, $0130 + DOUBLE_W
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
 .else
         .word   $011e, $0130
 .endif
@@ -112,7 +120,7 @@ AreaTable:
         .byte   $07
         .byte   $62                             ; 13C4 62                       b
 .ifdef config128
-        .word   $1e+DOUBLE_W, $a0+DOUBLE_W
+        .word   $1e+CFG_DOUBLE_W, $a0+CFG_DOUBLE_W
 .else
         .word   $1e, $a0
 .endif
@@ -121,7 +129,7 @@ AreaTable:
         .byte   $07                             ; 13C9 07                       .
         .byte   $62                             ; 13CA 62                       b
 .ifdef config128
-        .word   $b4 + DOUBLE_W, $136 + DOUBLE_W
+        .word   $b4 + CFG_DOUBLE_W, $136 + CFG_DOUBLE_W
 .else
         .word   $b4, $136
 .endif
@@ -129,7 +137,7 @@ AreaTable:
 ;#5
         .byte   $69, $c4
 .ifdef config128
-        .word   $1e + DOUBLE_W, $a0 + DOUBLE_W
+        .word   $1e + CFG_DOUBLE_W, $a0 + CFG_DOUBLE_W
 .else
         .word   $1e, $a0
 .endif
@@ -137,7 +145,7 @@ AreaTable:
 ;#6
         .byte   $17, $21                             ; 13D5 17                       .
 .ifdef config128
-        .word   $88 + DOUBLE_W, $9a + DOUBLE_W
+        .word   $88 + CFG_DOUBLE_W, $9a + CFG_DOUBLE_W
 .else
         .word   $88, $9a
 .endif
@@ -146,7 +154,7 @@ AreaTable:
         .byte   $23                             ; 13DB 23                       #
         .byte   $2d
 .ifdef config128
-        .word   $88 + DOUBLE_W, $9a + DOUBLE_W
+        .word   $88 + CFG_DOUBLE_W, $9a + CFG_DOUBLE_W
 .else
         .word   $88, $9a
 .endif
@@ -155,7 +163,7 @@ AreaTable:
         .byte   $2F                             ; 13E1 2F                       /
         .byte   $39
 .ifdef config128
-        .word   $88 + DOUBLE_W, $9a + DOUBLE_W
+        .word   $88 + CFG_DOUBLE_W, $9a + CFG_DOUBLE_W
 .else
         .word   $88, $9a
 .endif
@@ -164,7 +172,7 @@ AreaTable:
         .byte   $3B                             ; 13E7 3B                       ;
         .byte   $45
 .ifdef config128
-        .word   $88 + DOUBLE_W, $9a + DOUBLE_W
+        .word   $88 + CFG_DOUBLE_W, $9a + CFG_DOUBLE_W
 .else
         .word   $88, $9a
 .endif
@@ -172,7 +180,7 @@ AreaTable:
 ;#10
         .byte   $47, $51
 .ifdef config128
-        .word   $88 + DOUBLE_W, $9a + DOUBLE_W
+        .word   $88 + CFG_DOUBLE_W, $9a + CFG_DOUBLE_W
 .else
         .word   $88, $9a
 .endif
@@ -180,7 +188,7 @@ AreaTable:
 ;#11
         .byte   $53, $5d                             ; 13F3 53
 .ifdef config128
-        .word   $88 + DOUBLE_W, $9a + DOUBLE_W
+        .word   $88 + CFG_DOUBLE_W, $9a + CFG_DOUBLE_W
 .else
         .word   $88, $9a
 .endif
@@ -188,7 +196,7 @@ AreaTable:
 ;#12
         .byte   $17, $21                             ; 13F9 17
 .ifdef config128
-        .word   $011e + DOUBLE_W, $0130 + DOUBLE_W
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
 .else
         .word   $011e, $0130
 .endif
@@ -196,7 +204,7 @@ AreaTable:
 ;#13
         .byte   $23, $2d
 .ifdef config128
-        .word   $011e + DOUBLE_W, $0130 + DOUBLE_W
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
 .else
         .word   $011e, $0130
 .endif
@@ -204,7 +212,7 @@ AreaTable:
 ;#14
         .byte   $2F, $39                             ; 1405 2F                       /
 .ifdef config128
-        .word   $011e + DOUBLE_W, $0130 + DOUBLE_W
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
 .else
         .word   $011e, $0130
 .endif
@@ -212,7 +220,7 @@ AreaTable:
 ;#15
         .byte   $3B, $45                             ; 140B 3B                       ;
 .ifdef config128
-        .word   $011e + DOUBLE_W, $0130 + DOUBLE_W
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
 .else
         .word   $011e, $0130
 .endif
@@ -220,7 +228,7 @@ AreaTable:
 ;#16
         .byte   $47, $51
 .ifdef config128
-        .word   $011e + DOUBLE_W, $0130 + DOUBLE_W
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
 .else
         .word   $011e, $0130
 .endif
@@ -228,7 +236,7 @@ AreaTable:
 ;#17
         .byte   $53, $5d
 .ifdef config128
-        .word   $011e + DOUBLE_W, $0130 + DOUBLE_W
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
 .else
         .word   $011e, $0130
 .endif
@@ -236,7 +244,7 @@ AreaTable:
 ;#18
         .byte   $79, $83                             ; 141D 79                       y
 .ifdef config128
-        .word   $88 + DOUBLE_W, $9a + DOUBLE_W
+        .word   $88 + CFG_DOUBLE_W, $9a + CFG_DOUBLE_W
 .else
         .word   $88, $9a
 .endif
@@ -244,7 +252,7 @@ AreaTable:
 ;#19
         .byte   $85, $8f
 .ifdef config128
-        .word   $88 + DOUBLE_W, $9a + DOUBLE_W
+        .word   $88 + CFG_DOUBLE_W, $9a + CFG_DOUBLE_W
 .else
         .word   $88, $9a
 .endif
@@ -252,7 +260,7 @@ AreaTable:
 ;#20
         .byte   $91, $9b
 .ifdef config128
-        .word   $88 + DOUBLE_W, $9a + DOUBLE_W
+        .word   $88 + CFG_DOUBLE_W, $9a + CFG_DOUBLE_W
 .else
         .word   $88, $9a
 .endif
@@ -260,7 +268,7 @@ AreaTable:
 ;#21
         .byte   $9d, $a7
 .ifdef config128
-        .word   $88 + DOUBLE_W, $9a + DOUBLE_W
+        .word   $88 + CFG_DOUBLE_W, $9a + CFG_DOUBLE_W
 .else
         .word   $88, $9a
 .endif
@@ -268,7 +276,7 @@ AreaTable:
 ;#22
         .byte   $a9, $b3
 .ifdef config128
-        .word   $88 + DOUBLE_W, $9a + DOUBLE_W
+        .word   $88 + CFG_DOUBLE_W, $9a + CFG_DOUBLE_W
 .else
         .word   $88, $9a
 .endif
@@ -276,7 +284,7 @@ AreaTable:
 ;#23
         .byte   $b5, $bf
 .ifdef config128
-        .word   $88 + DOUBLE_W, $9a + DOUBLE_W
+        .word   $88 + CFG_DOUBLE_W, $9a + CFG_DOUBLE_W
 .else
         .word   $88, $9a
 .endif
@@ -354,11 +362,19 @@ L14A6:  lda     driveType,y                     ; 14A6 B9 8E 84                 
         .byte   0
         .byte   RECTANGLETO
 .ifdef config128
-        .word   319 + DOUBLE_W + ADD1_W
+.ifdef mega65
+        .word   SC_FROM_END+0 + (((SC_FROM_END|0) >> 8) << 12)  
+.else
+        .word   319 + CFG_DOUBLE_W + CFG_ADD1_W
+.endif
 .else
         .word   319
 .endif
+.ifdef mega65
+        .byte   0
+.else
         .byte   199
+.endif
         .byte   NULL
 
 .ifdef config128
@@ -596,7 +612,7 @@ L16A2:  ldy     #$03                            ; 16A2 A0 03                    
         lda     #$13                            ; 16AF A9 13                    ..
         sta     r1H                             ; 16B1 85 05                    ..
 .ifdef config128
-        LoadW   r11, $4F + DOUBLE_W
+        LoadW   r11, $4F + CFG_DOUBLE_W
 .else
         LoadW   r11, $4F
 .endif
@@ -611,7 +627,7 @@ L16CC:  ldy     #$04                            ; 16CC A0 04                    
         lda     #$13                            ; 16D9 A9 13                    ..
         sta     r1H                             ; 16DB 85 05                    ..
 .ifdef config128
-        LoadW   r11, $E5 + DOUBLE_W
+        LoadW   r11, $E5 + CFG_DOUBLE_W
 .else
         LoadW   r11, $E5
 .endif
@@ -626,7 +642,7 @@ L16F6:  ldy     #$05                            ; 16F6 A0 05                    
         lda     #$75                            ; 1703 A9 75                    .u
         sta     r1H                             ; 1705 85 05                    ..
 .ifdef config128
-        LoadW   r11, $4F + DOUBLE_W
+        LoadW   r11, $4F + CFG_DOUBLE_W
 .else
         LoadW   r11, $4F
 .endif
@@ -674,7 +690,7 @@ L1761:
         lda     #$A4                            ; 1769 A9 A4                    ..
         sta     r1H                             ; 176B 85 05                    ..
 .ifdef config128
-        LoadW   r11, $BE + DOUBLE_W
+        LoadW   r11, $BE + CFG_DOUBLE_W
 .else
         LoadW   r11, $BE
 .endif
@@ -683,7 +699,7 @@ L1761:
         lda     #$B2                            ; 1780 A9 B2                    ..
         sta     r1H                             ; 1782 85 05                    ..
 .ifdef config128
-        LoadW   r11, $BE + DOUBLE_W
+        LoadW   r11, $BE + CFG_DOUBLE_W
 .else
         LoadW   r11, $BE
 .endif
@@ -710,7 +726,7 @@ L17B2:
         lda     #$8D                            ; 17BA A9 8D                    ..
         sta     r1H                             ; 17BC 85 05                    ..
 .ifdef config128
-        LoadW   r11, $BE + DOUBLE_W
+        LoadW   r11, $BE + CFG_DOUBLE_W
 .else
         LoadW   r11, $BE
 .endif
@@ -796,7 +812,7 @@ L1873:  LoadW   r0, RAMExpStr
         lda     #$75                            ; 187B A9 75                    .u
         sta     r1H                             ; 187D 85 05                    ..
 .ifdef config128
-        LoadW   r11, $BE + DOUBLE_W
+        LoadW   r11, $BE + CFG_DOUBLE_W
 .else
         LoadW   r11, $BE
 .endif
