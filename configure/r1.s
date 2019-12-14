@@ -289,6 +289,55 @@ AreaTable:
         .word   $88, $9a
 .endif
 
+;#24
+        .byte   $79, $83                             ; 141D 79                       y
+.ifdef config128
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
+.else
+        .word   $011e, $9a
+.endif
+
+;#25
+        .byte   $85, $8f
+.ifdef config128
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
+.else
+        .word   $011e, $9a
+.endif
+
+;#26
+        .byte   $91, $9b
+.ifdef config128
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
+.else
+        .word   $011e, $9a
+.endif
+
+;#27
+        .byte   $9d, $a7
+.ifdef config128
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
+.else
+        .word   $011e, $9a
+.endif
+
+;#28
+        .byte   $a9, $b3
+.ifdef config128
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
+.else
+        .word   $011e, $9a
+.endif
+
+;#29
+        .byte   $b5, $bf
+.ifdef config128
+        .word   $011e + CFG_DOUBLE_W, $0130 + CFG_DOUBLE_W
+.else
+        .word   $011e, $9a
+.endif
+
+
 
 L1441:  LoadW   r0, AreaTable
         cpy     #$00                            ; 1449 C0 00                    ..
@@ -484,10 +533,11 @@ L1590:  jsr     L16A2                           ; 1590 20 A2 16                 
         jsr     L16CC                           ; 1593 20 CC 16                  ..
         lda     ramExpSize                      ; 1596 AD C3 88                 ...
         beq     L159E                           ; 1599 F0 03                    ..
-        jsr     L16F6                           ; 159B 20 F6 16                  ..
-L159E:  ldy     #$00                            ; 159E A0 00                    ..
-        jsr     L15AA                           ; 15A0 20 AA 15                  ..
-        jsr     L1752                           ; 15A3 20 52 17                  R.
+        jsr     L16F6                           ; 159B 20 F6 16     
+	jsr	RenderDriveD             
+L159E:  ;ldy     #$00                            ; 159E A0 00                    ..
+        ;jsr     L15AA                           ; 15A0 20 AA 15                  ..
+        ;jsr     L1752                           ; 15A3 20 52 17                  R.
         jsr     ExitTurbo                       ; 15A6 20 32 C2                  2.
         rts                                     ; 15A9 60                       `
 ; ----------------------------------------------------------------------------
@@ -589,6 +639,10 @@ DriveCStr:
         .byte   $18                         ; 1672 00 18                    ..
         .byte   "Drive C"                       ; 1674 44 72 69 76 65 20 43     Drive C
         .byte   $00                             ; 167B 00                       .
+DriveDStr:
+        .byte   $18
+        .byte   "Drive D"
+        .byte   $00
 ; ----------------------------------------------------------------------------
 L167C:  ldy     #$03                            ; 167C A0 03                    ..
         jsr     L1720                           ; 167E 20 20 17                   .
@@ -598,11 +652,14 @@ L167C:  ldy     #$03                            ; 167C A0 03                    
         beq     L1690                           ; 1689 F0 05                    ..
         ldy     #$05                            ; 168B A0 05                    ..
         jsr     L1720                           ; 168D 20 20 17                   .
+	ldy     #$00                            ; 168B A0 05                    ..
+        jsr     L1720                           ; 168D 20 20 17                   .
 L1690:  jsr     L16BE                           ; 1690 20 BE 16                  ..
         jsr     L16E8                           ; 1693 20 E8 16                  ..
         lda     ramExpSize                      ; 1696 AD C3 88                 ...
         beq     L169E                           ; 1699 F0 03                    ..
         jsr     L1712                           ; 169B 20 12 17                  ..
+	jsr     L1712b
 L169E:  jsr     ExitTurbo                       ; 169E 20 32 C2                  2.
         rts                                     ; 16A1 60                       `
 ; ----------------------------------------------------------------------------
@@ -648,6 +705,21 @@ L16F6:  ldy     #$05                            ; 16F6 A0 05                    
 .endif
         jsr     PutString                       ; 170F 20 48 C1                  H.
 L1712:  LoadW   V212D, L1B99
+        jsr     L1A74                           ; 171C 20 74 1A                  t.
+        rts                                     ; 171F 60                       `
+; ----------------------------------------------------------------------------
+RenderDriveD:  ldy     #$00                            ; 16F6 A0 05                    ..
+        jsr     L15AA                           ; 16F8 20 AA 15                  ..
+        LoadW   r0, DriveDStr
+        lda     #$75                            ; 1703 A9 75                    .u
+        sta     r1H                             ; 1705 85 05                    ..
+.ifdef config128
+        LoadW   r11, $E5 + CFG_DOUBLE_W
+.else
+        LoadW   r11, $E5
+.endif
+        jsr     PutString                       ; 170F 20 48 C1                  H.
+L1712b: LoadW   V212D, L1B99_D
         jsr     L1A74                           ; 171C 20 74 1A                  t.
         rts                                     ; 171F 60                       `
 ; ----------------------------------------------------------------------------
@@ -753,13 +825,14 @@ ConfigOtherPressVec:
 L17EA:
 	lda     #$00                            ; 17EA A9 00                    ..
         sta     L180C                           ; 17EC 8D 0C 18                 ...
-        jsr     L1837                           ; 17EF 20 37 18                  7.
+        ;jsr     L1837                           ; 17EF 20 37 18                  7.
         jsr     L180D                           ; 17F2 20 0D 18                  ..
         inc $d020
         jsr     L181B                           ; 17F5 20 1B 18                  ..
         lda     ramExpSize                      ; 17F8 AD C3 88                 ...
         beq     L1800                           ; 17FB F0 03                    ..
         jsr     L1829                           ; 17FD 20 29 18                  ).
+	jsr     L1829_D
 L1800:  lda     L180C                           ; 1800 AD 0C 18                 ...
         beq     L180B                           ; 1803 F0 06                    ..
         jsr     L0FA0                           ; 1805 20 A0 0F                  ..
@@ -779,6 +852,11 @@ L181B:
 ; ----------------------------------------------------------------------------
 L1829:
         LoadW   V212D, L1B99
+        jsr     L15DF                           ; 1833 20 DF 15                  ..
+        rts                                     ; 1836 60                       `
+; ----------------------------------------------------------------------------
+L1829_D:
+        LoadW   V212D, L1B99_D
         jsr     L15DF                           ; 1833 20 DF 15                  ..
         rts                                     ; 1836 60                       `
 ; ----------------------------------------------------------------------------
@@ -1209,6 +1287,24 @@ L1B89:
 L1B99:
         asl                                    ; 1B99 0A                       .
         .byte   $12                             ; 1B9A 12                       .
+        brk                                     ; 1B9B 00                       .
+        brk                                     ; 1B9C 00                       .
+        brk                                     ; 1B9D 00                       .
+        brk                                     ; 1B9E 00                       .
+        brk                                     ; 1B9F 00                       .
+        brk                                     ; 1BA0 00                       .
+        brk                                     ; 1BA1 00                       .
+        brk                                     ; 1BA2 00                       .
+        brk                                     ; 1BA3 00                       .
+        brk                                     ; 1BA4 00                       .
+        brk                                     ; 1BA5 00                       .
+        brk                                     ; 1BA6 00                       .
+        brk                                     ; 1BA7 00                       .
+        brk                                     ; 1BA8 00                       .
+
+L1B99_D:
+        .byte	11                               
+        .byte   $18                             ; 1B9A 18                       .
         brk                                     ; 1B9B 00                       .
         brk                                     ; 1B9C 00                       .
         brk                                     ; 1B9D 00                       .
