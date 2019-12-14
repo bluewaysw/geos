@@ -69,441 +69,48 @@ SetNewMode0:
 	START_IO
 
 
-	lda $d031
-	;bit  graphMode
-	;beq @1
-	bbsf 7, graphMode, @_1
-	jmp  @1
+	lda 	$d031
+	;bit 	graphMode
+	;beq 	@1
+	bbsf 	7, graphMode, @_1
+	jmp  	@1
 @_1:
-	LoadW r0, VIC_IniTbl
-	.assert * - VIC_IniTbl_end - VIC_IniTbl < 256, error, "VIC_IniTbl must be < 256 bytes"
-	ldy #<(VIC_IniTbl_end - VIC_IniTbl)
-	jsr SetVICRegs
+	
+	lda	#1		; init 80 col
+	jsr 	InitVideoMode
 
-	LDA   #80
-	STA   $D058
-	STA   $D05E
-
-    	; 80 column mode, or advanced modes
-	; Set bitmap mode (makes horizontal borders take effect)
-	LDA   #$3B
-	STA   $D011
-	lda #$09
-	sta $d016
-
-        LDA #59
-	STA $D05C
-	LDA #128
-	STA $D05D
-
-	; 90 column mode, or advanced modes
-	lda #$C0
-    	sta $d031
-
-
-	; enable sprite H640
-	LDA   $D054
-	ORA   #$10
-	STA   $D054
-	LDA #0
-	sta $D076
-
-
-	lda	#$04	; 3.5Mhz, H640, no bitplanes
-	sta	$d030
-
-	lda cia2base
-	and #%00110000
-	ora #%00000101
-	sta cia2base
-
-	; Set screen ram that has 100x60 cells x 2 bytes per cell = 12,000 bytes of colour
-	; information for bitmap mode.
-	; First byte is foreground colour (8-bit) and second byte is background colour (also 8-bit),
-	; so each 8x8 cell can still have only 2 colours, but they can be chosen from the whole
-	; palette.
-	LDA #<$e000
-	STA $D060
-	LDA #>$e000
-	STA $D061
-	LDA #<4
-	STA $D062
-	LDA #>4
-	STA $D063
-	; Set bitmap data to somewhere that has 100x60 x 8 = 48,000 bytes of RAM.
-	; (We are using 2nd bank of 64KB for this)
-	; NOTE: This can't actually be set freely (yet), but will be on 16KB boundaries.
-	LDA #<$0000
-	STA $D068
-	LDA #>$0000
-	STA $D069
-	LDA #4
-	STA $D06A
-
-	LDA #$8F
-	STA $d06D
-
-	LoadW screenNextLine, 632
-	LoadW screenMaxX, 639
-	LoadW screenMaxY, 199
-	LoadW screenCardsX, 80
-	LoadB scrFullCardsX, 80
-	LoadB scrFullCardsX+1, 25
-	LoadB spriteXPosOff, VIC_X_POS_OFF_640
-	LoadB spriteYPosOff, VIC_Y_POS_OFF_640
-
-        LDA #0
-	STA $D05D
-
-	LoadW	r5, 640
-	jsr	InitScanLineTab
 	END_IO
 	rts
-;    	END_IO
-;    	rts
 @1:
-	lda graphMode
-	cmp #3|64
-	beq @12
-        cmp #1|64
-	bne @11b
-	jmp @_1
+	lda	graphMode
+	cmp	#3|64		; high res mode
+	beq	@12
+        cmp	#1|64
+	bne	@11b
+	jmp	@_1
 @11b:
-        jmp @11
+        jmp 	@11
 @12:
-	LoadW r0, VIC_IniTbl
-	.assert * - VIC_IniTbl_end - VIC_IniTbl < 256, error, "VIC_IniTbl must be < 256 bytes"
-	ldy #<(VIC_IniTbl_end - VIC_IniTbl)
-	jsr SetVICRegs
-
-        LDA #19
-	STA $D05C
-	LDA #128
-	STA $D05D
-	LDA #$FF
-	sta $D076
-	LDA   $D054
-	ORA   #$10
-	STA   $D054
-
-	lda #$c9
-	sta grcntrl2
-
-	; Set bitmap mode (makes horizontal borders take effect)
-	LDA   #$3B
-	STA   $D011
-
-	; 90 column mode, or advanced modes
-	lda #$C8
-    	sta $d031
-
-	LDA   #90
-	STA   $D058
-	STA   $D05E
-
-        LDA #0
-	STA $D05D
-
-	lda	#$04	; 3.5Mhz, H640, no bitplanes
-	sta	$d030
-
-	lda cia2base
-	and #%00110000
-	ora #%00000101
-	sta cia2base
-
-	; Set screen ram that has 100x60 cells x 2 bytes per cell = 12,000 bytes of colour
-	; information for bitmap mode.
-	; First byte is foreground colour (8-bit) and second byte is background colour (also 8-bit),
-	; so each 8x8 cell can still have only 2 colours, but they can be chosen from the whole
-	; palette.
-	LDA #<$e000
-	STA $D060
-	LDA #>$e000
-	STA $D061
-	LDA #<4
-	STA $D062
-	LDA #>4
-	STA $D063
-	; Set bitmap data to somewhere that has 100x60 x 8 = 48,000 bytes of RAM.
-	; (We are using 2nd bank of 64KB for this)
-	; NOTE: This can't actually be set freely (yet), but will be on 16KB boundaries.
-	LDA #<$0000
-	STA $D068
-	LDA #>$0000
-	STA $D069
-	LDA #4
-	STA $D06A
-
-	LDA #$8F
-	STA $d06D
-
-	lda #<74
-	sta $d048
-	lda #>74
-	sta $d049
-	lda #<554
-	sta $D04A
-	lda #>554
-	sta $d04b
-
-	lda #<74
-	sta $d04e
-	lda #>74
-	sta $d04f
-
-	LoadW screenNextLine, 712
-	LoadW screenMaxX, 719
-	LoadW screenMaxY, 479
-	LoadW screenCardsX, 90
-	LoadB scrFullCardsX, 90
-	LoadB scrFullCardsX+1, 60
-	LoadB spriteXPosOff, VIC_X_POS_OFF_720
-	LoadB spriteYPosOff, VIC_Y_POS_OFF_720
-
-	LoadW	r5, 720
-	jsr	InitScanLineTab
+	lda	#2
+	jsr 	InitVideoMode
 	END_IO
 	rts
 @11:
-	lda graphMode
-	cmp #5|64
-	beq @13
-        cmp #8|64
-	beq @13
-	jmp @14
+	lda	graphMode
+	cmp	#5|64
+	beq	@13
+        cmp	#8|64
+	beq	@13
+	jmp 	@14
 @13:
-	LoadW r0, VIC_IniTbl
-	.assert * - VIC_IniTbl_end - VIC_IniTbl < 256, error, "VIC_IniTbl must be < 256 bytes"
-	ldy #<(VIC_IniTbl_end - VIC_IniTbl)
-	jsr SetVICRegs
-
-        ; left boarder size
-        LDx    #0
-        LDA    graphMode
-        cmp     #8|64
-        beq     @13a
-        LDx    #5
-
-@13a:
-	STx    $D05C
-
-	LDA    #128
-	STA    $D05D
-	LDA    #$FF
-	sta    $D076
-	LDA    $D054
-	ORA    #$10
-	STA    $D054
-
-	lda #$c9
-	sta grcntrl2
-
-	; Set bitmap mode (makes horizontal borders take effect)
-	LDA   #$3B
-	STA   $D011
-
-	; 90 column mode, or advanced modes
-	lda #$C8
-    	sta $d031
-
-	LDx   #100
-        LDA    graphMode
-        cmp     #8|64
-        beq     @13b
-        LDx   #94
-@13b:
-	STx   $D058
-	STx   $D05E
-        LDA #0
-	STA $D05D
-
-	lda	#$04	; 3.5Mhz, H640, no bitplanes
-	sta	$d030
-
-	;lda cia2base
-	;and #%00110000
-	;ora #%00000101
-	;sta cia2base
-
-	; Set screen ram that has 100x60 cells x 2 bytes per cell = 12,000 bytes of colour
-	; information for bitmap mode.
-	; First byte is foreground colour (8-bit) and second byte is background colour (also 8-bit),
-	; so each 8x8 cell can still have only 2 colours, but they can be chosen from the whole
-	; palette.
-	LDA #<$e000
-	STA $D060
-	LDA #>$e000
-	STA $D061
-	LDA #<4
-	STA $D062
-	LDA #>4
-	STA $D063
-	; Set bitmap data to somewhere that has 100x60 x 8 = 48,000 bytes of RAM.
-	; (We are using 2nd bank of 64KB for this)
-	; NOTE: This can't actually be set freely (yet), but will be on 16KB boundaries.
-;	LDA #<$2000
-;	STA $D068
-;	LDA #>$2000
-;	STA $D069
-;	LDA #1
-;	STA $D06A
-	LDA #<$0000
-	STA $D068
-	LDA #>$0000
-	STA $D069
-	LDA #4
-	STA $D06A
-
-	LDA #$8F
-	STA $d06D
-
-
-        LDA    graphMode
-        cmp     #8|64
-        beq @13c
-        lda #<5
-	sta $d048
-	lda #>5
-	sta $d049
-	lda #<593
-	sta $D04A
-	lda #>593
-	sta $d04b
-
-	lda #<5
-	sta $d04e
-	lda #>5
-	sta $d04f
-
-	LoadW screenNextLine, 744
-	LoadW screenMaxX, 751
-	LoadW screenMaxY, 587
-	LoadW screenCardsX, 94
-	LoadB scrFullCardsX, 94
-	LoadB scrFullCardsX+1, 74
-	LoadB spriteXPosOff, VIC_X_POS_OFF_800
-	LoadB spriteYPosOff, VIC_Y_POS_OFF_800
-        LoadW	r5, 752
-        bra @13d
-@13c:
-        lda #<60
-        sta $d048
-        lda #>60
-        sta $d049
-        lda #<540
-        sta $D04A
-        lda #>540
-        sta $d04b
-
-        lda #<60
-        sta $d04e
-        lda #>60
-        sta $d04f
-        LoadW screenNextLine, 792
-        LoadW screenMaxX, 773
-        LoadW screenMaxY, 479
-        LoadW screenCardsX, 100
-        LoadB scrFullCardsX, 96
-        LoadB scrFullCardsX+1, 60
-        LoadB spriteXPosOff, VIC_X_POS_OFF_800B
-        LoadB spriteYPosOff, VIC_Y_POS_OFF_800B
-        LoadW	r5, 800
-@13d:
-	jsr	InitScanLineTab
+	lda	#3		; super res
+	jsr 	InitVideoMode
 	END_IO
 	rts
 
-
 @14:
-        LoadW r0, VIC_IniTbl
-        .assert * - VIC_IniTbl_end - VIC_IniTbl < 256, error, "VIC_IniTbl must be < 256 bytes"
-        ldy #<(VIC_IniTbl_end - VIC_IniTbl)
-        jsr SetVICRegs
-
-
-	jsr i_FillRam
-	.word 1000
-	.word COLOR_MATRIX
-	.byte (DKGREY << 4)+LTGREY
-
-	LoadW screenNextLine, 312
-	LoadW screenMaxX, 319
-	LoadW screenMaxY, 199
-	LoadW screenCardsX, 40
-	LoadB scrFullCardsX, 40
-	LoadB scrFullCardsX+1, 25
-	LoadB spriteXPosOff, VIC_X_POS_OFF
-	LoadB spriteYPosOff, VIC_Y_POS_OFF
-
-	LDA #80
-	STA $D05C
-	LDA #128
-	STA $D05D
-	LDA #0
-	sta $D076
-
-        ; 40 column compatibility mode
-    	lda #$40
-    	sta $d031
-
-	lda #%00111011
-	sta $d011
-	;lda #$38
-	;sta $d018
-	;lda #$08
-	;sta $d016
-
-	lda	#$04	; 3.5Mhz, H640, no bitplanes
-	sta	$d030
-
-	;lda cia2base
-	;and #%00110000
-	;ora #%00000101
-	;sta cia2base
-
-	LDA	#$8F
-	 STA $d06D
-
-	lda #<104
-	sta $d048
-	lda #>104
-	sta $d049
-	lda #<504
-	sta $D04A
-	lda #>504
-	sta $d04b
-
-
-	LDA #<$0000
-	STA $D068
-	LDA #>$0000
-	STA $D069
-	LDA #4
-	STA $D06A
-
-	LDA #<$8c00
-	STA $D060
-	LDA #>$8c00
-	STA $D061
-	LDA #0
-	STA $D062
-
-	LDA   #40
-	STA   $D058
-	STA   $D05E
-
-	; disable sprite H640
-	LDA   $D054
-	AND   #$EF
-	STA   $D054
-
-        LDA #0
-	STA $D05D
-
-	LoadW	r5, 320
-	jsr	InitScanLineTab
-
+	lda	#0
+	jsr	InitVideoMode
     	END_IO
     	rts
 .endif
@@ -540,6 +147,217 @@ SetRightMargin:
 	;stx rightMargin+1
 	;sty rightMargin
 	jmp UseSystemFont
+
+.ifdef mega65
+
+InitVideoMode:
+	pha
+
+	LoadW 	r0, VIC_IniTbl
+	.assert * - VIC_IniTbl_end - VIC_IniTbl < 256, error, "VIC_IniTbl must be < 256 bytes"
+	ldy 	#<(VIC_IniTbl_end - VIC_IniTbl)
+	jsr 	SetVICRegs
+
+	pla
+	tax
+	asl
+	tay
+
+	LDA   	vmiSideBorder, y
+	STA	$D05C	; width of side border
+	LDA   	vmiSideBorder+1, y
+	STA	$D05D	; bit 7 enable VICII hot register, bit 6 raster delay
+
+	lda	vmiD030, x	
+	sta	$d030
+
+	; 80 column mode, or advanced modes
+	; Set bitmap mode (makes horizontal borders take effect)
+	LDA   	vmiD011, x
+	STA   	$D011
+	LDA   	vmiD016, x
+	sta 	$d016
+
+	LDA   	vmiFullCardsY, X
+	sta     $d07b
+
+	LDA   	vmiCardsX, X
+	STA   	$D058	; characters per logical text row
+	STA  	$D05E	; Number of characters to diplay per row
+
+	; 90 column mode, or advanced modes
+	lda	vmiD031,x 
+	sta	$d031
+
+	LDA 	#0
+	STA 	$D05D		; reset hot registers,
+				; so that other reg acces doesn't reset
+				; everything
+
+	; enable sprite H640
+	LDA   	$D054
+	ORA   	vmiSpriteH640_OR, x
+	and   	vmiSpriteH640_AND, x
+	STA   	$D054
+
+	lda   	vmiSpriteV400, x
+	sta 	$D076
+
+	lda	#0
+	sta	$D059
+
+	lda 	cia2base
+	and 	#%00110000
+	ora 	#%00000101
+	sta 	cia2base
+
+	; Set screen ram that has 100x60 cells x 2 bytes per cell = 12,000 bytes of colour
+	; information for bitmap mode.
+	; First byte is foreground colour (8-bit) and second byte is background colour (also 8-bit),
+	; so each 8x8 cell can still have only 2 colours, but they can be chosen from the whole
+	; palette.
+	LDA 	vmiColorRAMOffset, y
+	STA 	$D060
+	LDA 	vmiColorRAMOffset+1 , y
+	STA 	$D061
+	LDA 	vmiColorRAMBank,y
+	STA 	$D062
+	LDA 	vmiColorRAMBank+1,y
+	STA 	$D063
+
+	; Set bitmap data to somewhere that has 100x60 x 8 = 48,000 bytes of RAM.
+	; (We are using 2nd bank of 64KB for this)
+	; NOTE: This can't actually be set freely (yet), but will be on 16KB boundaries.
+	LDA 	vmiBitmapRAMOffset, y
+	STA 	$D068
+	LDA 	vmiBitmapRAMOffset+1, y
+	STA 	$D069
+	LDA 	vmiBitmapRAMBank,x
+	STA 	$D06A
+
+	lda	vmiSpritePtrAddr, x
+	STA 	$d06D
+
+	lda	vmiNextLine, y
+	sta	screenNextLine
+	lda	vmiNextLine+1, y
+	sta	screenNextLine+1
+
+	lda	vmiMaxX, y
+	sta	screenMaxX
+	lda	vmiMaxX+1, y
+	sta	screenMaxX+1
+
+	lda	vmiMaxY, y
+	sta	screenMaxY
+	lda	vmiMaxY+1, y
+	sta	screenMaxY+1
+
+	lda	vmiCardsX, y
+	sta	screenCardsX
+	lda	vmiCardsX+1, y
+	sta	screenCardsX+1
+
+	lda	vmiFullCardsX, x
+	sta	scrFullCardsX
+	lda	vmiFullCardsY, x
+	sta	scrFullCardsX+1
+
+	lda	vmiSpriteXPosOff, x
+	sta	spriteXPosOff
+	lda	vmiSpriteYPosOff, x
+	sta	spriteYPosOff
+
+	lda 	vmiTopBorder, y
+	sta 	$d048
+	sta	$d04e
+	lda 	vmiTopBorder+1, y
+	sta 	$d049
+	sta	$d04f
+	lda 	vmiBottomBorder, y
+	sta 	$D04A
+	lda 	vmiBottomBorder+1, y
+	sta 	$D04B
+	
+	LDA 	#0
+	STA 	$D05D		; reset hot registers,
+				; so that other reg acces doesn't reset
+				; everything
+
+				LDA   	vmiCardsX, Y
+				STA   	$D058	; characters per logical text row
+				STA  	$D05E	; Number of characters to diplay per row
+				LDA   	vmiCardsX+1, Y
+				STA	$d059
+				LDA   	vmiFullCardsY, X
+				sta     $d07b
+
+	lda	vmiScanLineLen, y
+	sta 	r5L
+	lda	vmiScanLineLen+1, y
+	sta 	r5H
+	jsr	InitScanLineTab
+
+	rts
+
+;
+;       Video Modes init table
+;
+
+;       
+;		320x200x2	640x200x2	640x400x2	720xYx2(dyn)
+;		(320x200x256)	(640x200x16)	(640x400x4)
+vmiScanLineLen:  
+	.word	320,		640,		640,		720
+vmiNextLine:
+	.word	312,		632,		632,		712
+vmiMaxX:
+	.word	319,		639,		639,		719
+vmiMaxY:
+	.word	199,		199,		399,		575
+vmiCardsX:
+	.word	40,		80,		80,		90
+vmiFullCardsX:
+	.byte	40,		80,		80,		90
+vmiFullCardsY:
+	.byte	25,		25,		50,		72
+vmiSpriteXPosOff:
+	.byte	25,		60,		60,		26
+vmiSpriteYPosOff:
+	.byte	50,		50,		104,		1
+vmiD011:
+	.byte	%00111011,	$3B,		$3B,		$3b
+vmiD016:
+	.byte	$09,		$09,		$09,		$09
+vmiSideBorder:
+	.word	79 | $8000,	59 | $8000,	59 | $8000,	26 | $8000
+vmiD031:
+	.byte	$40,		$C0,		$C8,		$C8
+vmiSpriteH640_OR:
+	.byte	$00,		$10,		$10,		$10
+vmiSpriteH640_AND:
+	.byte	$EF,		$FF,		$FF,		$FF
+vmiSpriteV400:
+	.byte	0,		$00,		$FF,		$FF
+vmiD030:		; 3.5Mhz, H640, no bitplanes
+	.byte	$04,		$04,		$04,		$04
+vmiSpritePtrAddr:
+	.byte	$8F,		$8F,		$8F,		$8F
+vmiColorRAMOffset:
+	.word	$8c00,		$e000,		$e000,		$e000
+vmiColorRAMBank:
+	.word	0,		4,		4,		4
+vmiBitmapRAMOffset:
+	.word	$0000,		$0000,		$0000,		$0000
+vmiBitmapRAMBank:
+	.byte	4,		4,		4,		4
+		;104
+		;504
+vmiTopBorder:
+	.word	104,		104,		104,		1
+vmiBottomBorder:
+	.word	504,		504,		504,		577
+.endif
 
 .ifdef mega65
 

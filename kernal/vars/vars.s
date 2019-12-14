@@ -184,6 +184,6 @@ scrFullCardsX:	.word 40
 screenMaxX:	.word 319
 screenNextLine: .word 312
 screenMaxY:     .word 199
-spriteXPosOff:	.word VIC_X_POS_OFF
-spriteYPosOff:	.word VIC_Y_POS_OFF
+spriteXPosOff:	.word 25
+spriteYPosOff:	.word 50
 
