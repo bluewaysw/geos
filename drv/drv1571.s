@@ -804,10 +804,10 @@ __DoneWithIO:
 	lda tmpgrirqen
 	sta grirqen
 
-	lda	#$a5
-	sta	$d02f
-	lda #$96
-	sta	$d02f
+	lda #C65_VIC_INIT1
+	sta $d02f
+	lda #C65_VIC_INIT2
+	sta $d02f
 	lda $d031
 	ora #$40
 	sta $d031
@@ -987,8 +987,8 @@ Hst_RecvByte_0:
 	sec
 Hst_RecvByte_1:
 	lda rasreg
-	sbc #$31
-	bcc Hst_RecvByte_2
+	sbc #$28
+	bcc Hst_RecvByte_1
 	and #6
 	beq Hst_RecvByte_1
 Hst_RecvByte_2:
@@ -1052,8 +1052,8 @@ Hst_SendByte_01:
 	sec
 Hst_SendByte_1:
 	lda rasreg
-	sbc #$31
-	bcc Hst_SendByte_2
+	sbc #$28
+	bcc Hst_SendByte_1
 	and #6
 	beq Hst_SendByte_1
 Hst_SendByte_2:

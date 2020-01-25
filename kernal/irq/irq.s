@@ -160,8 +160,12 @@ _IRQHandler:
 	pla
 	tax
 	lda tempIRQAcc
-_NMIHandler:
 	rti
+_NMIHandler:
+	cld
+	sta tempIRQAcc
+	pla
+	jmp (BRKVector)
 .endif
 
 .ifdef use2MHz

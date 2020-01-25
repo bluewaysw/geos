@@ -973,11 +973,14 @@ __DoneWithIO:
         lda     L9BF1                           ; 95A7 AD F1 9B                 ...
         sta     grirqen                         ; 95AA 8D 1A D0                 ...
 
-		lda	#$a5
-		sta	$d02f
-		lda #$96
-		sta	$d02f
-		
+	lda	#C65_VIC_INIT1
+	sta	$d02f
+	lda	#C65_VIC_INIT2
+	sta	$d02f
+	lda	$d031
+	ora	#$40
+	sta	$d031
+	
 .if (!.defined(config128)) || .defined(mega65)
         lda     L9BF2                           ; 95AD AD F2 9B                 ...
         sta     CPU_DATA                        ; 95B0 85 01                    ..

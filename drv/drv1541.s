@@ -653,10 +653,10 @@ __DoneWithIO:
 	lda tmpgrirqen
 	sta grirqen
 
-	lda	#$a5
-	sta	$d02f
-	lda #$96
-	sta	$d02f
+	lda #C65_VIC_INIT1
+	sta $d02f
+	lda #C65_VIC_INIT2
+	sta $d02f
 	lda $d031
 	ora #$40
 	sta $d031

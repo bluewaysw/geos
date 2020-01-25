@@ -1592,7 +1592,8 @@ RedrawHead:
 .else
 	.byte	0,15
 .ifdef topdesk128
-	.word	0+DOUBLE_W,319+DOUBLE_W+ADD1_W
+;	.word	0+DOUBLE_W,319+DOUBLE_W+ADD1_W
+	.word	0,319
 .else
 	.word	0,319
 .endif
@@ -1605,7 +1606,8 @@ RedrawHead:
 	jsr	i_Rectangle
 	.byte	1,13
 .ifdef topdesk128
-	.word	221+DOUBLE_W,237+DOUBLE_W
+;	.word	221+DOUBLE_W,237+DOUBLE_W
+	.word	221,237
 .else
 	.word	221,237
 .endif
@@ -2584,13 +2586,29 @@ NormHandler:	; Behandlung der Messages Activate,Close,Restore
 @99:	rts
 
 
-PrintDriveNames:	MoveB	numDrives,a7L
-	LoadWr0	University
+PrintDriveNames:
+.ifdef mega65	
+	; count drives to show, show up to the last drive
+	; that has been assigned
+	ldx	#4
+@nd0:
+	dex
+	lda	driveType,x
+	bne	@nd
+	cpx	#0
+	bne	@nd0
+@nd:
+	inx
+	stx	a7L
+.else
+	MoveB	numDrives,a7L
+.endif
+	LoadW	r0, University
 	jsr	LoadCharSet
 .ifdef topdesk128
-    lda graphMode
-    bpl @40
-    jsr UseSystemFont
+	lda	graphMode
+	bpl	@40
+	jsr	UseSystemFont
 @40:
 .endif
 	dec	a7L
@@ -2613,7 +2631,8 @@ PrintDriveNames:	MoveB	numDrives,a7L
 	bpl	@loop
 	jsr	i_PutString
 .ifdef topdesk128
-	.word	5 +DOUBLE_W
+;	.word	5 +DOUBLE_W
+	.word	5
 	.byte	198,0
 .else
 	.word	5
@@ -2631,6 +2650,33 @@ PutDrive:	; schreibt DriveName
 	txa
 	pha
 	lda	driveType,x
+	
+	ldy	#<(@none)	
+	ldx	#>(@none)	
+	cmp	#0 ;DRV_SD_81
+	beq	@51
+	ldy	#<(@sd81)	
+	ldx	#>(@sd81)	
+	cmp	#6 ;DRV_SD_81
+	beq	@51
+	ldy	#<(@sd71)	
+	ldx	#>(@sd71)	
+	cmp	#7 ;DRV_SD_81
+	beq	@51
+	ldy	#<(@int)	
+	ldx	#>(@int)	
+	cmp	#4 ;DRV_F011_0
+	beq	@51
+	ldy	#<(@ext)	
+	ldx	#>(@ext)	
+	cmp	#5 ;DRV_F011_0
+	beq	@51
+	ldy	#<(@virt)	
+	ldx	#>(@virt)	
+	cmp	#8 ;DRV_F011_V
+	beq	@51
+	
+	
 	and	#%00000011
 	tay
 	dey
@@ -2650,6 +2696,7 @@ PutDrive:	; schreibt DriveName
 	sta	@nr
 	sta	@nr+1
 	LoadW___ r0, @dr
+@52:
 	SubVB	10,r11L	; nur low, da immer noch }ber 256
 	jmp	@50
 @40:	LoadB	@nr+1,':'
@@ -2660,9 +2707,23 @@ PutDrive:	; schreibt DriveName
 	adc	#'A'
 	sta	(r0),y
 	jmp	NewPutString
+@51:	sty	r0L
+	stx	r0H
+	ldx	#r11
+	jsr	NormalizeX
+	SubVW_	7, r11
+	bra	@50
+
 @dr:	.byte	"x:RAM "
 @nr:	.byte	PLAINTEXT,PLAINTEXT,"15"
 @ty:	.byte	"41",0
+
+@sd81:	.byte	"x:SD D81",0
+@sd71:	.byte	"x:SD D41/D71",0
+@int:	.byte	"x:Internal ",0
+@virt:	.byte	"x:Virtual ",0
+@ext:	.byte	"x:Ext 1565 ",0
+@none:	.byte	"x: ??? ",0
 
 CheckKlick:	; Ermittlung, ob Knopf gehalten oder nicht
 	LoadB	dblClickCount,20

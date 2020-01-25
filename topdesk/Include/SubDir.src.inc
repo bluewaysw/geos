@@ -664,7 +664,20 @@ SetNumDrives:
 ; Parameter - keine
 ; R}ckgabewert
 ; a - Anzahl der verf}gbaren Drives
-GetMaxDrives:	ldy	numDrives
+GetMaxDrives:
+.ifdef mega65	
+	ldy	#4
+@1:
+	dey
+	lda	driveType, y
+	bne	@2
+	cpy	#0
+	bne	@1
+@2:
+	iny
+	tya
+.else
+	ldy	numDrives
 	cpy	#2
 	bge	@10
 	lda	curDrive
@@ -694,6 +707,7 @@ GetMaxDrives:	ldy	numDrives
 	beq	@30
 	iny
 	bne	@30
+.endif
 	rts
 
 TestNumDrives:
@@ -798,7 +812,8 @@ XErrZeile3:	.byte	"from TopDesk.",PLAINTEXT,0
 XDAcc:	jmp	DA0
 XAssembly:
 XAutoExec:
-XAppl:	lda	curDrive
+XAppl:	
+	lda	curDrive
 	cmp	#10
 	bcc	XAppl2
 	lda	AutoSwapFlag
@@ -1140,13 +1155,20 @@ CLS:	ldy	#r15H-r0L
 	jsr	SetPattern
 	lda	c128Flag
 	bpl	@64
+	lda	graphMode
+	asl
+	bpl	@notScalable
+	
 	jsr	i_Rectangle
-;	.byte	0,199
-	.byte	0,0
-;	.word	0,319  ;|DOUBLE_W|ADD1_W
-	.word   0, SC_FROM_END+0 + (((SC_FROM_END|0) >> 8) << 12)  
-
+	.byte	0,<(SC_FROM_END|0)
+	.word   0, (SC_FROM_END|0) + (((SC_FROM_END|0) >> 8) << 12)  
 	rts
+@notScalable:
+	jsr	i_Rectangle
+	.byte	0,199
+	.word	0,319|DOUBLE_W|ADD1_W
+	rts
+
 @64:	jsr	i_Rectangle
 	.byte	0,199
 	.word	0,319

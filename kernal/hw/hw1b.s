@@ -98,9 +98,9 @@ ASSERT_NOT_BELOW_IO
 	; 47, 53 = enable VIC IV
 	; a5, 96 = enable VIC III
 
-	lda #$47
+	lda #C65_VIC_INIT1
 	sta $d02f
-	lda #$53
+	lda #C65_VIC_INIT2
 	sta $d02f
 
 	; enable 800x600 mode
@@ -175,9 +175,9 @@ ASSERT_NOT_BELOW_IO
 	sta $d04f
 .endif
 .else
-	lda #$a5
+	lda #C65_VIC_INIT1
 	sta $d02f
-	lda #$96
+	lda #C65_VIC_INIT2
 	sta $d02f
 
     ; enable bitplanes

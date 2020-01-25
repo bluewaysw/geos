@@ -54,6 +54,9 @@ vdcdata = $d601
 .import InitRAM1571
 .import InitRAM1581
 .import InitF011
+.import InitSD81
+.import InitSD71
+.import InitSD
 
 .export V20D9
 .export V2102
@@ -79,6 +82,7 @@ vdcdata = $d601
 .export V20F2
 .export V20EA
 .export CheckDrive
+.export V2551
 
 L6819           = $6819
 
@@ -573,11 +577,12 @@ L15DF:  lda     V212E                           ; 15DF AD 2E 21                 
         ldy     #$00                            ; 15E9 A0 00                    ..
         lda     (r15L),y                        ; 15EB B1 20                    .
         sta     V212B                           ; 15ED 8D 2B 21                 .+!
-        jsr     InitDrive                           ; 15F0 20 3E 07                  >.
+	jsr     InitDrive                           ; 15F0 20 3E 07                  >.
         ldy     V212B                           ; 15F3 AC 2B 21                 .+!
         lda     $8486,y                         ; 15F6 B9 86 84                 ...
         sta     V212C                           ; 15F9 8D 2C 21                 .,!
-        jmp     L161C                           ; 15FC 4C 1C 16                 L..
+        jsr     L161C                           ; 15FC 4C 1C 16                 L..
+	rts
 ; ----------------------------------------------------------------------------
 L15FF:  lda     V212E                           ; 15FF AD 2E 21                 ..!
         sta     r15H                            ; 1602 85 21                    .!
@@ -625,7 +630,8 @@ L1657:  inc     V212A                           ; 1657 EE 2A 21                 
         bvc     L1623                           ; 165B 50 C6                    P.
 L165D:  rts                                     ; 165D 60                       `
 ; ----------------------------------------------------------------------------
-L165E:  jmp     (r0L)                           ; 165E 6C 02 00                 l..
+L165E:  
+	jmp     (r0L)                           ; 165E 6C 02 00                 l..
 ; ----------------------------------------------------------------------------
 DriveAStr:
         .byte   $18                                     ; 1661 18                       .
@@ -750,73 +756,6 @@ L172E:  sec                                     ; 172E 38                       
         jsr     Rectangle                       ; 174E 20 24 C1                  $.
         rts                                     ; 1751 60                       `
 ; ----------------------------------------------------------------------------
-L1752:  jsr     L1873                           ; 1752 20 73 18                  s.
-        lda     ramExpSize                      ; 1755 AD C3 88                 ...
-        beq     L1760                           ; 1758 F0 06                    ..
-        jsr     L1761                           ; 175A 20 61 17                  a.
-        jsr     L17B2                           ; 175D 20 B2 17                  ..
-L1760:  rts                                     ; 1760 60                       `
-; ----------------------------------------------------------------------------
-L1761:
-        LoadW  r0, DMAMoveDataStr
-        lda     #$A4                            ; 1769 A9 A4                    ..
-        sta     r1H                             ; 176B 85 05                    ..
-.ifdef config128
-        LoadW   r11, $BE + CFG_DOUBLE_W
-.else
-        LoadW   r11, $BE
-.endif
-        jsr     PutString                       ; 1775 20 48 C1                  H.
-        LoadW   r0, DMAMoveDataStr2
-        lda     #$B2                            ; 1780 A9 B2                    ..
-        sta     r1H                             ; 1782 85 05                    ..
-.ifdef config128
-        LoadW   r11, $BE + CFG_DOUBLE_W
-.else
-        LoadW   r11, $BE
-.endif
-        jsr     PutString                       ; 178C 20 48 C1                  H.
-L178F:  lda     sysRAMFlg                       ; 178F AD C4 88                 ...
-        and     #$80                            ; 1792 29 80                    ).
-        beq     L1798                           ; 1794 F0 02                    ..
-        lda     #$02                            ; 1796 A9 02                    ..
-L1798:  ldy     #$01                            ; 1798 A0 01                    ..
-        jsr     L15CF                           ; 179A 20 CF 15                  ..
-        rts                                     ; 179D 60                       `
-; ----------------------------------------------------------------------------
-DMAMoveDataStr:
-        .byte   $18                                     ; 179E 18                       .
-        .byte   "DMA for"                       ; 179F 44 4D 41 20 66 6F 72     DMA for
-        .byte   $00
-DMAMoveDataStr2:
-        .byte   $22                         ; 17A6 00 22                    ."
-        .byte   "MoveData"                      ; 17A8 4D 6F 76 65 44 61 74 61  MoveData
-        .byte   $22,$00                         ; 17B0 22 00                    ".
-; ----------------------------------------------------------------------------
-L17B2:
-        LoadW   r0, RAMRebootStr
-        lda     #$8D                            ; 17BA A9 8D                    ..
-        sta     r1H                             ; 17BC 85 05                    ..
-.ifdef config128
-        LoadW   r11, $BE + CFG_DOUBLE_W
-.else
-        LoadW   r11, $BE
-.endif
-        jsr     PutString                       ; 17C6 20 48 C1                  H.
-L17C9:  lda     sysRAMFlg                       ; 17C9 AD C4 88                 ...
-        and     #$20                            ; 17CC 29 20                    )
-        beq     L17D2                           ; 17CE F0 02                    ..
-        lda     #$02                            ; 17D0 A9 02                    ..
-L17D2:  ldy     #$02                            ; 17D2 A0 02                    ..
-        jsr     L15CF                           ; 17D4 20 CF 15                  ..
-        rts                                     ; 17D7 60                       `
-; ----------------------------------------------------------------------------
-RAMRebootStr:
-        .byte   $18                             ; 17D8 18                       .
-        .byte   "RAM Reboot"                    ; 17D9 52 41 4D 20 52 65 62 6F  RAM Rebo
-                                                ; 17E1 6F 74                    ot
-        .byte   $00                             ; 17E3 00                       .
-; ----------------------------------------------------------------------------
 ConfigOtherPressVec:
         lda     mouseData                       ; 17E4 AD 05 85                 ...
         bpl     L17EA                           ; 17E7 10 01                    ..
@@ -831,13 +770,18 @@ L17EA:
         jsr     L181B                           ; 17F5 20 1B 18                  ..
         lda     ramExpSize                      ; 17F8 AD C3 88                 ...
         beq     L1800                           ; 17FB F0 03                    ..
+
         jsr     L1829                           ; 17FD 20 29 18                  ).
 	jsr     L1829_D
+
 L1800:  lda     L180C                           ; 1800 AD 0C 18                 ...
         beq     L180B                           ; 1803 F0 06                    ..
+
+
         jsr     L0FA0                           ; 1805 20 A0 0F                  ..
         jsr     L167C                           ; 1808 20 7C 16                  |.
-L180B:  rts                                     ; 180B 60                       `
+L180B:  
+	rts                                     ; 180B 60                       `
 ; ----------------------------------------------------------------------------
 L180C:  brk                                     ; 180C 00                       .
 L180D:
@@ -847,7 +791,7 @@ L180D:
 ; ----------------------------------------------------------------------------
 L181B:
         LoadW   V212D, L1B89
-        jsr     L15FF                           ; 1825 20 FF 15                  ..
+        jsr     L15FF                           ; 1825 20 FF 15               d    ..	
         rts                                     ; 1828 60                       `
 ; ----------------------------------------------------------------------------
 L1829:
@@ -858,34 +802,9 @@ L1829:
 L1829_D:
         LoadW   V212D, L1B99_D
         jsr     L15DF                           ; 1833 20 DF 15                  ..
-        rts                                     ; 1836 60                       `
+	rts                                     ; 1836 60                       `
 ; ----------------------------------------------------------------------------
-L1837:  lda     ramExpSize                      ; 1837 AD C3 88                 ...
-        beq     L1872                           ; 183A F0 36                    .6
-        ldy     #$01                            ; 183C A0 01                    ..
-        jsr     L1441                           ; 183E 20 41 14                  A.
-        jsr     IsMseInRegion                   ; 1841 20 B3 C2                  ..
-        beq     L1857                           ; 1844 F0 11                    ..
-        lda     sysRAMFlg                       ; 1846 AD C4 88                 ...
-        eor     #$80                            ; 1849 49 80                    I.
-        sta     sysRAMFlg                       ; 184B 8D C4 88                 ...
-        sta     sysFlgCopy                      ; 184E 8D 12 C0                 ...
-        sta     $040A                           ; 1851 8D 0A 04                 ...
-        jmp     L178F                           ; 1854 4C 8F 17                 L..
-; ----------------------------------------------------------------------------
-L1857:  ldy     #$02                            ; 1857 A0 02                    ..
-        jsr     L1441                           ; 1859 20 41 14                  A.
-        jsr     IsMseInRegion                   ; 185C 20 B3 C2                  ..
-        beq     L1872                           ; 185F F0 11                    ..
-        lda     sysRAMFlg                       ; 1861 AD C4 88                 ...
-        eor     #$20                            ; 1864 49 20                    I
-        sta     sysRAMFlg                       ; 1866 8D C4 88                 ...
-        sta     sysFlgCopy                      ; 1869 8D 12 C0                 ...
-        sta     $040A                           ; 186C 8D 0A 04                 ...
-        jmp     L17C9                           ; 186F 4C C9 17                 L..
-; ----------------------------------------------------------------------------
-L1872:  rts                                     ; 1872 60                       `
-; ----------------------------------------------------------------------------
+.if 0
 L1873:  LoadW   r0, RAMExpStr
         lda     #$75                            ; 187B A9 75                    .u
         sta     r1H                             ; 187D 85 05                    ..
@@ -910,9 +829,10 @@ L1873:  LoadW   r0, RAMExpStr
 ; ----------------------------------------------------------------------------
 RAMExpStr:
         .byte   $18                             ; 18A5 18                       .
-        .byte   "RAM expansion: "               ; 18A6 52 41 4D 20 65 78 70 61  RAM expa
+        .byte   "RAMe: "               ; 18A6 52 41 4D 20 65 78 70 61  RAM expa
                                                 ; 18AE 6E 73 69 6F 6E 3A 20     nsion:
         .byte   $00                             ; 18B5 00                       .
+.endif
 ; ----------------------------------------------------------------------------
 MenuQuit:
         jsr     DoPreviousMenu                  ; 18B6 20 90 C1                  ..
@@ -1145,28 +1065,60 @@ L1AA0:  lda     #$00                            ; 1AA0 A9 00                    
         sta     (r15L),y                        ; 1AA2 91 20                    .
         dey                                     ; 1AA4 88                       .
         bpl     L1AA0                           ; 1AA5 10 F9                    ..
-        jsr     L1C39                           ; 1AA7 20 39 1C                  9.
+        
+	; no drive
+	jsr     L1C39                           ; 1AA7 20 39 1C                  9.        
+	jsr     L1B5B                           ; 1AAA 20 5B 1B                  [.
+
+	jsr     CheckF011                       ; 1AA7 20 39 1C                  9.
         jsr     L1B5B                           ; 1AAA 20 5B 1B                  [.
+
+	jsr     CheckSD
+        jsr     L1B5B
+	
+	; 1541 (shadowed 1541)
         jsr     L1C41                           ; 1AAD 20 41 1C                  A.
         jsr     L1B5B                           ; 1AB0 20 5B 1B                  [.
+
+	; shadowed 1541 (1541)
         jsr     L1C56                           ; 1AB3 20 56 1C                  V.
         jsr     L1B5B                           ; 1AB6 20 5B 1B                  [.
-        jsr     L1C88                           ; 1AB9 20 88 1C                  ..
+        
+	; 1571
+	jsr     L1C88                           ; 1AB9 20 88 1C                  ..
         jsr     L1B5B                           ; 1ABC 20 5B 1B                  [.
+	
+	; 1581
         jsr     L1C99                           ; 1ABF 20 99 1C                  ..
         jsr     L1B5B                           ; 1AC2 20 5B 1B                  [.
+
 .ifndef config128
-        jsr     L1CAA                           ; 1AC5 20 AA 1C                  ..
+        ; Dir Shadow 1581
+	jsr     L1CAA                           ; 1AC5 20 AA 1C                  ..
         jsr     L1B5B                           ; 1AC8 20 5B 1B                  [.
 .endif
+	; RAM 1541
         jsr     L1C6F                           ; 1ACB 20 6F 1C                  o.
         jsr     L1B5B                           ; 1ACE 20 5B 1B                  [.
+
+	; RAM 1571
         jsr     L1CC3                           ; 1AD1 20 C3 1C                  ..
         jsr     L1B5B                           ; 1AD4 20 5B 1B                  [.
-        jsr     L1CDC                           ; 1AD7 20 DC 1C                  ..
+        
+	; RAM 1581
+	jsr     L1CDC                           ; 1AD7 20 DC 1C                  ..
         jsr     L1B5B                           ; 1ADA 20 5B 1B                  [.
-        jsr     CheckF011                       ; 1AA7 20 39 1C                  9.
+
+
+	;jsr     CheckF011_1                       ; 1AA7 20 39 1C                  9.
+        ;jsr     L1B5B                           ; 1AAA 20 5B 1B                  [.
+
+	jsr     CheckSD81                       ; 1AA7 20 39 1C                  9.
         jsr     L1B5B                           ; 1AAA 20 5B 1B                  [.
+
+	jsr     CheckSD71                       ; 1AA7 20 39 1C                  9.
+        jsr     L1B5B                           ; 1AAA 20 5B 1B                  [.
+
         lda     V212E                           ; 1ADD AD 2E 21                 ..!
         sta     r15H                            ; 1AE0 85 21                    .!
         lda     V212D                           ; 1AE2 AD 2D 21                 .-!
@@ -1332,6 +1284,13 @@ L1BA9:
         .byte   <OptRAM1581
 	.byte   <OptF011
 
+	.byte   <OptF011_1
+	.byte   <OptSD81
+	.byte   <OptSD71
+	.byte   <OptF011_V
+
+	.byte   <OptSD
+	
 L1BB2:
         .byte   >OptNoDrive
         .byte   >Opt1541
@@ -1343,6 +1302,12 @@ L1BB2:
         .byte   >OptRAM1571
         .byte   >OptRAM1581
 	.byte   >OptF011
+	.byte   >OptF011_1
+	.byte   >OptSD81
+	.byte   >OptSD71
+	.byte   >OptF011_V
+	.byte   >OptSD
+	
 
 ; no drive
 OptNoDrive:
@@ -1436,9 +1401,53 @@ OptF011:
         .word   F011Label
         .word   InitF011
 F011Label:
-        .byte   "F011"                          ; 1BCE 31 35 34 31              1541
+        .byte   "Internal 3.5", 34                          ; 1BCE 31 35 34 31              1541
         .byte   $00                             ; 1BD2 00                       .
 
+; F011_1
+OptF011_1:
+        .byte   $05
+        .word   F011_1Label
+        .word   InitF011
+F011_1Label:
+        .byte   "1565"                          ; 1BCE 31 35 34 31              1541
+        .byte   $00                             ; 1BD2 00                       .
+
+; SD81
+OptSD81:
+        .byte   $06
+        .word   SD81Label
+        .word   InitSD81
+SD81Label:
+        .byte   "SD D81"                          ; 1BCE 31 35 34 31              1541
+        .byte   $00                             ; 1BD2 00                       .
+
+; SD71
+OptSD71:
+        .byte   $07
+        .word   SD71Label
+        .word   InitSD71
+SD71Label:
+        .byte   "SD D41/D71"                          ; 1BCE 31 35 34 31              1541
+        .byte   $00                             ; 1BD2 00                       .
+
+; F011_V
+OptF011_V:
+        .byte   $08
+        .word   F011_VLabel
+        .word   InitF011
+F011_VLabel:
+        .byte   "1"                          ; 1BCE 31 35 34 31              1541
+        .byte   $00                             ; 1BD2 00                       .
+
+; SD
+OptSD:
+        .byte   $09
+        .word   SDLabel
+        .word   InitSD
+SDLabel:
+        .byte   "SD Mount"                          ; 1BCE 31 35 34 31              1541
+        .byte   $00                             ; 1BD2 00                       .
 
 L1C39:  ldy     V212C                           ; 1C39 AC 2C 21                 .,!
         beq     L1C40                           ; 1C3C F0 02                    ..
@@ -1500,13 +1509,67 @@ L1C96:  ldy     #$00                            ; 1C96 A0 00                    
         rts                                     ; 1C98 60                       `
 
 ; ----------------------------------------------------------------------------
-CheckF011:  lda     V212C                           ; 1C88 AD 2C 21                 .,!
-        cmp     #$04                            ; 1C8B C9 02                    ..
+CheckF011_1:  
+	lda     V212C                           ; 1C88 AD 2C 21                 .,!
+	cmp	#$05
+	beq	ShowF011_1
+	
+	cmp	#0
+	bne	L1C96
+ShowF011_1:
+	ldy	#11
+	rts
+	
+CheckSD:  
+	lda     V212C                           ; 1C88 AD 2C 21                 .,!
+	cmp	#DRV_SD_71
+	beq	L1C96
+	cmp	#DRV_SD_81
+	beq	L1C96
+	cmp	#0
+	bne	L1C96
+ShowSD:
+	ldy	#15
+	rts
+	
+CheckSD81:  
+	lda     V212C                           ; 1C88 AD 2C 21                 .,!
+	cmp	#DRV_SD_71
+	beq	ShowSD81
+	cmp	#DRV_SD_81
+	bne	L1C96
+ShowSD81:
+	ldy	#12
+	rts
+
+CheckSD71:  lda     V212C                           ; 1C88 AD 2C 21                 .,!
+	cmp	#DRV_SD_81
+	beq	ShowSD71
+	cmp	#DRV_SD_71
+	bne	L1C96
+ShowSD71:
+	ldy	#13
+	rts
+
+CheckF011:  
+	lda     V212C                           ; 1C88 AD 2C 21                 .,!
+	cmp     #$04                            ; 1C8B C9 02                    ..
         beq     ShowF011                           ; 1C8D F0 04                    ..
         cmp     #$00                            ; 1C8F C9 00                    ..
         bne     NoF011                           ; 1C91 D0 03                    ..
-ShowF011:  ldy     #10                            ; 1C93 A0 05                    ..
-        rts                                     ; 1C95 60                       `
+
+	; check if Floppy is already selected
+	ldy	#0
+@1:
+	lda	driveType,y
+	cmp	#DRV_F011_0
+	beq	NoF011
+	iny
+	cpy	#4
+	bne	@1
+ShowF011:                              ; 1C93 A0 05                    ..
+        ldy	#10
+	rts                                     ; 1C95 60                       `
 ; ----------------------------------------------------------------------------
 NoF011:  ldy     #$00                            ; 1C96 A0 00                    ..
         rts                                     ; 1C98 60                       `
@@ -1604,7 +1667,8 @@ L1D08:  sta     L1D9A                           ; 1D08 8D 9A 1D                 
         lda     r0L                             ; 1D12 A5 02                    ..
         cmp     #$02                            ; 1D14 C9 02                    ..
         beq     L1D27                           ; 1D16 F0 0F                    ..
-        jsr     L1D28                           ; 1D18 20 28 1D                  (.
+        
+	jsr     L1D28                           ; 1D18 20 28 1D                  (.
 L1D1B:  lda     V212B                           ; 1D1B AD 2B 21                 .+!
         jsr     L1DF2                           ; 1D1E 20 F2 1D                  ..
 inc $d020

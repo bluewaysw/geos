@@ -177,6 +177,8 @@ IsDeviceValid:
 	bcc @1
 	cmp #12
 	bcs @1
+	lda curType 
+	beq @1
 	jsr ExitTurbo
 @1:	PopB curDevice
 @2:	cmp #8

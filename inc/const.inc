@@ -47,6 +47,14 @@ DRV_NULL                =       0
 DRV_1541                =       1
 DRV_1571                =       2
 DRV_1581                =       3
+
+; for now MEGA65, specific drive types here
+DRV_F011_0		=	4
+DRV_F011_1		=	5
+DRV_SD_81		=	6
+DRV_SD_71		=	7
+DRV_F011_V		=	8
+
 DRV_NETWORK             =       15
 
 ; various disk
@@ -442,3 +450,10 @@ HIGH_Y_MASK             =   %00011111
 SC_FROM_END             =   %100000000000
 SC_FROM_CENTER          =   %010000000000
 SC_SCALE                =   %110000000000
+
+; C65 constants (internal?)
+;C65_VIC_INIT1		= 	$a5
+;C65_VIC_INIT2		= 	$96
+; we use VICIV mode so use VICIV contants
+C65_VIC_INIT1		= 	$47
+C65_VIC_INIT2		= 	$53

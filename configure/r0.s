@@ -48,6 +48,9 @@ L6216           = $6216;
 .export InitRAM1571
 .export InitRAM1581
 .export InitF011
+.export InitSD81
+.export InitSD71
+.export InitSD
 
 ;.export L043E   ;        = $043E; fix!
 ;.export L0616   ;        = $0616; fix!
@@ -82,19 +85,24 @@ L6216           = $6216;
 .import V20F2
 .import V20EA
 .import CheckDrive
+.import V2551
 
 ; ----------------------------------------------------------------------------
 
 ; ----------------------------------------------------------------------------
-        .byte   $02,$02                         ; 0406 01 03                    ..
+        .byte   $00,$00                         ; 0406 01 03                    ..
 L0408:  .byte   $00,$00                         ; 0408 03 00                    ..
 L040A:  .byte   $a0 ;$E0                             ; 040A E0                       .
 ; ----------------------------------------------------------------------------
 __STARTUP_RUN__:
+	jsr	i_FillRam
+	.word	V2551-V20D9+1
+	.word	V20D9
+	.byte	0
 .ifndef config128
         jsr     L047C                           ; 040B 20 7C 04                  |.
 .endif
-        lda     firstBoot                       ; 040E AD C5 88                 ...
+	lda     firstBoot                       ; 040E AD C5 88                 ...
         cmp     #$FF                            ; 0411 C9 FF                    ..
         bne     L0418                           ; 0413 D0 03                    ..
         jmp     L04EC                           ; 0415 4C EC 04                 L..
@@ -110,7 +118,7 @@ L0418:  bit     c128Flag                        ; 0418 2C 13 C0                 
         tay                                     ; 0423 A8                       .
         lda     $8486,y                         ; 0424 B9 86 84                 ...
         sta     V2105                           ; 0427 8D 05 21                 ..!
-        jsr     L0FB3                           ; 042A 20 B3 0F                  ..
+	jsr     L0FB3                           ; 042A 20 B3 0F                  ..
         jsr     i_MoveData                      ; 042D 20 B7 C1                  ..
         .word   $5000
         .word   V2150 ;SaveBootCode
@@ -119,7 +127,7 @@ L0418:  bit     c128Flag                        ; 0418 2C 13 C0                 
         ;bvc     L0483                           ; 0431 50 50                    PP
         ;and     ($00,x)                     ; 0433 21 00                    !.
         ;.byte   $04                             ; 0435 04                       .
-        lda     #$01                            ; 0436 A9 01                    ..
+	lda     #$01                            ; 0436 A9 01                    ..
         sta     NUMDRV                          ; 0438 8D 8D 84                 ...
         jsr     L0558                           ; 043B 20 58 05                  X.
 L043E:        lda     V2104                           ; 043E AD 04 21                 ..!
@@ -161,7 +169,7 @@ L0470:
         ;brk                                     ; 0475 00                       .
         ;bvc     L0478                           ; 0476 50 00                    P.
         ;.byte   $04                             ; 0478 04                       .
-L0479:  jmp     EnterDeskTop                    ; 0479 4C 2C C2                 L,.
+L0479: 	jmp     EnterDeskTop                    ; 0479 4C 2C C2                 L,.
 ; ----------------------------------------------------------------------------
 .ifndef config128
 L047C:  bit     c128Flag                        ; 047C 2C 13 C0                 ,..
@@ -296,40 +304,62 @@ L0557:  rts                                     ; 0557 60                       
 ; ----------------------------------------------------------------------------
 L0558:  jsr     ExitTurbo                       ; 0558 20 32 C2                  2.
         lda     ramExpSize                      ; 055B AD C3 88                 ...
-        beq     L0563                           ; 055E F0 03                    ..
+	beq     L0563                           ; 055E F0 03                    ..
         lda     L040A                           ; 0560 AD 0A 04                 ...
 L0563:  and     #$A0                            ; 0563 29 A0                    ).
         sta     sysRAMFlg                       ; 0565 8D C4 88                 ...
         sta     sysFlgCopy                      ; 0568 8D 12 C0                 ...
-        lda     V2105                           ; 056B AD 05 21                 ..!
+.if 1
+	lda     V2105                           ; 056B AD 05 21                 ..!
         cmp     #$02                            ; 056E C9 02                    ..
         bcs     L057B                           ; 0570 B0 09                    ..
-        jsr     L0E64                           ; 0572 20 64 0E                  d.
-        cmp     #$FF                            ; 0575 C9 FF                    ..
+        
+	; restore/detect drives?
+	jsr     L0E64                           ; 0572 20 64 0E                  d.
+        
+	cmp     #$FF                            ; 0575 C9 FF                    ..
         bne     L057B                           ; 0577 D0 02                    ..
         lda     #$01                            ; 0579 A9 01                    ..
-L057B:  sta     V2106                           ; 057B 8D 06 21                 ..!
+L057B: 
+	sta     V2106                           ; 057B 8D 06 21                 ..!
+.endif
+.if 1
         lda     curDrive                        ; 057E AD 89 84                 ...
         eor     #$01                            ; 0581 49 01                    I.
-        jsr     SetDevice                       ; 0583 20 B0 C2                  ..
+	jsr     SetDevice                       ; 0583 20 B0 C2                  ..
         jsr     L0E64                           ; 0586 20 64 0E                  d.
-        cmp     #$FF                            ; 0589 C9 FF                    ..
+	cmp     #$FF                            ; 0589 C9 FF                    ..
         bne     L058F                           ; 058B D0 02                    ..
         lda     #$00                            ; 058D A9 00                    ..
 L058F:  sta     V2107                           ; 058F 8D 07 21                 ..!
+.endif
+.if 1
         lda     ramExpSize                      ; 0592 AD C3 88                 ...
         beq     L05A3                           ; 0595 F0 0C                    ..
-        lda     #$0A                            ; 0597 A9 0A                    ..
+        
+	lda     #$0A                            ; 0597 A9 0A                    ..
         jsr     SetDevice                       ; 0599 20 B0 C2                  ..
         jsr     L0E64                           ; 059C 20 64 0E                  d.
-        cmp     #$FF                            ; 059F C9 FF                    ..
+	cmp     #$FF                            ; 0589 C9 FF                    ..
         bne     L05A5                           ; 05A1 D0 02                    ..
+.endif
 L05A3:  lda     #$00                            ; 05A3 A9 00                    ..
 L05A5:  sta     V2108                           ; 05A5 8D 08 21                 ..!
+
         lda     V2104                           ; 05A8 AD 04 21                 ..!
         jsr     SetDevice                       ; 05AB 20 B0 C2                  ..
-        jsr     L06B2                           ; 05AE 20 B2 06                  ..
-        jsr     L064A                           ; 05B1 20 4A 06                  J.
+
+	; restore saved drive
+	jsr     L06B2                           ; 05AE 20 B2 06                  ..
+        
+	; setup default drive
+	ldx	V2104
+	lda	V2105
+	sta	V2106-8,x
+	jsr	SetupDefaulDrives
+	
+	; load required drivers?
+	jsr     L064A                           ; 05B1 20 4A 06                  J.
         txa                                     ; 05B4 8A                       .
         bne     L05F7                           ; 05B5 D0 40                    .@
         jsr     PurgeTurbo                      ; 05B7 20 35 C2                  5.
@@ -342,10 +372,13 @@ L05C1:  sta     driveType,y                     ; 05C1 99 8E 84                 
         sta     ramBase,y                       ; 05CA 99 C7 88                 ...
         dey                                     ; 05CD 88                       .
         bpl     L05C1                           ; 05CE 10 F1                    ..
-        jsr     L05F8                           ; 05D0 20 F8 05                  ..
-        lda     V2106                           ; 05D3 AD 06 21                 ..!
+        
+	; install drivers in RAM (if available)
+	jsr     L05F8                           ; 05D0 20 F8 05                  ..
+        
+	lda     V2106                           ; 05D3 AD 06 21                 ..!
         jsr     L0769                           ; 05D6 20 69 07                  i.
-        lda     V2107                           ; 05D9 AD 07 21                 ..!
+	lda     V2107                           ; 05D9 AD 07 21                 ..!
         beq     L05E7                           ; 05DC F0 09                    ..
         jsr     L0739                           ; 05DE 20 39 07                  9.
         lda     V2107                           ; 05E1 AD 07 21                 ..!
@@ -397,7 +430,7 @@ L0649:  rts                                     ; 0649 60                       
 ; ----------------------------------------------------------------------------
 L064A:  lda     V2106                           ; 064A AD 06 21                 ..!
         jsr     L0672                           ; 064D 20 72 06                  r.
-        bne     L0671                           ; 0650 D0 1F                    ..
+	bne     L0671                           ; 0650 D0 1F                    ..
         lda     V2107                           ; 0652 AD 07 21                 ..!
         jsr     L0672                           ; 0655 20 72 06                  r.
         bne     L0671                           ; 0658 D0 17                    ..
@@ -415,23 +448,31 @@ L0671:  rts                                     ; 0671 60                       
 L0672:  ldx     #$00                            ; 0672 A2 00                    ..
         tay                                     ; 0674 A8                       .
         beq     L06AA                           ; 0675 F0 33                    .3
-        jsr     L0A76                           ; 0677 20 76 0A                  v.
-        lda     L06AD,y                         ; 067A B9 AD 06                 ...
+        
+	; get VLIR record offset from type
+	jsr     L0A76                           ; 0677 20 76 0A                  v.
+        
+	; already loaded?
+	lda     L06AD,y                         ; 067A B9 AD 06                 ...
         bne     L06AA                           ; 067D D0 2B                    .+
-        tya                                     ; 067F 98                       .
+        
+	tya                                     ; 067F 98                       .
         pha                                     ; 0680 48                       H
         jsr     OpenConfigFile                           ; 0681 20 22 05                  ".
         pla                                     ; 0684 68                       h
         tay                                     ; 0685 A8                       .
         txa                                     ; 0686 8A                       .
         bne     L06AA                           ; 0687 D0 21                    .!
-        lda     #$FF                            ; 0689 A9 FF                    ..
+        
+	lda     #$FF                            ; 0689 A9 FF                    ..
         sta     L06AD,y                         ; 068B 99 AD 06                 ...
-        lda     L0A64,y                         ; 068E B9 64 0A                 .d.
+        
+	lda     L0A64,y                         ; 068E B9 64 0A                 .d.
         sta     r7L                             ; 0691 85 10                    ..
         lda     L0A69,y                         ; 0693 B9 69 0A                 .i.
         sta     r7H                             ; 0696 85 11                    ..
-        tya                                     ; 0698 98                       .
+        
+	tya                                     ; 0698 98                       .
         clc                                     ; 0699 18                       .
         adc     #$02                            ; 069A 69 02                    i.
         jsr     PointRecord                     ; 069C 20 80 C2                  ..
@@ -442,6 +483,51 @@ L0672:  ldx     #$00                            ; 0672 A2 00                    
         jsr     ReadRecord                      ; 06A7 20 8C C2                  ..
 L06AA:  txa                                     ; 06AA 8A                       .
         rts                                     ; 06AB 60                       `
+
+
+SetupDefaulDrives:
+	jsr	SetupInternalFloppy
+	jsr	SetupSDMountD81
+	jsr	SetupSDMountD71
+	rts
+
+SetupInternalFloppy:
+	ldx	#0
+@3:
+	lda	V2106, x
+	beq	@2
+	cmp	#DRV_F011_0
+	beq	@1
+	inx
+	cpx	#3
+	bne	@3
+	bra	@1
+@2:	
+	lda	#DRV_F011_0
+	sta	V2106, x
+@1:
+	rts
+	
+SetupSDMountD81:
+	rts
+	
+SetupSDMountD71:
+	rts
+
+GetFreeDrive:
+	ldx	#0
+@2:
+	lda	driveType, x
+	beq	@1
+	inx
+	cpx	#4
+	bne	@2
+	sec
+	rts
+	
+@1:	clc
+	rts
+
 ; ----------------------------------------------------------------------------
 L06AC:  brk                                     ; 06AC 00                       .
 L06AD:  brk                                     ; 06AD 00                       .
@@ -459,7 +545,8 @@ L06B2:  lda     #$01                            ; 06B2 A9 01                    
         ldx     V2107                           ; 06BF AE 07 21                 ..!
         jsr     L06EB                           ; 06C2 20 EB 06                  ..
         sta     V2107                           ; 06C5 8D 07 21                 ..!
-        ldy     V2104                           ; 06C8 AC 04 21                 ..!
+        
+	ldy     V2104                           ; 06C8 AC 04 21                 ..!
         lda     $03FE,y                         ; 06CB B9 FE 03                 ...
         and     #$7F                            ; 06CE 29 7F                    ).
         ldx     V2106                           ; 06D0 AE 06 21                 ..!
@@ -520,10 +607,11 @@ L0736:  lda     r2L                             ; 0736 A5 06                    
 L0739:  lda     curDrive                        ; 0739 AD 89 84                 ...
         eor     #$01                            ; 073C 49 01                    I.
 InitDrive:
-;inc $d020
-  jsr     SetDevice                       ; 073E 20 B0 C2                  ..
-inc $d020
-inc $d020
+	;ldy     curDrive                        ; 074D AC 89 84                 ...
+        ;lda     $8486,y                         ; 0750 B9 86 84                 ...
+        ;beq     L0768                           ; 0753 F0 06                    ..
+
+	jsr     SetDevice                       ; 073E 20 B0 C2                  ..
         txa                                     ; 0741 8A                       .
         bne     L0768                           ; 0742 D0 24                    .$
 .ifndef config128
@@ -560,8 +648,17 @@ L077F:  cmp     #$02                            ; 077F C9 02                    
         jmp     L07DF                           ; 0783 4C DF 07                 L..
 ; ----------------------------------------------------------------------------
 L0786:  cmp     #$03                            ; 0786 C9 03                    ..
-        bne     L078D                           ; 0788 D0 03                    ..
+        bne     @1                              ; 0788 D0 03                    ..
         jmp     L07EF                           ; 078A 4C EF 07                 L..
+@1:	cmp	#DRV_SD_81
+	bne	@2
+	jmp	InitSD81
+@2:	cmp	#DRV_SD_71
+	bne 	@3
+	jmp	InitSD71
+@3:	cmp	#DRV_F011_0
+	bne	L078D
+	jmp	InitF011
 ; ----------------------------------------------------------------------------
 L078D:  cmp     #$41                            ; 078D C9 41                    .A
         bne     L0797                           ; 078F D0 06                    ..
@@ -628,11 +725,41 @@ L07EF:  lda     V212C                           ; 07EF AD 2C 21                 
 ; ----------------------------------------------------------------------------
 L07FE:  rts                                     ; 07FE 60                       `
 ; ----------------------------------------------------------------------------
-InitF011:
-		lda     V212C                           ; 07EF AD 2C 21                 .,!
+InitF011:	
+	lda     V212C                           ; 07EF AD 2C 21                 .,!
         cmp     #$04                            ; 07F2 C9 03                    ..
         beq     L07FE                           ; 07F4 F0 08                    ..
+
         lda     #$04                            ; 07F6 A9 03                    ..
+        sta     V212F                           ; 07F8 8D 2F 21                 ./!
+        jsr     InitNewDrive                           ; 07FB 4C D7 08                 L..
+
+	rts
+; ----------------------------------------------------------------------------
+InitSD81:
+	lda     V212C                           ; 07EF AD 2C 21                 .,!
+        cmp     #$06                            ; 07F2 C9 03                    ..
+        beq     L07FE                           ; 07F4 F0 08                    ..
+        lda     #$06                            ; 07F6 A9 03                    ..
+        sta     V212F                           ; 07F8 8D 2F 21                 ./!
+        jmp     InitNewDrive                           ; 07FB 4C D7 08                 L..
+; ----------------------------------------------------------------------------
+InitSD:
+	lda     V212C                           ; 07EF AD 2C 21                 .,!
+        cmp     #DRV_SD_81
+	beq     L07FE                        
+	cmp     #DRV_SD_71
+	beq     L07FE                        
+        
+	lda     #DRV_SD_81                      ; 07F6 A9 03                    ..
+        sta     V212F                           ; 07F8 8D 2F 21                 ./!
+        jmp     InitNewDrive                           ; 07FB 4C D7 08                 L..
+; ----------------------------------------------------------------------------
+InitSD71:
+	lda     V212C                           ; 07EF AD 2C 21                 .,!
+        cmp     #$07                            ; 07F2 C9 03                    ..
+        beq     L07FE                           ; 07F4 F0 08                    ..
+        lda     #$07                            ; 07F6 A9 03                    ..
         sta     V212F                           ; 07F8 8D 2F 21                 ./!
         jmp     InitNewDrive                           ; 07FB 4C D7 08                 L..
 ; ----------------------------------------------------------------------------
@@ -733,8 +860,7 @@ L08D6:  rts                                     ; 08D6 60                       
 ; ----------------------------------------------------------------------------
 InitNewDrive:  ; init drive driver
 		jsr     InstallDriver                           ; 08D7 20 C8 09                  ..
-
-		lda     V212B                           ; 08DA AD 2B 21                 .+!
+	lda     V212B                           ; 08DA AD 2B 21                 .+!
         jsr     InitDrive                           ; 08DD 20 3E 07                  >.
         lda     firstBoot                       ; 08E0 AD C5 88                 ...
         cmp     #$FF                            ; 08E3 C9 FF                    ..
@@ -758,6 +884,7 @@ L08FF:  dec     L180C                           ; 08FF CE 0C 18                 
         sta     $03FE,y                         ; 0908 99 FE 03                 ...
         lda     #$00                            ; 090B A9 00                    ..
         sta     driveData,y                     ; 090D 99 BF 88                 ...
+
         rts                                     ; 0910 60                       `
 ; ----------------------------------------------------------------------------
 L0911:  pha                                     ; 0911 48                       H
@@ -883,22 +1010,38 @@ L09F0:  lda     sysRAMFlg                       ; 09F0 AD C4 88                 
         sta     sysRAMFlg                       ; 09F5 8D C4 88                 ...
         sta     sysFlgCopy                      ; 09F8 8D 12 C0                 ...
         sta     L040A                           ; 09FB 8D 0A 04                 ...
+	
+	; stash driver a driver
         ldy     driveType                       ; 09FE AC 8E 84                 ...
         beq     L0A0B                           ; 0A01 F0 08                    ..
         lda     #$08                            ; 0A03 A9 08                    ..
         jsr     L0A3D                           ; 0A05 20 3D 0A                  =.
         jsr     StashRAM                        ; 0A08 20 C8 C2                  ..
+
+	; stash driver b driver
 L0A0B:  ldy     $848F                           ; 0A0B AC 8F 84                 ...
         beq     L0A18                           ; 0A0E F0 08                    ..
         lda     #$09                            ; 0A10 A9 09                    ..
         jsr     L0A3D
         jsr     StashRAM
+
+	; stash driver c driver
 L0A18:  ldy     $8490                           ; 0A18 AC 90 84                 ...
-        beq     L0A25                           ; 0A1B F0 08                    ..
+        beq     L0A18_D                           ; 0A1B F0 08                    ..
         lda     #$0A                            ; 0A1D A9 0A                    ..
         jsr     L0A3D                           ; 0A1F 20 3D 0A                  =.
         jsr     StashRAM                        ; 0A22 20 C8 C2                  ..
-L0A25:  ldy     V212F                           ; 0A25 AC 2F 21                 ./!
+
+	; stash driver d driver
+L0A18_D:  
+	ldy     $8491                          ; 0A18 AC 90 84                 ...
+        beq     L0A25                           ; 0A1B F0 08                    ..
+        lda     #$0B                            ; 0A1D A9 0A                    ..
+        jsr     L0A3D                           ; 0A1F 20 3D 0A                  =.
+        jsr     StashRAM                        ; 0A22 20 C8 C2                  ..
+
+L0A25:  
+	ldy     V212F                           ; 0A25 AC 2F 21                 ./!
         lda     V212B                           ; 0A28 AD 2B 21                 .+!
         jsr     L0A3D                           ; 0A2B 20 3D 0A                  =.
         jsr     StashRAM                        ; 0A2E 20 C8 C2                  ..
@@ -981,6 +1124,12 @@ L0A81:  ldy     #$04                            ; 0A81 A0 04                    
 L0A85:  and     #$0F                            ; 0A85 29 0F                    ).
         tay                                     ; 0A87 A8                       .
         dey                                     ; 0A88 88                       .
+	
+	; drive type 4 and above use driver index 3
+	cpy	#3
+	bcc	L0A89
+	ldy	#3	; use M65 device driver (F011)
+	
 L0A89:  rts                                     ; 0A89 60                       `
 ; ----------------------------------------------------------------------------
 L0A8A:  ldy     V212B                           ; 0A8A AC 2B 21                 .+!
@@ -1322,7 +1471,8 @@ L0E82:  cpx     #$00                            ; 0E82 E0 00                    
 L0E9D:  lda     #$00                            ; 0E9D A9 00                    ..
 L0E9F:  rts                                     ; 0E9F 60                       `
 ; ----------------------------------------------------------------------------
-L0EA0:  jsr     L0EF5                           ; 0EA0 20 F5 0E                  ..
+L0EA0:  
+	jsr     L0EF5                           ; 0EA0 20 F5 0E                  ..
         lda     #$01                            ; 0EA3 A9 01                    ..
         sta     r2H                             ; 0EA5 85 07                    ..
         lda     #$00                            ; 0EA7 A9 00                    ..
@@ -1375,7 +1525,8 @@ L0EF5:  lda     r0H                             ; 0EF5 A5 03                    
         sta     V2109                           ; 0F01 8D 09 21                 ..!
         rts                                     ; 0F04 60                       `
 ; ----------------------------------------------------------------------------
-L0F05:  ldy     V2109                           ; 0F05 AC 09 21                 ..!
+L0F05:  
+	ldy     V2109                           ; 0F05 AC 09 21                 ..!
         cpy     #$20                            ; 0F08 C0 20                    .
         bcs     L0F15                           ; 0F0A B0 09                    ..
         lda     V210A,y                         ; 0F0C B9 0A 21                 ..!
@@ -1386,7 +1537,10 @@ L0F05:  ldy     V2109                           ; 0F05 AC 09 21                 
 L0F15:  jsr     InitForIO                       ; 0F15 20 5C C2                  \.
         LoadW   r0, L0F6E
         jsr     L0F74                           ; 0F20 20 74 0F                  t.
-        beq     L0F29                           ; 0F23 F0 04                    ..
+	beq     L0F29                           ; 0F23 F0 04                    ..
+	;@22:
+	 ;       inc $d020
+	;	bra @22
         jsr     DoneWithIO                      ; 0F25 20 5F C2                  _.
         rts                                     ; 0F28 60                       `
 ; ----------------------------------------------------------------------------

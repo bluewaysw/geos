@@ -48,7 +48,7 @@ next:	.WORD	0
 	TYS	; just to be sure: stack at $100
 	SEE	; just to be sure: 8 bit stack
 	EOM
-
+.if 0
 	; 10113/10114 clear device numbers of the f011 drive, we will
 	; manage those independent of dos
 	lda	#$10
@@ -68,13 +68,13 @@ next:	.WORD	0
 	INZ
 	EOM
 	sta 	($02), Z
-
+.endif
 	; Just to be sure, enable newVic mode, to access eg VIC-3 register $30
 	; We don't need Mega65 fast mode here at any price, let's do that
 	; later maybe, in c65/start.s
-	LDA	#$A5
+	LDA	#C65_VIC_INIT1
 	STA	$D02F
-	LDA	#$96
+	LDA	#C65_VIC_INIT2
 	STA	$D02F
 	; CPU port stuff
 	LDA	#$2F
@@ -89,13 +89,24 @@ next:	.WORD	0
 	STZ	$D019	; disable VIC interrupts
 	STZ	$D01A
 
-	lda	#$80
+	;lda	#$80	; NTSC
+	lda	#$00	; PAL
 	sta	$d06f
 
-; not working with xemu
-;	LDA	#$00
-;	sta	$D710
+	; disable HDMI audio
+	lda	#0
+	sta	$d61a
+		
 
+; not working with xemu
+; disable badline emulation
+	LDA	#$04
+	sta	$D710
+	lda	$D05D
+	and	#%10111111
+	;ora	#%01000000
+	sta	$D05D
+	
 	LDA   $D054	;40 mhz
 	ORA   #$40
 	STA   $D054

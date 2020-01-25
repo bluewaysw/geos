@@ -189,7 +189,8 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 .ifdef topdesk128
 @ssub:
     sta r11L
-    LoadB   r11H, >DOUBLE_W
+;    LoadB   r11H, >DOUBLE_W
+    LoadB   r11H, >0
     ldx #r11
     jsr NormalizeX
     lda a3L

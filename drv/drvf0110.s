@@ -627,10 +627,14 @@ __InitForIO:					;95c6
 	STA tmpPS
 	SEI
 
-	LDA CPU_DATA
-	STA tmpCPU_DATA
-	LoadB CPU_DATA, KRNL_IO_IN
-	
+;.ifdef mega65
+;	LoadB CPU_DATA, IO_IN
+;.endif
+;lda	#$a5
+;sta	$d02f
+;lda 	#$96
+;sta	$d02f
+
 	LDA grirqen
 	STA tmpgrirqen
 	LDA clkreg
@@ -638,6 +642,12 @@ __InitForIO:					;95c6
 	LDY #0
 	STY clkreg
 		
+;.ifndef mega65
+	LDA CPU_DATA
+	STA tmpCPU_DATA
+	LoadB CPU_DATA, KRNL_IO_IN
+;.endif
+	
 	STY grirqen
 	LDA #%01111111
 	STA grirq
@@ -671,6 +681,18 @@ __InitForIO:					;95c6
 	INY
 	STY cia2base+4
 	
+	; The implementation assumes, that the environment is properly initialized
+	; already, especially VICIII or VICIV enabled, running CPU at 3.5Mhz or
+	; 48Mhz in case of MEGA65
+;	LDA #$A5      ; C65: VIC-III enable sequence
+;	STA $D02F
+;	LDA #$96
+;	STA $D02F     ; C65: VIC-III enabled
+	;lda	#$40
+	;TSB $D031     ; set bit 6 in $D031 to put CPU at 3.5MHz
+	;;lda	#$21
+	;;TSB $D030     ; bank in $C000 interface ROM and remove CIAs from IO map
+
 	; set real floppy or SD mounted disk image
 	lda	$D6A1
 	and	#$FE
@@ -718,9 +740,9 @@ __DoneWithIO:
 	LDA tmpgrirqen
 	STA grirqen
 ;.ifndef mega65
-	lda #C65_VIC_INIT1
+	lda #$a5
 	sta $d02f
-	lda #C65_VIC_INIT2
+	lda #$96
 	sta $d02f
 	lda $d031
 	ora #$40
@@ -728,12 +750,7 @@ __DoneWithIO:
 ;.endif	
 ;.ifndef mega65
 	LDA tmpCPU_DATA
-	cmp #RAM_64K
-	bne @2
-	lda #IO_IN
-@2:
 	STA CPU_DATA
-	LoadB CPU_DATA, IO_IN
 ;.endif
 	LDA tmpPS
 	PHA
@@ -833,17 +850,12 @@ _ReadByteSlow:
 _ReadByte:
 @1:
 	inc $d021
-	;lda $d083
-	;bit #%00000100
-	;bne @2
 	LDA $D082
 	AND #$20
 	BNE @1
 	LDA $D087
 	RTS
-;@2:
-;	inc $d020
-;	bra @2
+	
 _WriteByte:
 	STA $D087
 	RTS
@@ -1079,11 +1091,7 @@ bne	@111
 	JSR _DriveReady		; drive ready, not wrote protect
 	BCS _WriteBlockEnd
 	
-	lda #$01
-	sta $D081
-	jsr _WaitReady
-
-	LDA #$46
+	LDA #$40
 	JSR _ExecCommand		; execute read	
 	JSR _CheckResult		; test if read succeeded
 	BCS _WriteBlockEnd

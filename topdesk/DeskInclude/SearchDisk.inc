@@ -148,10 +148,12 @@ MemSearchDisk:	ldx	#0
 	bne	@d10
 @d05:	LoadB	r1L,18
 	bne	@d20
-@d10:	cmp	#3
-    beq @d11
-	cmp #4
-	bne	@d05	; bei unbek. Laufwerk wird von 1541 ausgegangen
+@d10:	cmp	#7	; DRV_SD_71
+	beq 	@d05
+	; DRV_F011_0
+	; DRV_F011_1
+	; DRV_SD_81
+	; bei unbek. Laufwerk wird von 1581 ausgegangen
 @d11:
 	LoadB	r1L,40
 @d20:	LoadW___	r4,$8000

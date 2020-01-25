@@ -61,7 +61,8 @@ DispInfo:	LoadW___	r0,@db
 @db:	.byte	$01
 	.byte	32,138
 .ifdef topdesk128
-	.word	54+DOUBLE_W,265+DOUBLE_W
+;	.word	54+DOUBLE_W,265+DOUBLE_W
+	.word	54,265
 .else
 	.word	54,265
 .endif

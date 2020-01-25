@@ -30,10 +30,10 @@
 _MainLoop:
 	ldx CPU_DATA
 	cpx #$30
-	bne @HOHO
+	bne @2
 	ldx #IO_IN
 	stx CPU_DATA
-@HOHO:
+@2:
 .ifdef wheels_screensaver
 .import RunScreensaver
 	bit saverStatus

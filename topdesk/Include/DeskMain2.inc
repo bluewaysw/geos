@@ -48,10 +48,12 @@ DispMultiCount:	txa
 	jsr	SetPattern
 	jsr	i_Rectangle
 	.byte	2,12
-	.word	222+DOUBLE_W,236+DOUBLE_W
+;	.word	222+DOUBLE_W,236+DOUBLE_W
+	.word	222,236
 	MoveB	MultiCount,r0L
 	LoadB	r0H,0
-	LoadW___	r11,223+DOUBLE_W
+;	LoadW___	r11,223+DOUBLE_W
+	LoadW___	r11,223
 	LoadB	r1H,9
 	lda	#%11000000
 	jsr	PutDecimal
@@ -560,8 +562,10 @@ GetEqualWindows:	; Ermittlung der Fensternummern, deren Pfadname genau mit dem
 ClxL	= SC_FROM_END |  79
 ClxR	= SC_FROM_END |  0
 .else
-ClxL	= 240 + DOUBLE_W
-ClxR	= 319 + DOUBLE_W
+;ClxL	= 240 + DOUBLE_W
+;ClxR	= 319 + DOUBLE_W
+ClxL	= 240
+ClxR	= 319
 .endif
 .else
 ClxL	= 240
