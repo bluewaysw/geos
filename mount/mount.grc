@@ -1,0 +1,10 @@
+HEADER AUTO_EXEC "MEGA MOUNT" "MEGA Mount" "V1.0" {
+    author    "Falk Rehwagen"
+    dostype   SEQ
+    structure SEQ
+    info      "Used to mount D81 or D41/D71 SD image files for mountable drives, save and restore at boot up."
+    date      25 01 20 13 19
+    mode      80only
+    icon      "build/mega65/mount/mount.bf"
+}
+
