@@ -154,7 +154,7 @@ ASSERT_NOT_BELOW_IO
 
 .ifdef debugger 
 _DebugStart:
-	brk
+	;brk
 	jsr FirstInit
 .endif
 
