@@ -347,7 +347,7 @@ $(BUILD_DIR)/$(D64_RESULT): $(BUILD_DIR)/kernal_compressed.prg
 		echo \*\*\* Created fresh $@.; \
 	fi;
 
-$(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topdesk.cvt $(BUILD_DIR)/mount.cvt $(BUILD_DIR)/config.cvt
+$(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topdesk.cvt $(BUILD_DIR)/mount.cvt $(BUILD_DIR)/clock.cvt $(BUILD_DIR)/config.cvt
 	@if [ -e $(D81_TEMPLATE) ]; then \
 		cp $(D81_TEMPLATE) $@; \
 		echo delete geos $(GEOS_OUT) configure geoboot | $(C1541) $@ >/dev/null; \
@@ -358,6 +358,7 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo delete \"geopaint\"| $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/mount.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite $(BUILD_DIR)/clock.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite gpt64.cvt | $(C1541) $@ >/dev/null; \
 		echo \*\*\* Created $@ based on $(D81_TEMPLATE).; \
@@ -366,6 +367,7 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo write $< $(GEOS_OUT) | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/mount.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite $(BUILD_DIR)/clock.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite GW128.CVT | $(C1541) $@ >/dev/null; \
 		echo geoswrite GPT128.CVT | $(C1541) $@ >/dev/null; \
@@ -411,6 +413,14 @@ $(BUILD_DIR)/mount/mount.o:
 	sed 's/192/1/g' $(BUILD_DIR)/mount/mount.s2 > $(BUILD_DIR)/mount/mount.s
 	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/mount/mount.s -o $@
 
+$(BUILD_DIR)/clock/clock.o:
+	@mkdir -p `dirname $@`
+	$(AS) clock/clockIcon.s -o $(BUILD_DIR)/clock/clockIcon.o
+	$(LD) -C clock/clockIcon.cfg $(BUILD_DIR)/clock/clockIcon.o -o $(BUILD_DIR)/clock/clock.bf
+	$(GRC) -s $(BUILD_DIR)/clock/clock.s2 -o $(BUILD_DIR)/clock/clock.c clock/clock.grc
+	sed 's/192/1/g' $(BUILD_DIR)/clock/clock.s2 > $(BUILD_DIR)/clock/clock.s
+	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/clock/clock.s -o $@
+
 $(BUILD_DIR)/config.cvt: $(BUILD_DIR)/configure/configure.o $(BUILD_DIR)/configure/r0.o $(BUILD_DIR)/configure/r2.o \
                                 $(BUILD_DIR)/configure/r3.o $(BUILD_DIR)/configure/r4.o $(BUILD_DIR)/configure/r5.o \
 								$(BUILD_DIR)/configure/r6.o $(BUILD_DIR)/configure/r1.o
@@ -437,6 +447,9 @@ $(BUILD_DIR)/topdesk.cvt: $(BUILD_DIR)/topdesk/topdesk.o $(BUILD_DIR)/topdesk/Ma
 
 $(BUILD_DIR)/mount.cvt: $(BUILD_DIR)/mount/mount.o $(BUILD_DIR)/mount/main.o
 	$(LD) -t geos-cbm -o $@ $(BUILD_DIR)/mount/mount.o -m $(BUILD_DIR)/mount.map $(BUILD_DIR)/mount/main.o 
+
+$(BUILD_DIR)/clock.cvt: $(BUILD_DIR)/clock/clock.o $(BUILD_DIR)/clock/main.o
+	$(LD) -t geos-cbm -o $@ $(BUILD_DIR)/clock/clock.o -m $(BUILD_DIR)/clock.map $(BUILD_DIR)/clock/main.o 
 
 ifeq ($(VARIANT), mega65)
 $(BUILD_DIR)/compressed.bin: $(BUILD_DIR)/kernal_combined.prg

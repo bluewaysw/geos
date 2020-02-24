@@ -48,6 +48,7 @@ next:	.WORD	0
 	TYS	; just to be sure: stack at $100
 	SEE	; just to be sure: 8 bit stack
 	EOM
+
 .if 0
 	; 10113/10114 clear device numbers of the f011 drive, we will
 	; manage those independent of dos
@@ -72,16 +73,24 @@ next:	.WORD	0
 	; Just to be sure, enable newVic mode, to access eg VIC-3 register $30
 	; We don't need Mega65 fast mode here at any price, let's do that
 	; later maybe, in c65/start.s
-	LDA	#C65_VIC_INIT1
-	STA	$D02F
-	LDA	#C65_VIC_INIT2
-	STA	$D02F
 	; CPU port stuff
 	LDA	#$2F
 	STA	0
 	LDA	#$37
 	STA	1
 
+	LDA	#C65_VIC_INIT1
+	STA	$D02F
+	LDA	#C65_VIC_INIT2
+	STA	$D02F
+
+	LDA	#C65_VIC_INIT1
+	STA	$D02F
+	LDA	#C65_VIC_INIT2
+	STA	$D02F
+@aaa:
+;	inc $d020
+;	jmp @aaa
 
 	; Various VIC register stuffs
 	STZ	$D030	; turn ROM mappings / etc OFF
