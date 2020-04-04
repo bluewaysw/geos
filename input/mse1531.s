@@ -106,14 +106,24 @@ UM_6:
 UM_7:
 	sec
 	eor #$ff
+	pha
 	adc mouseYPos
 	sta mouseYPos
-	php
-	CmpBI mouseYPos, 199
-	bcc UM_8
-	LoadB mouseYPos, 199
+	pla
+	bpl UM_8a
+	lda #$FF
+	bra UM_8
+UM_8a:
+	lda #0
 UM_8:
-	plp
+	adc r3H
+	sta r3H	
+;	php
+;	CmpBI mouseYPos, 199
+;	bcc UM_8
+;	LoadB mouseYPos, 199
+;UM_8:
+;	plp
 	txa
 	eor #$ff
 	adc #0
