@@ -53,9 +53,12 @@ _EndScanLine:
 	ldx	#$00
 	lda	#$70
 	jsr	_MapHigh
-	ldx #$00
-	lda #$80
-	jsr _MapLow
+	;ldx	#$00
+	;lda	#$80
+	
+	ldx	#$00
+	lda	#$00
+	jsr	_MapLow
 	pla
 	tax
 @1:

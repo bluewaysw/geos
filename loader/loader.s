@@ -116,12 +116,14 @@ next:	.WORD	0
 	;ora	#%01000000
 	sta	$D05D
 	
-	LDA   $D054	;40 mhz
-	ORA   #$40
-	STA   $D054
-	lda   #$40
-	sta	  $d031
+	LDA   	$D054	;40 mhz
+	ORA   	#$40
+	STA   	$D054
+	lda   	#$40
+	sta	$d031
 
+	lda	#5
+	sta	$D61B
 
 	 ; Set screen ram that has 100x60 cells x 2 bytes per cell = 12,000 bytes of colour
 	 ; information for bitmap mode.

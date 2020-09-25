@@ -190,7 +190,7 @@ DebugMain:
 
   rts
 
-welcome:  .byte "SuperDebugger V6.0",13,"(C) 2019 blueway.Softworks", 13, 13, 0
+welcome:  .byte "SuperDebugger V6.0",13,"(C) 2019-20 blueway.Softworks", 13, 13, 0
 
 ClearConsole:
   ldx #0
@@ -529,28 +529,28 @@ UpdateCursor:
 
 ProcessTrace:
 
-  LoadW r0, trace
-  jsr PutString
+	LoadW	r0, trace
+	jsr	PutString
 
-  jsr ResetSingleStep
+	jsr	ResetSingleStep
 
-  ; calc next break address
-  ; move PC to r1
-  ldy stackPointer
-  lda $107+STACK_OFFSET, y
-  sta r0H
-  lda $106+STACK_OFFSET, y
-  sta r0L
+	; calc next break address
+	; move PC to r1
+	ldy	stackPointer
+	lda	$107+STACK_OFFSET, y
+	sta	r0H
+	lda	$106+STACK_OFFSET, y
+	sta	r0L
 
-  ldy #0
-  ;lda (r0), y     ; get opcode at PC
+	ldy	#0
+	;lda 	(r0), y     ; get opcode at PC
 	jsr	GetByte
 
 	; special opcode handling for single step
 	cmp	#$4C	; JMP
 	bne	@1
-
 	ldy	#1
+@4:
 	lda	(r0), y     ; get jmp address low
 	tax
 	iny
@@ -561,6 +561,20 @@ ProcessTrace:
 	bra	@2
 
 @1:
+	cmp	#$6C	; JMP ($xyza)
+	bne	@3
+	ldy	#1
+	jsr	GetByte
+	tax
+	ldy	#2
+	jsr	GetByte
+
+	sta	r0H
+	stx	r0L
+	ldy	#0
+	bra	@4
+
+@3:
 	jsr	DebugOpcode_GetLen
 
 	clc
@@ -1611,43 +1625,8 @@ DebugOpcode_Print:
 @8:
   cmp #BREL
   bne @9
-  lda #'$'
-  jsr PutChar
-
-	PushW	r0
-
-
-	ldy #1
-        ;lda (r0), Y
-        jsr GetByte
-	pha
-	
-	clc
-	adc	r0L
-	sta	r0L
-	lda	r0H
-	adc	#0
-	sta	r0H
-
-	lda	r0L
-	clc
-	adc	#2
-	sta	r0L
-	lda	r0H
-	adc	#0
-	sta	r0H
-
-	pla
-	bpl	@8a
-	dec	r0H
-@8a:
-	lda	r0H
-	jsr	PrintByteHex
-	lda	r0L
-	jsr	PrintByteHex
-
-	PopW	r0
-
+  
+  	jsr	DebugOpcode_PrintBREL
 	bra @done
 
 @9:
@@ -1680,6 +1659,12 @@ DebugOpcode_Print:
 	jsr	PutChar
 	bra 	@done
 @10:
+	cmp	#IND
+	bne	@11
+	jsr	DebugOpcode_PrintIND
+	bra	@done
+@11:
+
 @done:
   lda #13
   jsr PutChar
@@ -1694,28 +1679,85 @@ DebugOpcode_Print:
   adc #0
   sta r0H
   rts
+  
+DebugOpcode_PrintIND:
+	lda #'('
+	jsr PutChar
+	lda #'$'
+	jsr PutChar
+	
+	ldy #2
+	jsr GetByte
+	jsr PrintByteHex
 
+	ldy #1
+	jsr GetByte
+	jsr PrintByteHex
+
+	lda #')'
+	jsr PutChar
+	rts
+
+DebugOpcode_PrintBREL:
+
+	lda #'$'
+        jsr PutChar
+      
+      	PushW	r0
+      
+      
+      	ldy #1
+              ;lda (r0), Y
+              jsr GetByte
+      	pha
+      	
+      	clc
+      	adc	r0L
+      	sta	r0L
+      	lda	r0H
+      	adc	#0
+      	sta	r0H
+      
+      	lda	r0L
+      	clc
+      	adc	#2
+      	sta	r0L
+      	lda	r0H
+      	adc	#0
+      	sta	r0H
+      
+      	pla
+      	bpl	@8a
+      	dec	r0H
+      @8a:
+      	lda	r0H
+      	jsr	PrintByteHex
+      	lda	r0L
+      	jsr	PrintByteHex
+      
+      	PopW	r0
+	rts
+	
 GetByte:
-  PushW r0
-  clc 
-  tya
-  adc r0L
-  sta r0L
-  lda r0H
-  adc #0
-  sta r0H
+	PushW r0
+	clc 
+	tya
+	adc r0L
+	sta r0L
+	lda r0H
+	adc #0
+	sta r0H
 
-  CmpWI r0, r0
-  bne @a1
-  lda saveR0
-  jmp @3
+	CmpWI r0, r0
+	bne @a1
+	lda saveR0
+	jmp @3
 @a1:
-  CmpWI r0, r0+1
-  bne @a2
-  lda saveR0+1
-  jmp @3
+	CmpWI r0, r0+1
+	bne @a2
+	lda saveR0+1
+	jmp @3
 @a2:
-
 	CmpWI r0, r1
 	bne @a3_
 	lda saveR1
@@ -1726,7 +1768,6 @@ GetByte:
 	lda saveR1+1	
 	jmp @3
 @a4:
-
 	CmpWI r0, r2
 	bne @a5
 	lda saveR2
@@ -1737,7 +1778,6 @@ GetByte:
 	lda saveR2+1
 	jmp @3
 @a6:
-
 	CmpWI r0, r3
 	bne @a7
 	lda saveR3
@@ -1748,32 +1788,30 @@ GetByte:
 	lda saveR3+1
 	jmp @3
 @a8:
-
-
-  ldy #0
+	ldy #0
 @2:
-  lda breakList, y
-  ora breakList+1,y
-  beq @1
+	lda breakList, y
+	ora breakList+1,y
+	beq @1
 
-  lda breakList+1, y
-  cmp r0H
-  bne @1
-  lda breakList, y
-  cmp r0L
-  bne @1
+	lda breakList+1, y
+	cmp r0H
+	bne @1
+	lda breakList, y
+	cmp r0L
+	bne @1
 
-  tya
-  lsr
-  tay
-  lda breakOpList, Y
-  jmp @3
+	tya
+	lsr
+	tay
+	lda breakOpList, Y
+	jmp @3
 
 @1:
-  iny
-  iny
-  cpy #16
-  bne @2
+	iny
+	iny
+	cpy #16
+	bne @2
 
 	CmpWI 	consoleBufAddr, $800
 	bne     @a3

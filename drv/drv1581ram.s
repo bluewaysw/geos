@@ -783,7 +783,7 @@ __InitForIO:
         pla                                     ; 94E0 68                       h
         sta     L966A                           ; 94E1 8D 6A 96                 .j.
         sei                                     ; 94E4 78                       x
-.ifndef config128
+.if (!.defined(config128)) || (.defined(mega65))        
         lda     CPU_DATA                        ; 94E5 A5 01                    ..
         sta     L966C                           ; 94E7 8D 6C 96                 .l.
         lda     #$36                            ; 94EA A9 36                    .6
@@ -793,6 +793,10 @@ __InitForIO:
         sta     L966B                           ; 94F1 8D 6B 96                 .k.
         lda     clkreg                          ; 94F4 AD 30 D0                 .0.
         sta     L9669                           ; 94F7 8D 69 96                 .i.
+        lda     $d031                           ; 9504 AD 30 D0                 .0.
+        sta     saveD031                           ; 9507 8D EF 9B
+        and 	#%10111111
+        sta     $D031    
         ldy     #$00                            ; 94FA A0 00                    ..
         sty     clkreg                          ; 94FC 8C 30 D0                 .0.
         sty     grirqen                         ; 94FF 8C 1A D0                 ...
@@ -801,7 +805,7 @@ __InitForIO:
         sta     $DC0D                           ; 9507 8D 0D DC                 ...
         sta     $DD0D                           ; 950A 8D 0D DD                 ...
         LoadW   $0314, Interrupt
-.ifdef config128
+.if .defined(config128) && (!.defined(mega65))
         LoadW   $0318, Interrupt
 .else
         LoadW   $0318, InterruptNMI
@@ -829,7 +833,7 @@ L9542:  lda     rasreg                          ; 9542 AD 12 D0                 
 
 ; ----------------------------------------------------------------------------
 Interrupt:
-.ifdef config128
+.if .defined(config128) && (!.defined(mega65))
         pla
         sta     $ff00
 .endif
@@ -853,9 +857,21 @@ __DoneWithIO:
         lda     $DD0D                           ; 9567 AD 0D DD                 ...
         lda     L966B                           ; 956A AD 6B 96                 .k.
         sta     grirqen                         ; 956D 8D 1A D0                 ...
-.ifndef config128
-        lda     L966C                           ; 9570 AD 6C 96                 .l.
-        sta     CPU_DATA                        ; 9573 85 01                    ..
+        lda	#C65_VIC_INIT1
+        sta	$d02f
+        lda	#C65_VIC_INIT2
+        sta	$d02f
+        lda 	saveD031
+        sta 	$D031
+
+.if (!.defined(config128)) || (.defined(mega65))
+	LDA 	L966C
+	cmp 	#RAM_64K
+	bne 	@2
+	lda 	#IO_IN
+@2:
+	STA 	CPU_DATA
+
 .endif
         lda     L966A                           ; 9575 AD 6A 96                 .j.
         pha                                     ; 9578 48                       H
@@ -978,7 +994,13 @@ L95E3:  lda     r0H                             ; 95E3 A5 03                    
         lda     r1H                             ; 961E A5 05                    ..
         ldy     curDrive                        ; 9620 AC 89 84                 ...
         adc     driveData,y                     ; 9623 79 BF 88                 y..
-        sta     r3L                             ; 9626 85 08                    ..
+        
+	bne	@2
+@3:
+	inc	$d020
+	bra	@3
+@2:
+	sta     r3L                             ; 9626 85 08                    ..
         lda     r1L                             ; 9628 A5 04                    ..
         sta     r1H                             ; 962A 85 05                    ..
         pla                                     ; 962C 68                       h
@@ -1000,9 +1022,14 @@ L95E3:  lda     r0H                             ; 95E3 A5 03                    
         lda     r4L                             ; 9646 A5 0A                    ..
         sta     r0L                             ; 9648 85 02                    ..
         pla                                     ; 964A 68                       h
-        tay                                     ; 964B A8                       .
+        pha
+	tay                                     ; 964B A8                       .
         jsr     DoRAMOp                         ; 964C 20 D4 C2                  ..
-        tax                                     ; 964F AA                       .
+        pla
+	tay                                     ; 964B A8                       .
+        jsr     DoRAMOp                         ; 964C 20 D4 C2                  ..
+	
+	tax                                     ; 964F AA                       .
         pla                                     ; 9650 68                       h
         sta     r3L                             ; 9651 85 08                    ..
         pla                                     ; 9653 68                       h
@@ -1044,6 +1071,9 @@ L9679:  brk                                     ; 9679 00                       
         brk                                     ; 967C 00                       .
         brk                                     ; 967D 00                       .
         brk                                     ; 967E 00                       .
+saveD031:
+        .byte	0
+
         .byte   "RAM 1581 driver Copyright (C) 1"; 967F 52 41 4D 20 31 35 38 31 RAM 1581
                                                 ; 9687 20 64 72 69 76 65 72 20   driver 
                                                 ; 968F 43 6F 70 79 72 69 67 68  Copyrigh

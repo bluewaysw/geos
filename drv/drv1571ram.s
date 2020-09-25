@@ -841,7 +841,7 @@ __InitForIO:
         pla                                     ; 9538 68                       h
         sta     L96F1                           ; 9539 8D F1 96                 ...
         sei                                     ; 953C 78                       x
-.ifndef config128
+.if (!.defined(config128)) || (.defined(mega65))
         lda     CPU_DATA                        ; 953D A5 01                    ..
         sta     L96F3                           ; 953F 8D F3 96                 ...
         lda     #$36                            ; 9542 A9 36                    .6
@@ -851,6 +851,10 @@ __InitForIO:
         sta     L96F2                           ; 9549 8D F2 96                 ...
         lda     clkreg                          ; 954C AD 30 D0                 .0.
         sta     L96F0                           ; 954F 8D F0 96                 ...
+	lda     $d031                           ; 9504 AD 30 D0                 .0.
+        sta     saveD031                           ; 9507 8D EF 9B
+        and 	#%10111111
+        sta     $D031             
         ldy     #$00                            ; 9552 A0 00                    ..
         sty     clkreg                          ; 9554 8C 30 D0                 .0.
         sty     grirqen                         ; 9557 8C 1A D0                 ...
@@ -859,7 +863,7 @@ __InitForIO:
         sta     $DC0D                           ; 955F 8D 0D DC                 ...
         sta     $DD0D                           ; 9562 8D 0D DD                 ...
         LoadW   $0314, Interrupt
-.ifdef config128
+.if .defined(config128) && (!.defined(mega65))
         LoadW   $0318, Interrupt
 .else
         LoadW   $0318, InterruptNMI
@@ -887,7 +891,7 @@ L959A:  lda     rasreg                          ; 959A AD 12 D0                 
 
 ; ----------------------------------------------------------------------------
 Interrupt:
-.ifdef config128
+.if .defined(config128) && (!.defined(mega65))
         pla
         sta     $ff00
 .endif
@@ -911,7 +915,15 @@ __DoneWithIO:
         lda     $DD0D                           ; 95BF AD 0D DD                 ...
         lda     L96F2                           ; 95C2 AD F2 96                 ...
         sta     grirqen                         ; 95C5 8D 1A D0                 ...
-.ifndef config128
+
+	lda	#C65_VIC_INIT1
+	sta	$d02f
+	lda	#C65_VIC_INIT2
+	sta	$d02f
+        lda 	saveD031
+        sta 	$D031
+
+.if (!.defined(config128)) || (.defined(mega65))
         lda     L96F3                           ; 95C8 AD F3 96                 ...
         sta     CPU_DATA                        ; 95CB 85 01                    ..
 .endif
@@ -922,8 +934,9 @@ __DoneWithIO:
 
 ; ----------------------------------------------------------------------------
 __EnterTurbo:
+
         lda     curDrive                        ; 95D3 AD 89 84                 ...
-        jsr     SetDevice                       ; 95D6 20 B0 C2                  ..
+        ;jsr     SetDevice                       ; 95D6 20 B0 C2                  ..
         ldx     #$00                            ; 95D9 A2 00                    ..
         rts                                     ; 95DB 60                       `
 
@@ -1137,3 +1150,5 @@ L96FC:  brk                                     ; 96FC 00                       
         brk                                     ; 96FE 00                       .
 L96FF:  brk                                     ; 96FF 00                       .
 ;        .byte   $F2                             ; 9700 F2                       .
+saveD031:
+	.byte	0

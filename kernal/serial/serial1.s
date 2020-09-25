@@ -25,6 +25,8 @@ SerialNumber:
 	; This matches the serial in the cbmfiles.com GEOS64.D64
 	;.word $58B5
         .word $FD8D
+	;.word $8A9A
+	;.word $C846
 .endif
 .endif
 

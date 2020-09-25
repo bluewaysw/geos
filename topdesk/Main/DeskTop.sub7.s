@@ -154,9 +154,12 @@ InstallDriver:	lda	firstBoot
 	jsr	StashDrivers
 	jsr	InitMouse
 @rts:	rts
-@Prnt8:	lda	c128Flag
+@Test:	.byte	"Comm. Compat.",NULL
+@Prnt8:
+	lda	c128Flag
 	bpl	@Prnt8a
 	jsr	DA1
+.ifndef mega65
 	LoadW___	r0,$7900
 	LoadW___	r1,$d9c0
 	LoadW___	r2,$640
@@ -169,11 +172,22 @@ InstallDriver:	lda	firstBoot
 	LoadW___	r2,$100
 	jsr	MoveBData
 	PopW	r15
-@Prnt8a:	MoveW_	r15,@Prnt2
-	jsr	i_MoveData
-@Prnt2:	.word	0
-@Prnt3:	.word	PrntFileName
-	.word	16
+.endif
+@Prnt8a:	
+	;MoveW_	r15,@Prnt2
+	;LoadW	@Prnt2, @Test
+	;jsr	i_MoveData
+;@Prnt2:	.word	0
+;@Prnt3:	.word	PrntFileName
+;	.word	16
+	ldy	#0
+@copyLoop:
+	lda	(r15),y
+@Prnt3 = *+1
+	sta	$FFFF, y
+	iny
+	cpy	#16	
+	bne	@copyLoop
 	lda	firstBoot
 	bpl	@Prnt8b
 	jsr	RedrawAll
@@ -208,7 +222,9 @@ DA1:	MoveW_	r15,r6
 	sta	r10L
 	jmp	GetFile
 
-StashDrivers:	lda	sysRAMFlg
+StashDrivers:	
+	rts
+	lda	sysRAMFlg
 	and	#%00100000
 	bne	@10
 @05:	rts
@@ -256,7 +272,7 @@ StartUp:
 	lda	sysRAMFlg	; REU-MoveData ausschalten
 	and	#$7f
 	sta	sysRAMFlg
-@norm:
+@norm:	
 .ifndef topdesk128
  	lda	c128Flag
 	bpl	@010
@@ -333,10 +349,14 @@ StartUp:
 	lda	inputDevName
 	bne	@30
 	jsr	GetPrefs2
+.ifdef mega65
+	lda	#10	; Input 64
+.else
 	lda	#10	; Input 64
 	ldx	c128Flag
 	bpl	@20
 	lda	#15	; Input 128
+.endif
 @20:	sta	r7L
 	LoadB	r7H,1
 	LoadB	Name,0

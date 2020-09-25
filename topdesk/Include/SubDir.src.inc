@@ -61,8 +61,16 @@ FindDirFiles:
 .ifdef topdesk13
 	MoveW_	@r3,r3
 .endif
+lda	curType
+cmp	#$82
+bne	@HOHO
+@HOHO2:
+	;brk
+@HOHO:
+
 	LoadB	r14L,0
 	jsr	DiskInitTurboIO
+
 	txa
 	bne	@100	; DoneWithIO beq	:20
 @20:	jsr	@200
@@ -835,14 +843,19 @@ XSubDir:	MoveW_	r15,r6
 	bne	XError1
 	ldx	#SUB_DIR
 	rts
-
+.ifdef mega65
+XInput64:	jmp	XPrinter
+XInput128:	jmp	XDispErr
+.else
 XInput64:	lda	c128Flag
 	bpl	XPrinter
 	jmp	XDispErr
 XInput128:	lda	c128Flag
 	bmi	XPrinter
 	jmp	XDispErr
+.endif
 XPrinter:	jmp	InstallDriver
+
 
 XDocument:	lda	curDrive
 	cmp	#10

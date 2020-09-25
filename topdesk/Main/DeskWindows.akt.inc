@@ -270,7 +270,6 @@ DrawWindow2:	; Par: a4-a6: Window-Rechteck
 	plp
 
 	bcc	@n10
-	inc $d020
 	lda	#0
 	sta	cutDebug
 	rts
@@ -2732,6 +2731,9 @@ NewPutString:
 .ifdef topdesk128
     	ldx 	#r11
     	jsr 	NormalizeX
+	ldx 	#r11
+	ldy	#r1H
+    	jsr 	NormalizeY
 .endif
 	ldy	#00
 	lda	(r0),y
@@ -2888,7 +2890,7 @@ StringLen:
 	;t	"InvFrame"
 .include "topdesk/WinInclude/InvFrame.inc"
 
-;SpeedFrame	; Parameter : r2-r4 Start r5-r7 Ende r8 Min Breite r9L Min H|he r9H Temp.
+;SpeedFrame; Parameter : r2-r4 Start r5-r7 Ende r8 Min Breite r9L Min H|he r9H Temp.
 	; Des: a,x,y,r0-r12
 	;t	"SpeedFrame"
 .include "topdesk/WinInclude/SpeedFrame.inc"

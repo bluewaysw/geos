@@ -89,6 +89,7 @@ _Rectangle:
 
 @3:
 	;PopB  	r5H
+rectEnd:
 	PopW  	r4
 	PopW	r3
 	PopW	r2
@@ -214,10 +215,11 @@ _FrameRectangle:
 	sta r9H
 	
 	jsr _NormRect
+	;PushB	r5H
+
 	PushW	r2
 	PushW	r3
-	PushB	r4H
-	;PushB	r5H
+	PushW	r4
 
 	ldy r2L
 	sty r11L
@@ -236,8 +238,4 @@ _FrameRectangle:
 	lda r9H
 	jsr _VerticalLine
 	;PopW r3
-	
-	PopB	r4H
-	PopW	r3
-	PopW	r2
-	rts
+	jmp	rectEnd

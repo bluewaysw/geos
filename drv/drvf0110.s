@@ -782,7 +782,6 @@ _ReadBlockCont1:
 	LDA $D082
 	AND #$10
 	BNE @2
-	inc $d021
 	LDA $D083
 	BPL @3
 	bra @1a
@@ -849,7 +848,6 @@ _ReadByteSlow:
 
 _ReadByte:
 @1:
-	inc $d021
 	LDA $D082
 	AND #$20
 	BNE @1
@@ -951,7 +949,6 @@ _InitControl:
 	lsr $D082	; stata
 	bcs @2
 	jsr _ExecCommand
-	inc $D020
 	bra @3
 @2:
 	jsr _SettleHead
@@ -990,7 +987,6 @@ _FindTrack:
 	ldy #$10	; stin
 @4:
 	sty $D081
-	inc $d020
 	bra @5
 @1:
 	tya
@@ -1045,7 +1041,6 @@ _ExecCommand:
 	STA $D081
 _WaitReady:
 @1:
-	inc $D020
 	BIT $D082
 	BMI @1
 	RTS

@@ -21,49 +21,97 @@
 
 .ifdef mega65
 
+REU_BASE_BANK = $00
+
 _StashRAM:
-	START_IO_X
+	lda	#0
+	sta	opFromBankLow
+	sta	opFromBankHigh+1
+
+
 	;LDA #$A5      ; C65: VIC-III enable sequence
 	;STA $D02F
 	;LDA #$96
 	;STA $D02F     ; C65: VIC-III enabled
 
+	jsr	_GetBankParams
+	sty	opToBankLow
+	sta	opToBankHigh+1
+	
+	lda	r0L
+	sta	opFromAddr
+	lda	r0H
+	;ldx	r1L
+	ldy	r1H
+
+
+_RamOp:
+	sta	opFromAddr+1
+	stx	opToAddr
+	sty	opToAddr+1
 	MoveW r2, opLength
-	MoveW r0, opFromAddr
-	lda r1L
-	sta	opToAddr
-	lda r1H
-	sta opToAddr+1
 
-	lda #>opddmalist
-	ldy #<opddmalist
-
-	jmp _DoRAMOp
-
-_FetchRAM:
 	START_IO_X
 
-
-	MoveW r2, opLength_fetch
-	MoveW r0, opToAddr_fetch
-	lda r1L
-	sta	opFromAddr_fetch
-	lda r1H
-	sta opFromAddr_fetch+1
-
-	lda #>opddmalist_fetch
-	ldy #<opddmalist_fetch
-
-_DoRAMOp:
+	lda	#>opddmalist
+	ldy	#<opddmalist
 
 	sta	$d701
-	lda	#0
-	sta	$d702
-	sta 	$d704	;	enhanced bank
+	;lda	#0
 	sty	$d705
 
 	END_IO_X
 
+	rts
+
+; input: A=0
+_GetBankParams:
+	sta	$d702
+	sta 	$d704	;	enhanced bank
+	;ldy	#5
+	;lda	#0
+	;bne	@1
+	
+	lda	r3L
+
+	tax	
+	and	#$0F
+	;lda	#5
+	tay
+	txa
+	lsr	
+	lsr
+	lsr
+	lsr
+	
+	ora	#$80
+	;lda	#0
+@1:
+	ldx	r1L
+	rts
+
+
+_DoRAMOp:
+	cpy	#%10010000
+	beq	_StashRAM
+_FetchRAM:
+	lda	#0
+	sta	opToBankLow
+	sta	opToBankHigh+1
+
+	jsr	_GetBankParams
+	sty	opFromBankLow
+	sta	opFromBankHigh+1
+
+	;lda	r1L
+	stx	opFromAddr
+	lda	r1H
+	ldx	r0L
+	ldy	r0H
+
+	bra	_RamOp
+	
+	
 _VerifyRAM:
 _SwapRAM:
 @3:	rts
@@ -71,7 +119,9 @@ _SwapRAM:
 opddmalist:
 	; enchanced dma mode header
 	.byte	$0a
+opFromBankHigh:
 	.byte	$80, $00
+opToBankHigh:
 	.byte	$81, $00
 	.byte 	0
 	.byte	0	; swap
@@ -79,27 +129,12 @@ opLength:
 	.word	DISK_DRV_LGH
 opFromAddr:
 	.word	DISK_BASE
+opFromBankLow:
 	.byte	0				; bank 0
 opToAddr:
 	.word	DISK_SWAPBASE+DISK_DRV_LGH
+opToBankLow:
 	.byte	5				; bank 1
-	.word	0				; unsued mod
-
-opddmalist_fetch:
-	; enchanced dma mode header
-	.byte	$0a
-	.byte	$80, $00
-	.byte	$81, $00
-	.byte	0
-	.byte	0	; swap
-opLength_fetch:
-	.word	DISK_DRV_LGH
-opFromAddr_fetch:
-	.word	DISK_BASE
-	.byte	5				; bank 0
-opToAddr_fetch:
-	.word	DISK_SWAPBASE+DISK_DRV_LGH
-	.byte	0				; bank 1
 	.word	0				; unsued mod
 
 .else

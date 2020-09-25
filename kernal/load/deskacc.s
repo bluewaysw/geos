@@ -12,6 +12,7 @@
 
 .import Dialog_2
 .import _MNLP
+.import _MNLP_DeskAcc
 .import DeskAccSP
 .import DeskAccPC
 .import InitGEOEnv
@@ -22,6 +23,10 @@
 .import UseSystemFont
 .import ReadFile
 .import GetFHdrInfo
+
+.ifdef mega65
+.import CheckAppCompat
+.endif
 
 .ifndef bsw128
 .import FastDelFile
@@ -117,6 +122,10 @@ tmp3:	.byte 0
 	MoveB r10L, A885D
 	jsr GetFHdrInfo
 	bnex LDAcc1
+.ifdef mega65	
+	jsr CheckAppCompat
+	bne LDAcc1
+.endif
 .ifdef useRamExp
 ; swap to other bank
 	PushW r1
@@ -154,10 +163,11 @@ tmp3:	.byte 0
 	stx DeskAccSP
 	ldx fileHeader+O_GHST_VEC+1
 	lda fileHeader+O_GHST_VEC
-	jmp _MNLP
+	jmp _MNLP_DeskAcc
 	PopW r1
 LDAcc1:
 	rts
+
 .endif
 
 _RstrAppl:

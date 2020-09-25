@@ -8,7 +8,12 @@
 .include "geosmac.inc"
 .include "c64.inc"
 
-.segment "mse1531"
+.export __VLIR0_START__
+.export __STARTUP_RUN__
+
+.segment "mse1351"
+__STARTUP_RUN__:
+__VLIR0_START__:
 
 MouseInit:
 	jmp _MouseInit

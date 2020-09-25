@@ -120,8 +120,8 @@ _Panic:
   lda lowMapBnk
   pha
 
-  lda #$00
-  tax
+  lda #$80
+  ldx #0
   jsr _MapLow
 
   ; unmap to $6000

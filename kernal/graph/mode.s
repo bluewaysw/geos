@@ -314,23 +314,23 @@ vmiNextLine:
 vmiMaxX:
 	.word	319,		639,		639,		719
 vmiMaxY:
-	.word	199,		199,		399,		575
+	.word	199,		199,		399,		568
 vmiCardsX:
 	.word	40,		80,		80,		90
 vmiFullCardsX:
 	.byte	40,		80,		80,		90
 vmiFullCardsY:
-	.byte	25,		25,		50,		72
+	.byte	25,		25,		50,		71
 vmiSpriteXPosOff:
-	.byte	25,		60,		60,		26
+	.byte	24,		79,		79,		38
 vmiSpriteYPosOff:
-	.byte	50,		50,		104,		1
+	.byte	50,		50,		104,		17
 vmiD011:
 	.byte	%00111011,	$3B,		$3B,		$3b
 vmiD016:
 	.byte	$09,		$09,		$09,		$09
 vmiSideBorder:
-	.word	79 | $8000,	59 | $8000,	59 | $8000,	26 | $8000
+	.word	78 | $8000,	80 | $8000,	80 | $8000,	39 | $8000
 vmiD031:
 	.byte	$40,		$C0,		$C8,		$C8
 vmiSpriteH640_OR:
@@ -354,9 +354,9 @@ vmiBitmapRAMBank:
 		;104
 		;504
 vmiTopBorder:
-	.word	104,		104,		104,		1
+	.word	104,		104,		104,		17
 vmiBottomBorder:
-	.word	504,		504,		504,		577
+	.word	504,		504,		504,		586
 .endif
 
 .ifdef mega65

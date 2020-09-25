@@ -1,13 +1,10 @@
 HEADER AUTO_EXEC "MEGA RTC" "MEGA RTC" "V1.0" {
     author    "Falk Rehwagen"
+    dostype   USR
+    structure SEQ
     info      "Boot time init or setup of the RTC date and time."
     date      20 03 03 21 45
     mode      80only
     icon      "build/mega65/clock/clock.bf"
-    structure VLIR
 }
 
-MEMORY {
-    overlaysize 0x1000
-    overlaynums 0
-}

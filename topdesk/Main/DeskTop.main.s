@@ -153,7 +153,6 @@ __ClearMultiFile:
 
 
 __STARTUP_RUN__:
-
 Start:
 .ifdef topdesk128
     jsr SetMyNewMode
@@ -198,7 +197,7 @@ Start:
 @01:	sta	MyName,y
 	iny
 	bne	@loop
-@02:
+@02:	
     jmp	StartUp
 
 .ifdef topdesk13
@@ -401,7 +400,8 @@ JmpSub:	pha
 	jmp	(r0)
 @10:	pla
 	rts
-StartUp:	lda	#7
+StartUp:
+	lda	#7
 	jsr	GetModule
 	MoveW_	ModStart+3*3+1,r1
 	SubVW_	2,r1
@@ -957,7 +957,9 @@ OpenDa:	pha
 	pla
 @26:	jsr	NewSetDevice
 
-	jmp	OpenNext
+	jsr	OpenNext
+
+	rts
 
 @27:	pla
 	rts
@@ -1776,7 +1778,7 @@ DA_Call:	; Nummer des Men}punktes in a
 	tax
 	dex		; minus 1
 .ifdef topdesk128
-    dex
+	dex		; minus "switch"
 .endif
 	stx	a0L
 	jsr	GotoFirstMenu
@@ -1798,11 +1800,13 @@ DA_Call:	; Nummer des Men}punktes in a
 	LoadW___	r6,Name
 	LoadB	r0L,0
 	jsr	StashMain
-DA_Call2:	jsr	GetFile	; DA laden und ausf}hren
-DAReturn:	txa
+DA_Call2:	
+	jsr	GetFile	; DA laden und ausf}hren
+DAReturn:	
+	txa
 	pha
 .ifdef topdesk128
-    jsr SetMyNewMode
+	jsr	SetMyNewMode
 .else
 	lda	c128Flag
 	bpl	@04
@@ -1998,6 +2002,7 @@ OpenNext:	ldx	activeWindow	; eventuell selektierte Files
 	txa
 	pha
 	jsr	GetDiskName
+
 	txa
 	beq	@0xx
 	pla
@@ -2010,9 +2015,12 @@ OpenNext:	ldx	activeWindow	; eventuell selektierte Files
 	pla
 	ldx	#$80
 	jmp	FehlerAusgabe
-@0x1:	pla
+@0x1:
+
+	pla
 	pha
 	jsr	GetDiskInfo
+
 	pla
 	pha
 	tax
@@ -2024,6 +2032,7 @@ OpenNext:	ldx	activeWindow	; eventuell selektierte Files
 	sta	xOffsH,x
 	jsr	GetSubDirXList
 	jsr	ClearList
+
 	pla
 	tax
 
@@ -2032,6 +2041,7 @@ OpenNextNr:	lda	#0
 	txa
 	pha
 	jsr	ReLoad2
+
 	txa
 	beq	@0xx
 	pla
@@ -2141,10 +2151,15 @@ ReLoad:	; NeuEinladen der Files / Icons
 	LoadB	r11H,0	; OffSet auf 0 setzen
 	lda	#30
 	.byte	$2c
-@10:	lda	#18
+@10:	
+
+
+	lda	#18
 	sta	r13L	; Anzahl der Bytes pro Eintrag
 	stx	r13H	; davon x }berlesen
+
 	jsr	FindDirFiles
+
 	txa
 	beq	@15
 	pla
@@ -2630,6 +2645,11 @@ PrintDriveNames:
 	dec	a7L
 	bpl	@loop
 	jsr	i_PutString
+.ifdef scalable_coords
+	WordCX  5, SC_FROM_END | 6	
+	ByteCY	5, SC_FROM_END | 6
+	.byte	NULL
+.else
 .ifdef topdesk128
 ;	.word	5 +DOUBLE_W
 	.word	5
@@ -2637,6 +2657,7 @@ PrintDriveNames:
 .else
 	.word	5
 	.byte	196,0
+.endif
 .endif
 	LoadW___	r0,PrntFileName
 	jsr	NewPutString
@@ -2690,15 +2711,26 @@ PutDrive:	; schreibt DriveName
 	dey
 	bne	@30
 @20:	LoadB	@ty,'8'
-@30:	lda	driveType,x
+@30:	pla
+	tax
+	pha
+
+	lda	driveType,x
 	bpl	@40
 	lda	#PLAINTEXT
 	sta	@nr
 	sta	@nr+1
 	LoadW___ r0, @dr
 @52:
-	SubVB	10,r11L	; nur low, da immer noch }ber 256
+	AddVW	10,r11L	; nur low, da immer noch }ber 256
 	jmp	@50
+@51:	sty	r0L
+	stx	r0H
+	ldx	#r11
+	jsr	NormalizeX
+	SubVW_	7, r11
+	bra	@50
+
 @40:	LoadB	@nr+1,':'
 	LoadW___ r0, @nr
 @50:	pla
@@ -2707,12 +2739,6 @@ PutDrive:	; schreibt DriveName
 	adc	#'A'
 	sta	(r0),y
 	jmp	NewPutString
-@51:	sty	r0L
-	stx	r0H
-	ldx	#r11
-	jsr	NormalizeX
-	SubVW_	7, r11
-	bra	@50
 
 @dr:	.byte	"x:RAM "
 @nr:	.byte	PLAINTEXT,PLAINTEXT,"15"
@@ -2722,7 +2748,7 @@ PutDrive:	; schreibt DriveName
 @sd71:	.byte	"x:SD D41/D71",0
 @int:	.byte	"x:Internal ",0
 @virt:	.byte	"x:Virtual ",0
-@ext:	.byte	"x:Ext 1565 ",0
+@ext:	.byte	"x:Ext 1565",0
 @none:	.byte	"x: ??? ",0
 
 CheckKlick:	; Ermittlung, ob Knopf gehalten oder nicht
@@ -3230,11 +3256,13 @@ File_Selected:	; Auswertung einer File-Selection
 	jsr	DoneWithIO
 	rts
 
-OpenFile:	jsr	ClearMultiFile2
+OpenFile:
+	PushB	graphMode
+	jsr	ClearMultiFile2
 	jsr	MaxTextWin
 @04:	jsr	GetAktlDisk
 	bcc	@05
-	rts
+	jmp	@100
 @05:	LoadB	a7L,0
 	jsr	CheckKlick
 	bcs	@d10
@@ -3250,7 +3278,9 @@ OpenFile:	jsr	ClearMultiFile2
 	beq	@10b
 	jmp	@15
 @10b:	lda	a7L
-	beq	@w10
+	bne	@w10b
+	jmp	@w10
+@w10b:
 	lda	r10L
 	sta	OpenNextNr+1
 	jsr	GetNext	; freie WindowNummer holen
@@ -3293,12 +3323,15 @@ OpenFile:	jsr	ClearMultiFile2
 	ldx	@new
 	jsr	OpenNextNr
 @w08:	LoadB	OpenNextNr+1,0
+@100:
+	PopB	graphMode
+	jsr	SetNewMode
 	rts
 @w09:	ldx	activeWindow
 	jsr	GetSubDirXList
 	jsr	UpperDir
 	LoadB	OpenNextNr+1,0
-	rts
+	bra	@100
 @new:	.byte	0
 @w10:	ldx	activeWindow
 	lda	r10L
@@ -3314,7 +3347,13 @@ OpenFile:	jsr	ClearMultiFile2
 	jsr	FehlerAusgabe
 @e10:	; rts
 @10:
-@14:	rts
+@14:	
+	PopB	graphMode
+	jsr	SetNewMode
+	jsr	SetColor
+	jsr	RedrawHead	
+	jsr	RedrawAll
+	rts
 @15:	cmp	#14	; INCOMPATIBLE
 	bne	@16b
 	jsr	StashMain

@@ -71,12 +71,10 @@ _PosSprite:
 
 	lda	r4H
 	jsr	UncompactXY
-	sta r4H
-	sty r5H
+	sta 	r4H
+	sty 	r5H
 
-	jsr	_HR_PosSprite
-	PopB	r5H
-	rts
+;	jsr	_HR_PosSprite
 
 
 _HR_PosSprite:
@@ -151,6 +149,7 @@ tay
 	sta $d05f
 
 	END_IO
+	PopB	r5H
 	rts
 @2__:
 	adc #0

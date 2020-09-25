@@ -146,7 +146,8 @@ MemSearchDisk:	ldx	#0
 	beq	@d05
 	cmp	#1
 	bne	@d10
-@d05:	LoadB	r1L,18
+@d05:	
+	LoadB	r1L,18
 	bne	@d20
 @d10:	cmp	#7	; DRV_SD_71
 	beq 	@d05

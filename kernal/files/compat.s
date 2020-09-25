@@ -15,6 +15,15 @@
 .segment "compat"
 
 CheckAppCompat:
+	; if we are in extended mode 
+	; but app is not INCOMPATIBLE
+	bit	graphMode
+	bvc	@4
+	lda	fileHeader+O_128_FLAGS
+	lsr
+	bcc	@1
+	bra	@3
+@4:	
 	bbsf 7, graphMode, @2 ; 80 col
 	bit fileHeader+O_128_FLAGS
 	bpl @3 ; ok

@@ -1,0 +1,9 @@
+HEADER APPLICATION "COMM 1351" "Input Drvr" "V6.0" {
+    author    "David Durran"
+    dostype   USR
+    structure SEQ
+    info      "Input driver for the Commodore 1351 proportional mouse."
+    date      20 03 03 21 47
+    icon      "build/mega65/input/mse1351.bf"
+}
+

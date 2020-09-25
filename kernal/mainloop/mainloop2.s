@@ -27,9 +27,11 @@ _MainLoop2:
 
   ; map $50000-$52000 to $06000
   ; x = bank, a=offset
+  	ldx	#$00
+  	lda	#$00
   	;ldx #$02
   	;lda #$50
-  	;jsr _MapLow
+  	jsr _MapLow
 
 	jmp _MainLoop
 .endif

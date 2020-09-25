@@ -18,6 +18,7 @@
 .import _FrameRectangle
 .import _GraphicsString
 .import _BitmapUp
+.import DoInlineReturn7
 
 .global _i_Rectangle
 .global _i_RecoverRectangle
@@ -43,12 +44,12 @@ _i_Rectangle:
 	jsr _Rectangle
 .endif
 .ifdef wheels_size
-.global DoInlineReturn7
-DoInlineReturn7:
-.endif
+	jmp DoInlineReturn7
+.else
 	php
 	lda #7
 	jmp DoInlineReturn
+.endif
 
 .segment "graph2d"
 

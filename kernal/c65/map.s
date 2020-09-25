@@ -20,6 +20,7 @@
 
 .global _MapLow
 .global _MapHigh
+.global _MNLP_DeskAcc
 
 .import UNK_4
 .import UNK_5
@@ -33,7 +34,7 @@
 .else
 .import LdFile
 .endif
-
+.import _MNLP
 
 .import _FollowChain
 .import _FindFTypes
@@ -205,19 +206,20 @@ ApplyMapping:
 _map_FollowChain:
     jsr MapUnderlay
     jsr _FollowChain
+__unmap2:
     jmp UnmapUnderlay
 _map_FindFTypes:
     jsr MapUnderlay
     jsr _FindFTypes
-    jmp UnmapUnderlay
+    bra __unmap2
 _map_FindFile:
     jsr MapUnderlay
     jsr _FindFile
-    jmp UnmapUnderlay
+    bra __unmap2
 _map_SetDevice:
     jsr MapUnderlay
     jsr _SetDevice
-    jmp UnmapUnderlay
+    bra __unmap2
 _map_GetFHdrInfo:
     jsr MapUnderlay
     jsr _GetFHdrInfo
@@ -226,6 +228,9 @@ _map_LdDeskAcc:
     jsr MapUnderlay
     jsr _LdDeskAcc
     jmp UnmapUnderlay
+_MNLP_DeskAcc:
+    jsr UnmapUnderlay
+    jmp	_MNLP
 _map_RstrAppl:
     jsr MapUnderlay
     jsr _RstrAppl

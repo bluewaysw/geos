@@ -9,7 +9,13 @@
 .include "jumptab.inc"
 .include "c64.inc"
 
+.export __VLIR0_START__
+.export __STARTUP_RUN__
+
+
 .segment "joydrv"
+__STARTUP_RUN__:
+__VLIR0_START__:
 
 MouseInit:
 	jmp _MouseInit

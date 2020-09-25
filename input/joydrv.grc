@@ -1,0 +1,9 @@
+HEADER APPLICATION "JOYSTICK" "Input Drvr" "V6.0" {
+    author    "Berkeley Softworks"
+    dostype   USR
+    structure SEQ
+    info      "This is the default input driver, for joysticks & 1350 Mouse."
+    date      20 03 03 21 45
+    icon      "build/mega65/input/joydrv.bf"
+}
+

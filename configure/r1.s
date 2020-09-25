@@ -19,9 +19,10 @@
        ;*=$13b1
        ;!zone r1
 ; ----------------------------------------------------------------------------
-
+.ifndef mega65
 vdcreg  = $d600
 vdcdata = $d601
+.endif
 
 ; fix!
 ;L043E           = $043E; fix!
@@ -53,10 +54,14 @@ vdcdata = $d601
 .import InitShadowed1581
 .import InitRAM1571
 .import InitRAM1581
+.import InitRAM
 .import InitF011
+.import InitF011_1
 .import InitSD81
 .import InitSD71
 .import InitSD
+.import InitVirtual
+.import InitFloppy
 
 .export V20D9
 .export V2102
@@ -66,6 +71,7 @@ vdcdata = $d601
 .export V2106
 .export V2107
 .export V2108
+.export V2108a
 .export V2109
 .export V210A
 .export V212B
@@ -380,7 +386,7 @@ L147C:  jmp     EnterDeskTop                    ; 147C 4C 2C C2                 
 ; we are geso64/geos128 as config requires
 L147F:  lda     #$80                            ; 147F A9 80                    ..
         sta     dispBufferOn                    ; 1481 85 2F                    ./
-        lda     curDrive                        ; 1483 AD 89 84                 ...
+	lda     curDrive                        ; 1483 AD 89 84                 ...
         sta     V2104                           ; 1486 8D 04 21                 ..!
         tay                                     ; 1489 A8                       .
         lda     $8486,y                         ; 148A B9 86 84                 ...
@@ -416,7 +422,7 @@ L14A6:  lda     driveType,y                     ; 14A6 B9 8E 84                 
         .byte   RECTANGLETO
 .ifdef config128
 .ifdef mega65
-        .word   SC_FROM_END+0 + (((SC_FROM_END|0) >> 8) << 12)  
+	.word   SC_FROM_END+0 + (((SC_FROM_END|0) >> 8) << 12)  
 .else
         .word   319 + CFG_DOUBLE_W + CFG_ADD1_W
 .endif
@@ -428,7 +434,29 @@ L14A6:  lda     driveType,y                     ; 14A6 B9 8E 84                 
 .else
         .byte   199
 .endif
-        .byte   NULL
+	.byte   NULL
+
+.ifdef mega65
+.if 0
+	jsr     i_GraphicsString
+	.byte   NEWPATTERN
+	.byte   $00
+	
+	.byte   MOVEPENTO
+	.word	0 + (((SC_FROM_END|40) >> 8) << 12)
+	.byte	(SC_FROM_END|40) & $FF
+	
+	.byte   RECTANGLETO
+	.word	40 + (((SC_FROM_END|00) >> 8) << 12)
+	.byte	(SC_FROM_END|0) & $FF
+	
+	.byte   FRAME_RECTO
+	.word	0 + (((SC_FROM_END|40) >> 8) << 12)
+	.byte	(SC_FROM_END|40) & $FF
+
+	.byte	NULL
+.endif
+.endif
 
 .ifdef config128
         ; setup resolution specific coordinates
@@ -496,7 +524,7 @@ L1518:  lda     #$01                            ; 1518 A9 01                    
         beq     L153E                           ; 1530 F0 0C                    ..
         lda     #$81                            ; 1532 A9 81                    ..
         jsr     L0672                           ; 1534 20 72 06                  r.
-        lda     #$83                            ; 1537 A9 83                    ..
+	lda     #$83                            ; 1537 A9 83                    ..
         jsr     L0672                           ; 1539 20 72 06                  r.
         bne     L1541                           ; 153C D0 03                    ..
 L153E:  jsr     CloseRecordFile                 ; 153E 20 77 C2                  w.
@@ -592,7 +620,6 @@ L15FF:  lda     V212E                           ; 15FF AD 2E 21                 
         lda     (r15L),y                        ; 160B B1 20                    .
         sta     V212B                           ; 160D 8D 2B 21                 .+!
         jsr     InitDrive                           ; 1610 20 3E 07                  >.
-        inc $d020
         ldy     V212B                           ; 1613 AC 2B 21                 .+!
         lda     $8486,y                         ; 1616 B9 86 84                 ...
         sta     V212C                           ; 1619 8D 2C 21                 .,!
@@ -766,7 +793,6 @@ L17EA:
         sta     L180C                           ; 17EC 8D 0C 18                 ...
         ;jsr     L1837                           ; 17EF 20 37 18                  7.
         jsr     L180D                           ; 17F2 20 0D 18                  ..
-        inc $d020
         jsr     L181B                           ; 17F5 20 1B 18                  ..
         lda     ramExpSize                      ; 17F8 AD C3 88                 ...
         beq     L1800                           ; 17FB F0 03                    ..
@@ -867,7 +893,54 @@ SomeTextDlg:
         .byte   0
 MenuShowInfo:
         jsr     DoPreviousMenu                  ; 18E9 20 90 C1                  ..
-        ldx     #>InfoDlg                       ; 18EC A2 18                    ..
+        
+        ; init REU size
+	lda	#0
+	sta	r0H
+	lda	ramExpSize
+	asl
+	rol	r0H
+	asl
+	rol	r0H
+	asl	
+	rol	r0H
+	asl
+	rol	r0H
+	asl
+	rol	r0H
+	asl
+	rol	r0H
+	sta	r0L
+	
+	LoadW	r1, 10
+	ldx	#4
+@1:
+	txa	
+	pha
+	ldx	#r0
+	ldy	#r1
+	jsr	Ddiv
+	pla	
+	tax
+	lda	r8L
+	clc	
+	adc	#'0'
+	sta	REUSize,x
+	dex
+	bmi	@2
+		
+	CmpWI	r0, 0
+	bne	@1
+@2a:
+	cpx	#$FF
+	beq	@3
+	lda	#BOLDON
+	sta	REUSize,x	
+	dex	
+	bra	@2a
+@2:
+@3:
+	ldx     #>InfoDlg                       ; 18EC A2 18                    ..
         lda     #<InfoDlg                           ; 18EE A9 F4                    ..
         jsr     L2022                           ; 18F0 20 22 20                  "
         rts                                     ; 18F3 60                       `
@@ -880,27 +953,35 @@ InfoDlg:
         .word   L1910
         .byte   DBTXTSTR
         .byte   8
-        .byte   $20
+        .byte   $1E
         .word   L1921
         .byte   DBTXTSTR
         .byte   8
-        .byte   $2c
+        .byte   $2A
         .word   L193B
         .byte   DBTXTSTR
         .byte   8
-        .byte   $3E
+        .byte   $3C
         .word   L194F
         .byte   DBTXTSTR
         .byte   8
-        .byte   $4A
+        .byte   $48
         .word   L196C
+	.byte   DBTXTSTR
+        .byte   8
+        .byte   $58
+        .word   REUText
         .byte   DBSYSOPV
         .byte   0
 L1910:
         .byte   $18,$1A                     ; 190F 00 18 1A                 ...
 .ifdef config128
+.ifdef mega65
+	.byte	"65 CONFIGURE 6.0"
+.else
         .byte   "128 CONFIGURE 2.1"                 ; 1912 43 4F 4E 46 49 47 55 52  CONFIGUR
                                                 ; 191A 45 20 32 2E 31           E 2.1
+.endif
 .else
         .byte   "CONFIGURE 2.1"                 ; 1912 43 4F 4E 46 49 47 55 52  CONFIGUR
                                                 ; 191A 45 20 32 2E 31           E 2.1
@@ -926,7 +1007,16 @@ L196C:
                                                 ; 197C 2D 4C 69 6E 6B 3A 20 47  -Link: G
                                                 ; 1984 45 4F 52 45 50 20 4A     EOREP J
         .byte   "IM)"                           ; 198B 49 4D 29                 IM)
-        .byte   $1B,$00                         ; 198E 1B 00                    ..
+	.byte   $00                         ; 198E 1B 00                    ..
+REUText:
+	.byte 	"RAM expansion: "
+
+REUSize:
+	.byte	"     "
+
+REUTextSuffix:
+	.byte	"K", $1B, NULL
+	
 ; ----------------------------------------------------------------------------
 MenuSaveConfig:
         jsr     DoPreviousMenu                  ; 1990 20 90 C1                  ..
@@ -973,7 +1063,6 @@ CantSaveDlg:
         .byte   1
         .byte   $48
         .byte   0
-
 L19E4:  .byte   $18                             ; 19E4 18                       .
         .byte   "Unable to save configuration:" ; 19E5 55 6E 61 62 6C 65 20 74  Unable t
                                                 ; 19ED 6F 20 73 61 76 65 20 63  o save c
@@ -1070,6 +1159,9 @@ L1AA0:  lda     #$00                            ; 1AA0 A9 00                    
 	jsr     L1C39                           ; 1AA7 20 39 1C                  9.        
 	jsr     L1B5B                           ; 1AAA 20 5B 1B                  [.
 
+	jsr     CheckFloppy
+        jsr     L1B5B
+
 	jsr     CheckF011                       ; 1AA7 20 39 1C                  9.
         jsr     L1B5B                           ; 1AAA 20 5B 1B                  [.
 
@@ -1109,14 +1201,19 @@ L1AA0:  lda     #$00                            ; 1AA0 A9 00                    
 	jsr     L1CDC                           ; 1AD7 20 DC 1C                  ..
         jsr     L1B5B                           ; 1ADA 20 5B 1B                  [.
 
+	jsr     CheckRAM                        ; 1AD7 20 DC 1C                  ..
+        jsr     L1B5B                           ; 1ADA 20 5B 1B                  [.
 
-	;jsr     CheckF011_1                       ; 1AA7 20 39 1C                  9.
-        ;jsr     L1B5B                           ; 1AAA 20 5B 1B                  [.
+	jsr     CheckF011_1                       ; 1AA7 20 39 1C                  9.
+        jsr     L1B5B                           ; 1AAA 20 5B 1B                  [.
 
 	jsr     CheckSD81                       ; 1AA7 20 39 1C                  9.
         jsr     L1B5B                           ; 1AAA 20 5B 1B                  [.
 
 	jsr     CheckSD71                       ; 1AA7 20 39 1C                  9.
+        jsr     L1B5B                           ; 1AAA 20 5B 1B                  [.
+
+	jsr     CheckVirtual                    ; 1AA7 20 39 1C                  9.
         jsr     L1B5B                           ; 1AAA 20 5B 1B                  [.
 
         lda     V212E                           ; 1ADD AD 2E 21                 ..!
@@ -1290,6 +1387,8 @@ L1BA9:
 	.byte   <OptF011_V
 
 	.byte   <OptSD
+	.byte	<OptFloppy
+	.byte	<OptRAM
 	
 L1BB2:
         .byte   >OptNoDrive
@@ -1307,6 +1406,8 @@ L1BB2:
 	.byte   >OptSD71
 	.byte   >OptF011_V
 	.byte   >OptSD
+	.byte	>OptFloppy
+	.byte	>OptRAM
 	
 
 ; no drive
@@ -1408,9 +1509,9 @@ F011Label:
 OptF011_1:
         .byte   $05
         .word   F011_1Label
-        .word   InitF011
+        .word   InitF011_1
 F011_1Label:
-        .byte   "1565"                          ; 1BCE 31 35 34 31              1541
+        .byte   "External 1565"                          ; 1BCE 31 35 34 31              1541
         .byte   $00                             ; 1BD2 00                       .
 
 ; SD81
@@ -1435,9 +1536,9 @@ SD71Label:
 OptF011_V:
         .byte   $08
         .word   F011_VLabel
-        .word   InitF011
+        .word   InitVirtual
 F011_VLabel:
-        .byte   "1"                          ; 1BCE 31 35 34 31              1541
+        .byte   "Virtual"                          ; 1BCE 31 35 34 31              1541
         .byte   $00                             ; 1BD2 00                       .
 
 ; SD
@@ -1448,6 +1549,24 @@ OptSD:
 SDLabel:
         .byte   "SD Mount"                          ; 1BCE 31 35 34 31              1541
         .byte   $00                             ; 1BD2 00                       .
+
+; SD
+OptFloppy:
+        .byte   $09
+        .word   FloppyLabel
+        .word   InitFloppy
+FloppyLabel:
+        .byte   "3.5", 34, " Floppy"                          ; 1BCE 31 35 34 31              1541
+        .byte   $00                             ; 1BD2 00                       .
+
+; RAM drive (1581)
+OptRAM:
+        .byte   $83                             ; 1C2A 00 83                    ..
+        .word   RAMDriveLabel
+        .word   InitRAM
+RAMDriveLabel:
+        .byte   "RAM Drive"                      ; 1C30 52 41 4D 20 31 35 38 31  RAM 1581
+        .byte   0                                     ; 1C38 00                       .
 
 L1C39:  ldy     V212C                           ; 1C39 AC 2C 21                 .,!
         beq     L1C40                           ; 1C3C F0 02                    ..
@@ -1485,8 +1604,8 @@ L1C6C:  ldy     #$00                            ; 1C6C A0 00                    
 L1C6F:  lda     V212C                           ; 1C6F AD 2C 21                 .,!
         cmp     #$81                            ; 1C72 C9 81                    ..
         beq     L1C82                           ; 1C74 F0 0C                    ..
-        cmp     #$00                            ; 1C76 C9 00                    ..
-        bne     L1C85                           ; 1C78 D0 0B                    ..
+	bit	V212C
+	bpl	L1C85
         lda     #$81                            ; 1C7A A9 81                    ..
         jsr     L0911                           ; 1C7C 20 11 09                  ..
         txa                                     ; 1C7F 8A                       .
@@ -1511,14 +1630,41 @@ L1C96:  ldy     #$00                            ; 1C96 A0 00                    
 ; ----------------------------------------------------------------------------
 CheckF011_1:  
 	lda     V212C                           ; 1C88 AD 2C 21                 .,!
-	cmp	#$05
-	beq	ShowF011_1
-	
-	cmp	#0
+	cmp     #$05                            ; 1C8B C9 02                    ..
+	beq     ShowF011_1                           ; 1C8D F0 04                    ..
+
+
+	; check if Floppy is already selected
+	ldy	#0
+@1:
+	lda	driveType,y
+	cmp	#DRV_F011_1
+	beq	L1C96
+	iny
+	cpy	#4
+	bne	@1
+
+	; no drive with this type
+	lda     V212C
+	beq	@2
+	cmp	#DRV_F011_0
 	bne	L1C96
-ShowF011_1:
-	ldy	#11
-	rts
+	bra	ShowF011_1
+@2:
+	ldy	#0
+@3:
+	lda	driveType,y
+	cmp	#DRV_F011_0
+	beq	ShowF011_1
+	iny
+	cpy	#4
+	bne	@3
+	bra	L1C96
+		
+	; no floppy yet at all
+ShowF011_1:                              ; 1C93 A0 05                    ..
+        ldy	#11
+	rts                                     ; 1C95 60                       `
 	
 CheckSD:  
 	lda     V212C                           ; 1C88 AD 2C 21                 .,!
@@ -1532,11 +1678,37 @@ ShowSD:
 	ldy	#15
 	rts
 	
+CheckFloppy:  
+	lda     V212C                           ; 1C88 AD 2C 21                 .,!
+	cmp	#DRV_F011_0
+	beq	L1C96
+	cmp	#DRV_F011_1
+	beq	L1C96
+	cmp	#0
+	bne	L1C96
+	
+	; show floppy if non of the floppies is in Selection
+	ldy	#0
+@1:
+	lda	driveType,y
+	cmp	#DRV_F011_0
+	beq	L1C96
+	cmp	#DRV_F011_1
+	beq	L1C96
+	iny
+	cpy	#4
+	bne	@1
+
+	ldy	#16
+	rts
+
 CheckSD81:  
 	lda     V212C                           ; 1C88 AD 2C 21                 .,!
 	cmp	#DRV_SD_71
 	beq	ShowSD81
 	cmp	#DRV_SD_81
+	beq	ShowSD81
+	cmp	#DRV_F011_V
 	bne	L1C96
 ShowSD81:
 	ldy	#12
@@ -1546,17 +1718,48 @@ CheckSD71:  lda     V212C                           ; 1C88 AD 2C 21             
 	cmp	#DRV_SD_81
 	beq	ShowSD71
 	cmp	#DRV_SD_71
-	bne	L1C96
+	beq	ShowSD71
+	cmp	#DRV_F011_V
+	bne	L1C96b
 ShowSD71:
 	ldy	#13
 	rts
+
+L1C96b:  ldy     #$00                            ; 1C96 A0 00                    ..
+        rts                                     ; 1C98 60                       `
+
+CheckVirtual:  
+	lda     V212C                          
+	cmp	#DRV_SD_81
+	beq	ShowVirtualMaybe
+	cmp	#DRV_SD_71
+	beq	ShowVirtualMaybe
+	cmp     #DRV_F011_V
+	beq     ShowVirtual                     
+	bne     NoVirtual                        
+
+	; check if Floppy is already selected
+ShowVirtualMaybe:
+	ldy	#0
+@1:
+	lda	driveType,y
+	cmp	#DRV_F011_V
+	beq	NoVirtual
+	iny
+	cpy	#4
+	bne	@1
+ShowVirtual:
+        ldy	#14
+	rts 
+
+NoVirtual:  
+	ldy     #$00                           
+        rts                                    
 
 CheckF011:  
 	lda     V212C                           ; 1C88 AD 2C 21                 .,!
 	cmp     #$04                            ; 1C8B C9 02                    ..
         beq     ShowF011                           ; 1C8D F0 04                    ..
-        cmp     #$00                            ; 1C8F C9 00                    ..
-        bne     NoF011                           ; 1C91 D0 03                    ..
 
 	; check if Floppy is already selected
 	ldy	#0
@@ -1567,6 +1770,23 @@ CheckF011:
 	iny
 	cpy	#4
 	bne	@1
+	
+	lda     V212C
+	beq	@2
+	cmp	#DRV_F011_1
+	bne	NoF011
+	jmp	ShowF011
+@2:
+	ldy	#0
+@3:
+	lda	driveType,y
+	cmp	#DRV_F011_1
+	beq	ShowF011
+	iny
+	cpy	#4
+	bne	@3
+	bra	NoF011
+
 ShowF011:                              ; 1C93 A0 05                    ..
         ldy	#10
 	rts                                     ; 1C95 60                       `
@@ -1624,8 +1844,8 @@ L1CC0:  ldy     #$00                            ; 1CC0 A0 00                    
 L1CC3:  lda     V212C                           ; 1CC3 AD 2C 21                 .,!
         cmp     #$82                            ; 1CC6 C9 82                    ..
         beq     L1CD6                           ; 1CC8 F0 0C                    ..
-        cmp     #$00                            ; 1CCA C9 00                    ..
-        bne     L1CD9                           ; 1CCC D0 0B                    ..
+	bit	V212C
+	bpl	L1CD9
         lda     #$82                            ; 1CCE A9 82                    ..
         jsr     L0911                           ; 1CD0 20 11 09                  ..
         txa                                     ; 1CD3 8A                       .
@@ -1639,8 +1859,8 @@ L1CD9:  ldy     #$00                            ; 1CD9 A0 00                    
 L1CDC:  lda     V212C                           ; 1CDC AD 2C 21                 .,!
         cmp     #$83                            ; 1CDF C9 83                    ..
         beq     L1CEF                           ; 1CE1 F0 0C                    ..
-        cmp     #$00                            ; 1CE3 C9 00                    ..
-        bne     L1CF2                           ; 1CE5 D0 0B                    ..
+	bit	V212C
+	bpl	L1CF2
         lda     #$83                            ; 1CE7 A9 83                    ..
         jsr     L0911                           ; 1CE9 20 11 09                  ..
         txa                                     ; 1CEC 8A                       .
@@ -1650,6 +1870,20 @@ L1CEF:  ldy     #$09                            ; 1CEF A0 09                    
 ; ----------------------------------------------------------------------------
 L1CF2:  ldy     #$00                            ; 1CF2 A0 00                    ..
         rts                                     ; 1CF4 60                       `
+
+CheckRAM:  
+	lda     V212C                           ; 1CDC AD 2C 21                 .,!
+        bmi	NoCheckRAM
+	bne	NoCheckRAM
+	
+	; offer it if RAM for a drive is available
+	
+ShowCheckRAM:  ldy     #17                            ; 1CEF A0 09                    ..
+        rts                                     ; 1CF1 60                       `
+; ----------------------------------------------------------------------------
+NoCheckRAM:  ldy     #$00                            ; 1CF2 A0 00                    ..
+        rts                                     ; 1CF4 60                       `
+
 ; ----------------------------------------------------------------------------
 InitNoDrive:
         lda     V212C                           ; 1CF5 AD 2C 21                 .,!
@@ -1657,6 +1891,16 @@ InitNoDrive:
         jsr     PurgeTurbo                      ; 1CFA 20 35 C2                  5.
         lda     V212C                           ; 1CFD AD 2C 21                 .,!
         bmi     L1D1B                           ; 1D00 30 19                    0.
+	cmp	#DRV_F011_0
+	beq	L1D1B
+	cmp	#DRV_F011_1
+	beq	L1D1B
+	cmp	#DRV_F011_V
+	beq	L1D1B
+	cmp	#DRV_SD_71
+	beq	L1D1B
+	cmp	#DRV_SD_81
+	beq	L1D1B
         lda     V212B                           ; 1D02 AD 2B 21                 .+!
         clc                                     ; 1D05 18                       .
         adc     #$39                            ; 1D06 69 39                    i9
@@ -1671,9 +1915,7 @@ L1D08:  sta     L1D9A                           ; 1D08 8D 9A 1D                 
 	jsr     L1D28                           ; 1D18 20 28 1D                  (.
 L1D1B:  lda     V212B                           ; 1D1B AD 2B 21                 .+!
         jsr     L1DF2                           ; 1D1E 20 F2 1D                  ..
-inc $d020
         jsr     CheckAllDrives                           ; 1D21 20 B0 1D                  ..
-inc $d020
         dec     L180C                           ; 1D24 CE 0C 18                 ...
 L1D27:  rts                                     ; 1D27 60                       `
 ; ----------------------------------------------------------------------------
@@ -1707,7 +1949,6 @@ L1D5B:  dec     L1D5F                           ; 1D5B CE 5F 1D                 
 L1D5F:  brk                                     ; 1D5F 00                       .
 L1D60:  brk                                     ; 1D60 00                       .
 ; ----------------------------------------------------------------------------
-
 L1D61:  .byte   $18                             ; 1D61 18                       .
         .byte   "If you are able to, please"    ; 1D62 49 66 20 79 6F 75 20 61  If you a
                                                 ; 1D6A 72 65 20 61 62 6C 65 20  re able
@@ -1730,7 +1971,7 @@ UnplugDlg:
         .byte   DBTXTSTR
         .byte   12, 48
         .word   L1D7D
-        .byte   OK
+	.byte   OK
         .byte   1, $48
         .byte   CANCEL
         .byte   $11, $48
@@ -1796,7 +2037,6 @@ SetupDriveAB:  lda     #$00                            ; 1E14 A9 00             
         lda     V212F                           ; 1E1C AD 2F 21                 ./!
         sta     $8486,y                         ; 1E1F 99 86 84                 ...
         inc     $848D
-
 		lda     V212B
         jsr     InitAndCheckDrive
 		bne     L1E48                           ; 1E2B D0 1B                    ..
@@ -1820,7 +2060,7 @@ L1E48:  bne     L1EB0                           ; 1E48 D0 66                    
 L1E4A:  sty     L1E04                           ; 1E4A 8C 04 1E                 ...
         jsr     L0739                           ; 1E4D 20 39 07                  9.
         lda     L1E04                           ; 1E50 AD 04 1E                 ...
-        jsr     L1FC5                           ; 1E53 20 C5 1F                  ..
+        jsr     Init                           ; 1E53 20 C5 1F                  ..
         jsr     PurgeTurbo                      ; 1E56 20 35 C2                  5.
 L1E59:  ldx     #>PluginDlg                            ; 1E59 A2 1F                    ..
         lda     #<PluginDlg                            ; 1E5B A9 A1                    ..
@@ -1842,7 +2082,7 @@ L1E59:  ldx     #>PluginDlg                            ; 1E59 A2 1F             
         lda     V212F                           ; 1E79 AD 2F 21                 ./!
         sta     $8486,y                         ; 1E7C 99 86 84                 ...
         lda     V212B                           ; 1E7F AD 2B 21                 .+!
-        jsr     L1FC5                           ; 1E82 20 C5 1F                  ..
+        jsr     Init                           ; 1E82 20 C5 1F                  ..
         lda     V212B                           ; 1E85 AD 2B 21                 .+!
         sta     curDevice                       ; 1E88 85 BA                    ..
         sta     curDrive                        ; 1E8A 8D 89 84                 ...
@@ -1861,7 +2101,7 @@ L1E98:  lda     L1E04                           ; 1E98 AD 04 1E                 
         bvc     L1EB0                           ; 1EA6 50 08                    P.
 L1EA8:  lda     V212B                           ; 1EA8 AD 2B 21                 .+!
         eor     #$01                            ; 1EAB 49 01                    I.
-        jsr     L1FC5                           ; 1EAD 20 C5 1F                  ..
+        jsr     Init                           ; 1EAD 20 C5 1F                  ..
 L1EB0:  jsr     CheckAllDrives                           ; 1EB0 20 B0 1D                  ..
         rts                                     ; 1EB3 60                       `
 ; ----------------------------------------------------------------------------
@@ -1885,7 +2125,7 @@ L1EDD:  sty     L1E04                           ; 1EDD 8C 04 1E                 
         lda     #$08                            ; 1EE0 A9 08                    ..
         jsr     InitDrive                           ; 1EE2 20 3E 07                  >.
         lda     L1E04                           ; 1EE5 AD 04 1E                 ...
-        jsr     L1FC5                           ; 1EE8 20 C5 1F                  ..
+        jsr     Init                           ; 1EE8 20 C5 1F                  ..
         jsr     PurgeTurbo                      ; 1EEB 20 35 C2                  5.
 L1EEE:  ldx     #>PluginDlg2                            ; 1EEE A2 1F                    ..
         lda     #<PluginDlg2                            ; 1EF0 A9 B3                    ..
@@ -1903,7 +2143,7 @@ L1EEE:  ldx     #>PluginDlg2                            ; 1EEE A2 1F            
         lda     V212F                           ; 1F0B AD 2F 21                 ./!
         sta     $8486,y                         ; 1F0E 99 86 84                 ...
         lda     V212B                           ; 1F11 AD 2B 21                 .+!
-        jsr     L1FC5                           ; 1F14 20 C5 1F                  ..
+        jsr     Init                           ; 1F14 20 C5 1F                  ..
         lda     V212B                           ; 1F17 AD 2B 21                 .+!
         sta     curDevice                       ; 1F1A 85 BA                    ..
         sta     curDrive                        ; 1F1C 8D 89 84                 ...
@@ -1920,7 +2160,7 @@ L1F29:  lda     L1E04                           ; 1F29 AD 04 1E                 
         clv                                     ; 1F36 B8                       .
         bvc     L1F3E                           ; 1F37 50 05                    P.
 L1F39:  lda     #$08                            ; 1F39 A9 08                    ..
-        jsr     L1FC5                           ; 1F3B 20 C5 1F                  ..
+        jsr     Init                           ; 1F3B 20 C5 1F                  ..
 L1F3E:  jsr     CheckAllDrives                           ; 1F3E 20 B0 1D                  ..
         rts                                     ; 1F41 60                       `
 ; ----------------------------------------------------------------------------
@@ -1981,7 +2221,9 @@ PluginDlg2:
         .byte   $48
         .byte   0                                     ; 1FB2 00                       .
 
-L1FC5:  bit     sysRAMFlg                       ; 1FC5 2C C4 88                 ,..
+Init:  
+	brk
+	bit     sysRAMFlg                       ; 1FC5 2C C4 88                 ,..
         bvc     L1FEE                           ; 1FC8 50 24                    P$
         pha                                     ; 1FCA 48                       H
         tay                                     ; 1FCB A8                       .
@@ -2000,7 +2242,9 @@ L1FC5:  bit     sysRAMFlg                       ; 1FC5 2C C4 88                 
         lda     #$00                            ; 1FE6 A9 00                    ..
 L1FE8:  sta     r3L                             ; 1FE8 85 08                    ..
         jsr     StashRAM                        ; 1FEA 20 C8 C2                  ..
-        pla                                     ; 1FED 68                       h
+        
+	brk
+	pla                                     ; 1FED 68                       h
 L1FEE:  sta     r0L                             ; 1FEE 85 02                    ..
         lda     curDrive                        ; 1FF0 AD 89 84                 ...
         pha                                     ; 1FF3 48                       H
@@ -2242,6 +2486,7 @@ L20D1:  php                                     ; 20D1 08                       
 .endif
 
 .ifdef config128
+.ifndef mega65
 ; ----------------------------------------------------------------------------
 L217B:  ldy     #$00                            ; 217B A0 00                    ..
         lda     (r1L),y                         ; 217D B1 04                    ..
@@ -2251,7 +2496,7 @@ L217B:  ldy     #$00                            ; 217B A0 00                    
 
 ; ----------------------------------------------------------------------------
 L2186:  jmp     L22BD                           ; 2186 4C BD 22                 L."
-
+.endif
 ; ----------------------------------------------------------------------------
 L2189:  lda     r1H                             ; 2189 A5 05                    ..
         sta     r7H                             ; 218B 85 11                    ..
@@ -2393,6 +2638,7 @@ L225C:  lda     L236C,x                         ; 225C BD 6C 23                 
         tax                                     ; 2269 AA                       .
         rts                                     ; 226A 60                       `
 
+.ifndef mega65
 ; ----------------------------------------------------------------------------
 L226B:  bit     graphMode                       ; 226B 24 3F                    $?
         bmi     L2274                           ; 226D 30 05                    0.
@@ -2515,6 +2761,7 @@ L233B:  brk                                     ; 233B 00                       
 L233C:  lda     vdcdata                         ; 233C AD 01 D6                 ...
         rts                                     ; 233F 60                       `
 
+.endif
 ; ----------------------------------------------------------------------------
 L2340:  bit     graphMode                       ; 2340 24 3F                    $?
         bmi     L2350                           ; 2342 30 0C                    0.
@@ -2564,7 +2811,8 @@ V2105   = V2104 + 1 ;+ 35 + 1
 V2106   = V2105 + 1
 V2107   = V2106 + 1
 V2108   = V2107 + 1
-V2109   = V2108 + 1
+V2108a   = V2108 + 1
+V2109   = V2108a + 1
 V210A   = V2109 + 1
 V212A   = V210A + 1 + 30 + 1
 V212B   = V212A + 1

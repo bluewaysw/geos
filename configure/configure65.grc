@@ -9,6 +9,6 @@ HEADER AUTO_EXEC "65 CONFIGURE" "65 Config" "V6.0" {
 }
 
 MEMORY {
-    overlaysize 0x1000
+    overlaysize 0x107F
     overlaynums 0,1,2,3,4,5,6,7
 }

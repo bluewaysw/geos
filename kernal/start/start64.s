@@ -9,6 +9,7 @@
 .include "config.inc"
 .include "kernal.inc"
 .include "inputdrv.inc"
+.include "diskdrv.inc"
 .include "c64.inc"
 
 ; main.s
@@ -48,6 +49,8 @@
 .import MapUnderlay
 .import UnmapUnderlay
 .import _MapLow
+.import ClrScr
+.import SetNewMode
 .endif
 
 .ifdef debugger 
@@ -148,16 +151,36 @@ ASSERT_NOT_BELOW_IO
 	STA $D05D
 
 	; start with bank $6000-$8000 swapped out so we prevent debugger from beeing destroyed
+	;ldx #$00
+	;lda #$80
 	ldx #$00
-	lda #$80
+	lda #$00
 	jsr _MapLow
 
-.ifdef debugger 
-_DebugStart:
-	brk
+.ifdef debugger
+	; move debugger from $06000 to $16000
+	lda	#>debuggerlist
+	ldy	#<debuggerlist
+
+	sta	$d701
+	lda	#0
+	sta	$d702
+	sta 	$d704	;	enhanced bank
+	sty	$d705
+ 
 	jsr FirstInit
 .endif
+.if 0
+	LDA #$12
+	STA $D640
+	NOP
+	tax
+	ldy #>$0400 		; write dirent to DirEntry 
 
+	lda #$14
+	STA $D640
+	NOP
+.endif
 .if 0
 	; run a raster line cycle counter
 	sei	; interrupts off
@@ -233,7 +256,7 @@ _DebugStart:
 	; preconditions:
 	; curDrive is one of the BASIC mapped drives, directing us to 
 	; F011-0 or F011-1, we don't support booting from other drives and
-	; could/shoud hard reset here? In gereral we assume that GEOS
+	; could/should hard reset here? In general we assume that GEOS
 	; holds an disk driver that is in some way compatible to the boot drive.
 	
 	lda	#C65_VIC_INIT1
@@ -273,9 +296,9 @@ _DebugStart:
 	
 @detectDrive0:
 	; is virtual enabled?
-	ldx	#8	; DRV_F011_V	
-	lda	$D659
-	bit	#1
+	ldx	#DRV_F011_V	
+	lda	$D68A
+	bit	#4
 	bne	@detected
 	
 	; check if real drive
@@ -289,6 +312,9 @@ _DebugStart:
 	bra	@detected
 	
 @detectDrive1:
+	; potentially now drive 1 may be virtual,
+	; but because monitor-load does not support this
+	; at the moment, we assume this will not be the case
 	; check if real drive
 	ldx	#DRV_F011_0	; real internal floppy
 	lda	$D6A1
@@ -315,8 +341,12 @@ _DebugStart:
 	sta curType
 	sta _driveType,y
 	
+	cmp	#DRV_SD_81
+	bne	@detectDone
+	LoadW	r0, imageFileName
+	jsr	SetImageFile
 	
-
+@detectDone:
 	; on MEGA65 we check if we are able to transform
 	; from F011 mode to direct access SD mount
 	; this is possible if the drive is not a real drive and not virtual
@@ -335,23 +365,26 @@ OrigResetHandle:
 	lda #3|64
 	sta graphMode
 	LoadW	r5, 720
+	jsr MapUnderlay
 	jsr InitScanLineTab
 .endif
 	ldx #$ff
-.ifdef mega65
- 	jsr MapUnderlay
-.endif
 	jsr _DoFirstInitIO
 .ifdef mega65
  	jsr UnmapUnderlay
 .endif
 	jsr InitGEOEnv
+	jsr SetNewMode
+	jsr ClrScr
 .ifdef usePlus60K
 	jsr DetectPlus60K
 .endif
 .if .defined(useRamCart64) || .defined(useRamCart128)
 	jsr DetectRamCart
 .endif
+_DebugStart:
+	;brk
+	
 	jsr GetDirHead
 	MoveB bootSec, r1H
 	MoveB bootTr, r1L
@@ -399,7 +432,7 @@ OrigResetHandle:
 	
 loadZDriveOffset:
 
-	; ok, different ROM versiokn have different locations of the
+	; ok, different ROM version have different locations of the
 	; device numbers map for the internal/F011 drives
 	; for 910110 ROM it is 010112/010113
 	; for 9110XY ROM it is 010113/010114
@@ -447,6 +480,24 @@ loadZDriveOffset:
 	ldz	#3
 	rts
 
+.ifdef debugger
+debuggerlist:
+	; enchanced dma mode header
+	.byte	$0a
+	.byte	$80, $00
+	.byte	$81, $00
+	.byte 	0
+	.byte	0	; swap
+	.word	$2000	; $6000-$8000
+	.word	$6000
+	.byte	0				; bank 0
+	.word	$6000
+	.byte	1				; bank 1
+	.word	0				; unsued mod
+.endif
+
+imageFileName:
+	.byte	"GEOS.D81", NULL
 bootTr:
 	.byte DIR_1581_TRACK
 bootSec:
