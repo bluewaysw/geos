@@ -117,7 +117,8 @@ DiskName	= Name + 19
 	jmp	DeskFormat
 	jmp	StartUp
 	jmp	InstallDriver
-InstallDriver:	lda	firstBoot
+InstallDriver:	
+	lda	firstBoot
 	bpl	@10
 	jsr	GetAktlDisk
 	tax
@@ -153,8 +154,8 @@ InstallDriver:	lda	firstBoot
 	jsr	@Prnt8a
 	jsr	StashDrivers
 	jsr	InitMouse
+	ldx	#0		
 @rts:	rts
-@Test:	.byte	"Comm. Compat.",NULL
 @Prnt8:
 	lda	c128Flag
 	bpl	@Prnt8a
@@ -221,7 +222,7 @@ DA1:	MoveW_	r15,r6
 	sta	r0L
 	sta	r10L
 	jmp	GetFile
-
+	
 StashDrivers:	
 	rts
 	lda	sysRAMFlg

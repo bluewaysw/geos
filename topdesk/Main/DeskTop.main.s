@@ -3395,21 +3395,25 @@ OpenFile:
 	lda	#$80
 	bra	@16f
 
-@16:	cpx	#15
+@16:	
+	cpx	#15
 	bne	@17
 	jsr	SetNumDrives
 	jsr	MaxTextWin
 	LoadWr0	@db
-	jmp	NewDoDlgBox
+	jsr	NewDoDlgBox
+	bra	@200
 @17:	cpx	#16
 	bne	@18
 	jsr	SetNumDrives
 	jsr	MaxTextWin
 	LoadWr0	@db2
-	jmp	NewDoDlgBox
+	jsr	NewDoDlgBox
+	bra	@200
 @18:	; bei x=18 ist auf RAM A und B kein DeskTop gewesen!
 	jsr	SetNumDrives
-	rts
+@200:
+	jmp	@100
 @db:	.byte	$81
 	.byte	$0b,$10,$10
 	.word	@t1

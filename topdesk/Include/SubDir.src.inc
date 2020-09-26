@@ -854,7 +854,8 @@ XInput128:	lda	c128Flag
 	bmi	XPrinter
 	jmp	XDispErr
 .endif
-XPrinter:	jmp	InstallDriver
+XPrinter:
+	jmp	InstallDriver
 
 
 XDocument:	lda	curDrive

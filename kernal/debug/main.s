@@ -1848,9 +1848,9 @@ GetByte:
 	sbc	#$00
 	sta	r0L
 	lda	r0H
-	sbc	#$40
+	sbc	#$00
 	sta	r0H
-	lda	#1
+	lda	#0
 	sta	r1L
 	lda	#0
 	sta	r1H
