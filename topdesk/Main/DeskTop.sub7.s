@@ -175,20 +175,11 @@ InstallDriver:
 	PopW	r15
 .endif
 @Prnt8a:	
-	;MoveW_	r15,@Prnt2
-	;LoadW	@Prnt2, @Test
-	;jsr	i_MoveData
-;@Prnt2:	.word	0
-;@Prnt3:	.word	PrntFileName
-;	.word	16
-	ldy	#0
-@copyLoop:
-	lda	(r15),y
-@Prnt3 = *+1
-	sta	$FFFF, y
-	iny
-	cpy	#16	
-	bne	@copyLoop
+	MoveW_	r15,@Prnt2
+	jsr	i_MoveData
+@Prnt2:	.word	0
+@Prnt3:	.word	PrntFileName
+	.word	16
 	lda	firstBoot
 	bpl	@Prnt8b
 	jsr	RedrawAll
