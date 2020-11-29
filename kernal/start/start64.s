@@ -383,7 +383,7 @@ OrigResetHandle:
 	jsr DetectRamCart
 .endif
 _DebugStart:
-	;brk
+	brk
 	
 	jsr GetDirHead
 	MoveB bootSec, r1H

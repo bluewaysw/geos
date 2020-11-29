@@ -44,6 +44,10 @@
 .import screenNextLine
 .import PrvCharWidth
 
+.import i_MoveData
+.import ColTab
+.import RowTab
+
 .global SetRightMargin
 _SetNewMode:
         jsr SetNewMode0
@@ -279,6 +283,16 @@ InitVideoMode:
 	lda 	vmiBottomBorder+1, y
 	sta 	$D04B
 	
+	lda	screenCols, y
+	sta	@colSrc
+	lda	screenCols+1, y
+	sta	@colSrc+1	
+
+	lda	screenRows, y
+	sta	@rowSrc
+	lda	screenRows+1, y
+	sta	@rowSrc+1
+	
 	LDA 	#0
 	STA 	$D05D		; reset hot registers,
 				; so that other reg acces doesn't reset
@@ -297,6 +311,18 @@ InitVideoMode:
 	lda	vmiScanLineLen+1, y
 	sta 	r5H
 	jsr	InitScanLineTab
+
+	jsr	i_MoveData
+@colSrc:	
+	.word	0
+	.word	ColTab
+	.word	16
+	
+	jsr	i_MoveData
+@rowSrc:	
+	.word	0
+	.word	RowTab
+	.word	16
 
 	rts
 
@@ -318,7 +344,7 @@ vmiMaxY:
 vmiCardsX:
 	.word	40,		80,		80,		90
 vmiFullCardsX:
-	.byte	40,		80,		80,		90
+	.byte	40,		40,		80,		90
 vmiFullCardsY:
 	.byte	25,		25,		50,		71
 vmiSpriteXPosOff:
@@ -357,6 +383,25 @@ vmiTopBorder:
 	.word	104,		104,		104,		17
 vmiBottomBorder:
 	.word	504,		504,		504,		586
+screenCols:
+	.word	Col320, 	Col640,		Col640,		Col720
+screenRows:
+	.word	Row200,		Row200,		Row400,		Row569
+
+Col720:
+	.word	90, 180, 270, 360, 450, 540, 630, 719
+Col640:
+	.word	80, 160, 240, 320, 400, 480, 560, 639
+Col320:
+	.word	40, 80, 120, 160, 200, 240, 280, 319
+Row200:
+	.word	25, 50, 75, 100, 125, 150, 175, 199
+Row400:
+	.word	50, 100, 150, 200, 250, 300, 350, 399
+Row569:
+	.word	71, 142, 213, 284, 355, 426, 497, 568
+
+
 .endif
 
 .ifdef mega65

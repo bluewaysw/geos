@@ -203,6 +203,7 @@
 .import _map__CRC
 .import _map_SetNewMode
 .import _map_GetRealSize
+.import _map_IsMseInRegion
 .else
 .import _InsertRecord
 .import _NextRecord
@@ -899,7 +900,7 @@ SetDevice:
 	jmp _SetDevice
 .endif
 IsMseInRegion:
-	jmp __IsMseInRegion
+	jmp _map_IsMseInRegion
 ReadByte:
 .ifdef mega65
 	jmp _map_ReadByte

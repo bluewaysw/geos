@@ -206,7 +206,6 @@ IsDeviceValid:
 	sta SetDevTab + 3
 	jsr PrepForFetch
 	jsr FetchRAM
-	;jsr FetchRAM
 	jsr PrepForFetch
 @3:	ldx #NULL
 	rts

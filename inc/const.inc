@@ -447,7 +447,7 @@ GR_80 = $80 ; graphMode
 ; high resolution
 HIGH_Y_MASK             =   %00011111
 
-SC_FROM_END             =   %100000000000
+SC_FROM_END             =   %111100000000
 SC_FROM_CENTER          =   %010000000000
 SC_SCALE                =   %110000000000
 

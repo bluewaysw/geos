@@ -212,30 +212,49 @@ _NormRect:
 ; Destroyed: a, x, y, r5 - r9, r11
 ;---------------------------------------------------------------
 _FrameRectangle:
-	sta r9H
+	sta 	r9H
 	
-	jsr _NormRect
+	jsr 	_NormRect
 	;PushB	r5H
 
 	PushW	r2
 	PushW	r3
 	PushW	r4
 
-	ldy r2L
-	sty r11L
-	lda r9H
-	jsr _HorizontalLine
-	MoveB r2H, r11L
-	lda r9H
-	jsr _HorizontalLine
-	;PushW r3
-	PushW r4
-	MoveW r3, r4
-	MoveW r2, r3
-	lda r9H
-	jsr _VerticalLine
-	PopW r4
-	lda r9H
-	jsr _VerticalLine
-	;PopW r3
+	ldy 	r2L
+	sty 	r11L
+	lda 	r9H
+	jsr 	_HorizontalLine
+	MoveB 	r2H, r11L
+	lda	r3H
+	pha
+	and	#$0F
+	sta	r3H
+	lda	r4H
+	and	#$F0
+	ora	r3H
+	sta	r3H
+	lda 	r9H
+	jsr 	_HorizontalLine
+	PopB	r3H
+	PushB 	r3H
+	PushW 	r4
+	lda	r4H
+	and	#$F0
+	sta	r4H
+	lda	r3H
+	and	#$0F
+	ora	r4H
+	sta	r4H
+	MoveB 	r3L, r4L
+	MoveB	r3H, r5L
+	MoveW 	r2, r3
+	lda 	r9H
+	jsr 	_VerticalLine
+	PopW 	r4
+	pla
+	sta	r5L
+	lda 	r9H
+	jsr 	_VerticalLine
+	;PopW 	r3
 	jmp	rectEnd

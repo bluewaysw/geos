@@ -16,6 +16,7 @@
 .import scr_mobx
 
 .import NormalizeX
+.import NormalizeY
 
 .import UncompactXY
 
@@ -67,14 +68,14 @@ SprTabH:
 ; Destroyed: a, x, y, r6
 ;---------------------------------------------------------------
 _PosSprite:
-	PushB	r5H
+;	PushB	r5H
 
-	lda	r4H
-	jsr	UncompactXY
-	sta 	r4H
-	sty 	r5H
+;	lda	r4H
+;	jsr	UncompactXY
+;	sta 	r4H
+;	sty 	r5H
 
-;	jsr	_HR_PosSprite
+;;	jsr	_HR_PosSprite
 
 
 _HR_PosSprite:
@@ -82,6 +83,8 @@ _HR_PosSprite:
 .if .defined(bsw128) || .defined(mega65)
 	ldx #r4
 	jsr NormalizeX
+	ldy #r5L
+	jsr NormalizeY
 .endif
 	START_IO
 
@@ -94,7 +97,13 @@ _HR_PosSprite:
 	;sta r6L
 	sta mob0ypos,Y
 
-	lda r5H
+	;lda r5H
+	php
+	lda	r4H
+	jsr	UncompactXY
+	sta	r4H
+	plp
+	tya
 	ldy $D077
 	ldx #1
 	jsr @2__
@@ -127,15 +136,15 @@ _HR_PosSprite:
 ;@X:
 ;	AddVW    VIC_X_POS_OFF, r6
 ;.else
-lda r3L
-rol
-tay
+	lda r3L
+	rol
+	tay
 	lda r4L
 	clc
 	adc spriteXPosOff
 	;sta r6L
 	sta mob0xpos,Y
-	lda r4H
+	lda 	r4H
 ;.endif
 
 	ldy	msbxpos
@@ -149,7 +158,7 @@ tay
 	sta $d05f
 
 	END_IO
-	PopB	r5H
+;	PopB	r5H
 	rts
 @2__:
 	adc #0

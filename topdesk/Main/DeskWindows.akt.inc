@@ -1930,6 +1930,10 @@ DrawMap:	; entpackte Bitmap auf Bit-Grenzen mit Clipping darstellen
 	LoadB	@off80, 0
 	lda	graphMode
 	bmi	@n80
+	cmp	#$41	; TODO we should not map this mode to double
+			; icon with, this should be some mode property we
+			; should decide on
+	beq	@n80
 	lda	r13L
 	and	#$7f
 	sta	MapBreite
@@ -2650,6 +2654,12 @@ BackgroundRectangle:	; Wiederherstellung des Hintergrundes im Rechteck r2-r4
 
 @21:
 	LoadB	r10H,0	; xk:=xk*8
+	lda	graphMode
+	cmp	#$41	; TODO, don't use the mode id to guess double icon widt
+	bne	@12
+	asl	r10L
+	rol	r10H
+@12:
 	asl	r10L
 	rol	r10H
 	asl	r10L
@@ -2816,12 +2826,29 @@ Recover:	lda	c128Flag
 	jsr	NormalizeX
 	ldx	#r4
 	jsr	NormalizeX
-@10:	AddVB	8,r2H
-	AddVW__	8,r4
+@10:	ldy	#8
+	tya
+	clc
+	adc	r2H
+	sta	r2H
+	tya
+	clc
+	adc	r4L
+	sta	r4L
+	lda	#0
+	adc	r4H
+	sta	r4H
 .ifdef topdesk128
-    lda graphMode
-    bpl @z40
-    AddVW__ 8, r4
+	lda	graphMode
+	cmp	#$41
+	bne 	@z40
+	tya
+	clc
+	adc	r4L
+	sta	r4L
+	lda	#0
+	adc	r4H
+	sta	r4H
 @z40:
 .endif
 	ldy	#5

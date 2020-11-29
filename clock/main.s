@@ -51,12 +51,12 @@ __STARTUP_RUN__:
 		lda	firstBoot
 		cmp	#$FF
 		bne	@1
-		
+
 		; show dialog to operate the mounts
 		LoadW	r0, SelectDialog
 		jsr	DoDlgBox
 
-		jmp	EnterDeskTop		
+		jmp	EnterDeskTop
 
 @1:		jsr	GetRTC
 		bcs	@2	; branch if no valid GetRTC
@@ -64,19 +64,19 @@ __STARTUP_RUN__:
 		jsr	SetTime
 @2:
 		jmp	EnterDeskTop
-		
+
 
 GetRTC:
 		; check if clock is running by checking
 		; if seconds are changing for 3s
 		LoadW	r0, $7110
 		LoadW	r1, $0FFD
-				
+
 		jsr	GetLongUnbounced
 		sta	MySec
 
 		lda	#30
-		sta	dblClickCount		
+		sta	dblClickCount
 @1:
 		jsr	GetLongUnbounced
 
@@ -89,14 +89,14 @@ GetRTC:
 		inc	r0L
 		jsr	GetLongUnbounced
 		sta	MyMin
-	
+
 		inc	r0L
 		jsr	GetLongUnbounced
 		sta	MyStd
-	
+
 		and	#$80
 		beq	@10		; branch if 12h time
-		
+
 		lda	MyStd
 		and	#$3F
 		sta	MyStd
@@ -112,7 +112,7 @@ GetRTC:
 		lda	MyStd
 		and	#$1F
 		jsr	BcdToDec
-		
+
 		clc
 		adc	#12
 		jsr	DezBCD
@@ -130,15 +130,15 @@ GetRTC:
 		inc	r0L
 		jsr	GetLongUnbounced
 		sta	MyTag
-	
+
 		inc	r0L
 		jsr	GetLongUnbounced
 		sta	MyMonat
-	
+
 		inc	r0L
 		jsr	GetLongUnbounced
 		sta	MyJahr
-	
+
 		clc
 		rts
 @2:
@@ -148,7 +148,7 @@ GetRTC:
 SetRTC:
 		LoadW	r0, $7118
 		LoadW	r1, $0FFD
-		
+
 		jsr	GetLongUnbounced
 		pha
 		lda	#$41
@@ -157,9 +157,9 @@ SetRTC:
 
 		LoadW	r0, $7110
 		LoadW	r1, $0FFD
-		
+
 		; enable setting the RTC
-		
+
 		lda	MySec	;s
 		jsr	SetLong
 		jsr 	Wait
@@ -168,18 +168,18 @@ SetRTC:
 		inc	r0L
 		jsr	SetLong
 		jsr 	Wait
-		
+
 		inc	r0L
 
 		;lda	MyStd	;h
 		jsr	GetLongUnbounced
 		and	#$80
 		beq	@10
-		
+
 		lda	MyStd
 		ora	#$80
 		bra	@30
-@10:				
+@10:
 		LoadB	r2L, 0
 		PushW	r0
 		PushW	r1
@@ -232,9 +232,9 @@ SetRTC:
 		inc	r0L
 		jsr	SetLong
 		jsr 	Wait
-		
+
 		rts
-		
+
 SetTime:
 		jsr	RunClock
 		rts
@@ -291,7 +291,7 @@ Mykey:		lda	keyData
 		jsr	Beep
 		pla
 		tay
-		jmp	SetRev	
+		jmp	SetRev
 @120:		jsr	RunClock
 		jsr	ShowClock
 		;jsr	MouseUp
@@ -302,7 +302,7 @@ Mykey:		lda	keyData
 		jsr	SetRTC
 		jsr	RstrFrmDialogue
 @1000:		rts
-	
+
 
 SetPlain:
 		ldy	TabZeiger
@@ -320,22 +320,22 @@ SetRev:
 		jsr	DoneWithIO
 		jsr	SetObUn
 		jmp	ShowClock
-		
+
 SetObUn:
 		ldy	TabZeiger
 		lda	ObTab,y
 		sta	Obergrenze
 		rts
-		
+
 ObTab:		.byte	$33,$39,$31,$39
-		.byte	$39,$39,$32,$39,$35,$39, $35,$39		
+		.byte	$39,$39,$32,$39,$35,$39, $35,$39
 
 ; TestTime
 ; ]berpr}fung
 ; return
 ; a = 0 OK
 ; a = $ff false; y Wert f}r TabZeiger
-		
+
 TestTime:
 		lda	MyTag
 		jsr	BcdToDec
@@ -349,7 +349,7 @@ TestTime:
 		blt	@05
 		ldy	#0
 		beq	@00
-		
+
 @05:		lda	MyMonat
 		jsr	BcdToDec
 		cmp	#0
@@ -449,14 +449,14 @@ RevTab:
 
 Obergrenze:
 		.byte	"3"
-						
+
 SelectDialog:
 		.byte	$81	; standard dialog, light bachground
 
 		.byte	DBTXTSTR
 		.byte	10, 25
 		.word	Text1
-		
+
 		.byte	CANCEL
 		.byte	17, 70
 
@@ -464,27 +464,33 @@ SelectDialog:
 		.word	DrawDialog
 
 		.byte	NULL
-	
+
 Text1:
 		.byte	BOLDON, "Set RTC and system date/time:", NULL
-	
-	
+
+EntryX:
+		WordCX	%101100000000 | ((-96+24) & $FF), %101100000000 | ((-48+50) & $FF)
+EntryY:
+		ByteCY	%101100000000 | ((-96+24) & $FF), %101100000000 | ((-48+50) & $FF)
+
+
 DrawDialog:
 		jsr	GetDateTimeString
 		jsr	GetTime
-	
+
 ShowClock:
 		LoadW	r0, DateTimeString
-		LoadW	r11, 80
-		LoadB	r1H, 85
+
+		MoveW	EntryX, r11
+		MoveB	EntryY, r1H
 		jsr	PutString
 		rts
-	
-	
+
+
 GetDateTimeString:
 		jsr	GetRTC
 		bcc	@2
-		
+
 		; init from GEOS time
 		lda	day
 		jsr	DezBCD
@@ -529,13 +535,13 @@ GetDateTimeString:
 Wait:
 		LoadW	r2, $71FF
 		LoadW	r3, $0FFD
-		
+
 @10:
 		LDZ	#0
 		EOM
 		lda 	(r2), Z
 		bne	@10
-		
+
 		rts
 
 GetLongUnbounced:
@@ -549,13 +555,13 @@ GetLongUnbounced:
 	 	cmp	(r0), Z
 		bne 	GetLongUnbounced
 		rts
-		
+
 SetLong:
 		LDZ	#0
 		EOM
 		sta 	(r0), Z
 		RTS
-		
+
 DivnSet:	pha
 		txa
 		lsr
@@ -578,13 +584,13 @@ DivnSet:	pha
 		adc	#$30
 		sta	TagZehner,x
 		rts
-	
+
 MyJahr:		.byte	0
 MyMonat:	.byte	0
 MyTag:		.byte	0
 MyStd:		.byte	0
 MyMin:		.byte	0
-MySec:		.byte 	0	
+MySec:		.byte 	0
 
 
 DPA	= $dc00
@@ -595,17 +601,17 @@ GetTimeString:
 		ldx	TagEiner
 		jsr	ASCBCD
 		sta	MyTag
-		
+
 		lda	MonZehner
 		ldx	MonEiner
 		jsr	ASCBCD
 		sta	MyMonat
-		
+
 		lda	JahZehner
 		ldx	JahEiner
 		jsr	ASCBCD
 		sta	MyJahr
-		
+
 		lda	StdZehner
 		ldx	StdEiner
 		jsr	ASCBCD
@@ -615,7 +621,7 @@ GetTimeString:
 		ldx	MinEiner
 		jsr	ASCBCD
 		sta	MyMin
-		
+
 		lda	SecZehner
 		ldx	SecEiner
 		jsr	ASCBCD
@@ -625,11 +631,11 @@ GetTimeString:
 
 SetTime2:
 		jsr	InitForIO
-		
+
 		lda	MyTag
 		jsr	BcdToDec
 		sta	day
-		
+
 		lda	MyMonat
 		jsr	BcdToDec
 		sta	month
@@ -637,49 +643,49 @@ SetTime2:
 		lda	MyJahr
 		jsr	BcdToDec
 		sta	year
-		
+
 		LoadB	ampm,0
 		lda	MyStd
 		jsr	BcdToDec
-		
+
 		cmp	#24	; accept 24 to be 0 o'clock
 		bne	@ci
 		lda	#0
 @ci:		sta	hour
 
 		cmp	#12
-		blt	@am	
+		blt	@am
 		pha
 		LoadB	ampm,$80
 		pla
 		sec
 		sbc	#12
-		
+
 @am:		jsr	DezBCD
 		clc
 		adc	ampm
 		sta	DPA+$0b
 
 		lda	MyMin
-		jsr	BcdToDec		
+		jsr	BcdToDec
 		sta	minutes
 		jsr	DezBCD
 		sta	DPA+$0a
-		
+
 		lda	MySec
-		jsr	BcdToDec		
+		jsr	BcdToDec
 		sta	seconds
 		jsr	DezBCD
 		sta	DPA+$09
-		
+
 		rts
-		
+
 RunClock:
 		jsr	SetTime2
 		lda	#$00
 		sta	DPA+$08
 		jsr	DoneWithIO
-		rts	
+		rts
 ;ASCBCD
 ; a High
 ; x Low
@@ -695,7 +701,7 @@ ASCBCD:
 		and	#$0f
 		ora	r0L
 		rts
-	
+
 DezBCD:
 		sta	r0L
 		LoadB	r0H,0
@@ -711,7 +717,7 @@ DezBCD:
 		clc
 		adc	r8L
 		rts
-		
+
 BcdToDec:
 		tax
 		and	#$0F

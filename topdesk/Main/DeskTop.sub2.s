@@ -59,11 +59,20 @@ Name2	= DiskName + 19
 DispInfo:	LoadW___	r0,@db
 	jmp	NewDoDlgBox
 @db:	.byte	$01
-	.byte	32,138
 .ifdef topdesk128
 ;	.word	54+DOUBLE_W,265+DOUBLE_W
-	.word	54,265
+;	.word	54,265
+	;ByteCY	54, 32
+	;ByteCY	265, 138
+	;WordCX	54, 32
+	;WordCX	265, 138
+	ByteCY	%101100000000 | ((-(13*8)) & $FF), %101100000000 | ((-8*8) & $FF)
+	ByteCY	%101100000000 | (((13*8)-1) & $FF), %101100000000 | (((5*8)-1) & $FF)
+	WordCX 	%101100000000 | ((-(13*8)) & $FF), %101100000000 | ((-(8*8)) & $FF)
+	WordCX	%101100000000 | (((13*8)-1) & $FF), %101100000000 | (((5*8)-1) & $FF)
+
 .else
+	.byte	32,138
 	.word	54,265
 .endif
 	.byte	$0b,$10,$10
@@ -80,14 +89,14 @@ DispInfo:	LoadW___	r0,@db
 	.word	@t7
 	.byte	$0e,NULL
 .ifdef lang_de
-@t1:	.byte	BOLDON,"TopDesk",PLAINTEXT," Version 1.2",0
+@t1:	.byte	BOLDON,"TopDesk",PLAINTEXT," Version 6.0",0
 @t2:	.byte	"geschrieben von",BOLDON,0
 @t3:	.byte	"Walter Knupe",0
 @t4:	.byte	"H.J. Ciprina",0
 @t5:	.byte	"Volker Goehrke",PLAINTEXT,0
 @t7:	.byte	"(C) 1991 by GEOS-USER-CLUB, GbR",0
 .else
-@t1:	.byte	BOLDON,"TopDesk",PLAINTEXT," Version 1.2",0
+@t1:	.byte	BOLDON,"TopDesk",PLAINTEXT," Version 6.0",0
 @t2:	.byte	"written by",BOLDON,0
 @t3:	.byte	"Walter Knupe",0
 @t4:	.byte	"H.J. Ciprina",0

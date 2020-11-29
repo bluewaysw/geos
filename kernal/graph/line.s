@@ -821,56 +821,119 @@ Read80Help:
 ;            r3L top of line (0-199)
 ;            r3H bottom of line (0-199)
 ;            r4  x position of line (0-319)
+;            If in expanded mode, top 4 bits of r4 hold the
+;            4 MSB to expand r3H. If those 4 bits are != 0
+;            then we expect r5L to hold the top 4 MSB ro expand
+;            r3L.
 ; Return:    draw the line
 ; Destroyed: a, x, y, r4 - r8, r11
 ;---------------------------------------------------------------
 _VerticalLine:
-	sta r8L
+	sta 	r8L
+	PushB	r9H
 .if .defined(bsw128) || .defined(mega65)
 .ifdef bsw128
-	jsr _TempHideMouse
+	jsr 	_TempHideMouse
 .endif
-	ldx #r4
-	jsr _NormalizeX
+	ldx 	#r4
+	jsr 	_NormalizeX
+	LoadB	r9H, 0
+	bbrf 	6, graphMode, @10
+	lda	r4H
+	and	#$F0
+	beq	@10
+	lda	r5L
+	and	#$F0
+	sta	r9H	
+@10:
+	ldx 	#r9
+	ldy 	#r3L
+	jsr 	_NormalizeY	
+	ldx 	#r4
+	ldy 	#r3H
+	jsr	_NormalizeY
+
 .endif
 .ifdef bsw128
-	bbsf 7, graphMode, VLin80
+	bbsf 	7, graphMode, VLin80
 .endif
-	PushB r4L
-	and #%00000111
+	;PushB 	r4L
+	lda	r4L
+	and 	#%00000111
 	tax
-	lda BitMaskPow2Rev,x
-	sta r7H
-	lda r4L
-	and #%11111000
-	sta r4L
-	ldy #0
-	ldx r3L
-@1:	stx r7L
-	jsr _GetScanLine
-	AddW r4, r5
-	AddW r4, r6
-	lda r7L
-	and #%00000111
+	lda 	BitMaskPow2Rev,x
+	sta	r7H
+	lda 	r4L
+	and 	#%11111000
+	sta 	r4L
+	ldx 	r3L
+@1:	stx 	r7L
+	;PushB 	r9H
+	PushB 	r3H
+	stx 	r11L
+	lda 	r9H
+	sta 	r3H
+	jsr 	_GetScanLine_HR
+	PopB 	r3H
+	;PopB 	r9H
+
+	lda	r5L
+	clc	
+	adc	r4L
+	sta	r5L
+	lda	r4H
+	and	#$0F
+	tay
+	adc	r5H
+	sta	r5H
+	lda	r6L
+	clc
+	adc	r4L
+	sta	r6L
+	tya
+	adc	r6H
+	sta	r6H
+	
+	ldy 	#0
+	lda 	r7L
+	and 	#%00000111
 	tax
-	lda BitMaskPow2Rev,x
-	and r8L
-	bne @2
-	lda r7H
-	eor #$FF
-	and (r6),Y
-	bra @3
-@2:	lda r7H
-	ora (r6),Y
-@3:	sta (r6),Y
-	sta (r5),Y
-	ldx r7L
+	lda 	BitMaskPow2Rev,x
+	and 	r8L
+	bne 	@2
+	lda 	r7H
+	eor 	#$FF
+	and 	(r6),Y
+	bra 	@3
+@2:	lda 	r7H
+	ora 	(r6),Y
+@3:	sta 	(r6),Y
+	sta 	(r5),Y
+	
+	; next line
+	ldx 	r7L
 	inx
-	cpx r3H
-	beq @1
-	bcc @1
-	PopB r4L
-	jmp _EndScanLine
+	bne	@4
+	
+	; advance high level bits
+	lda	r9H
+	clc
+	adc	#16
+	sta	r9H
+@4:
+	lda	r4H
+	and	#$F0
+	cmp	r9H
+	beq	@4b
+	bcs 	@1	; branch if r9H is smaller than r4H
+@4b:
+	cpx 	r3H
+	beq 	@1
+	bcc 	@1
+@5:	
+	;PopB 	r4L
+	PopB 	r9H
+	jmp 	_EndScanLine
 
 .ifdef bsw128
 VLin80:

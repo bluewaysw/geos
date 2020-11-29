@@ -20,6 +20,7 @@
 .import _InitMachine
 .import ClrScr
 .import _UseSystemFont
+.import _MapLow
 
 .import MainLoop
 .import CallRoutine
@@ -65,6 +66,9 @@ _EnterDeskTop:
 ;	stx graphMode
 @1:
 	jsr ClrScr
+	ldx	#$00
+	lda	#$00
+	jsr	_MapLow
 .ifdef useRamExp
 	MoveW DeskTopStart, r0
 	MoveB DeskTopLgh, r2H

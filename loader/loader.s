@@ -105,7 +105,7 @@ next:	.WORD	0
 	; disable HDMI audio
 	lda	#0
 	sta	$d61a
-		
+
 
 ; not working with xemu
 ; disable badline emulation
@@ -115,13 +115,14 @@ next:	.WORD	0
 	and	#%10111111
 	;ora	#%01000000
 	sta	$D05D
-	
+
 	LDA   	$D054	;40 mhz
 	ORA   	#$40
 	STA   	$D054
 	lda   	#$40
 	sta	$d031
 
+  ; force 1351 emulation
 	lda	#5
 	sta	$D61B
 

@@ -253,7 +253,7 @@ CalcIconCoords:
 	dey
 	lda (IconDescVec),y
 .if .defined(bsw128) || .defined(mega65)
-        jsr LFCCC
+        jsr LFCCC_
 .endif
 	sta r3L
 	iny
@@ -287,6 +287,12 @@ CalcIconCoords:
 
 .if .defined(bsw128) || .defined(mega65)
 LFCCC:	pha
+	lda graphMode
+	cmp #$41
+	beq LFCCC_2a
+	pla
+LFCCC2:
+	pha
 	and #DOUBLE_B
 	bpl @1
 	pla
@@ -296,6 +302,10 @@ LFCCC:	pha
 @2:	asl
 @3:	rts
 @1:	pla
+	rts
+LFCCC_2a:
+	pla
+	asl
 	rts
 .endif
 
@@ -313,12 +323,13 @@ LFCCC_:
 	; x negative case
 	clc
 	adc scrFullCardsX
-	rts
+@3:
+	bra LFCCC
 @2:
 	pla
 	and #%01111111
-	rts
+	bra @3
 @1:
 	pla
-	rts
+	bra @3
 .endif

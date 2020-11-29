@@ -32,7 +32,7 @@ __STARTUP_RUN__:
 @1b:
 	; init for mountable drives
 	jsr	InitMountableDrives
-	
+
 	lda	dialogDrive
 	bne	@2
 
@@ -51,35 +51,35 @@ __STARTUP_RUN__:
 
 	lda	curDrive
 	pha
-	
+
 	lda	dialogDrive
 	jsr	SetDevice
-	
+
 	jsr	GetImageFile
 
 	ldx	#r0
 	ldy	#r1
 	LoadW	r1, imageName
 	jsr	CopyString
-	
+
 	pla
 	jsr	SetDevice
-	
+
 	; show dialog to operate the mounts
 	LoadW	r0, SelectDialog
 	jsr	DoDlgBox
-	
+
 	lda	r0L
 	cmp	#OK
 	bne	@1
-	
+
 	; mount new image for selected drive
 	lda	curDrive
 	pha
-	
+
 	lda	dialogDrive
 	jsr	SetDevice
-	
+
 	; mount selected image
 	lda	selectedEntry
 	sta	r13L
@@ -87,7 +87,7 @@ __STARTUP_RUN__:
 	jsr	GetEntryString
 
 	jsr	SetImageFile
-	
+
 	pla
 	jsr	SetDevice
 	bra	@end
@@ -97,8 +97,8 @@ __STARTUP_RUN__:
 @end:
 	jmp	EnterDeskTop
 
-	
-serialText: 
+
+serialText:
 	.byte 	"$XXXX", NULL
 NoDriveDialog:
 	.byte	$81	; standard dialog, light bachground
@@ -108,7 +108,7 @@ NoDriveDialog:
 
 	.byte	DBTXTSTR, 10,10
 	.word	serialText
-	
+
 	.byte	NULL
 
 SelectDialog:
@@ -118,7 +118,7 @@ SelectDialog:
 	.byte	17, 42
 	;.byte	DBUSRICON,17,42
 	;.word	mountButton
-	
+
 	;.byte	YES
 	;.byte	17, 59
 
@@ -133,7 +133,7 @@ SelectDialog:
 
 	;.byte	DBUSRICON,26,26
 	;.word	@icon4
-	
+
 	.byte	DB_USR_ROUT
 	.word	DrawDialog
 
@@ -158,7 +158,7 @@ endButton:
 
 driveButtons:
 	.word driveAButton, driveBButton, driveCButton, driveDButton
-	
+
 mountButton:
 	.word	mountIcon,0
 	.byte	2, 16
@@ -183,7 +183,7 @@ mountIcon:
 	.byte %10000000, %01111110
 	.byte %10000000, %00000000
 	.byte %10000000, %00000000
-	
+
 driveAButton:	.word	IconA,0
 	.byte	ICON_X,ICON_Y
 	.word	driveAButton+8
@@ -211,8 +211,8 @@ driveDButton:	.word	IconD,0
 	;LoadB	@dr,'D'
 	LoadB	sysDBData, 'A'
 	LoadB	dialogDrive, 11
-	jmp	RstrFrmDialogue	
-	
+	jmp	RstrFrmDialogue
+
 driveText:
 	.byte	BOLDON, "Drive "
 driveLetter:
@@ -221,21 +221,37 @@ imageName:
 	.byte	"IMAGE.D81sdfsdfsdfsdfsdfsdf     "
 	.byte	"IMAGE.D81sdfsdfsdfsdfsdfsdf     ", NULL
 
+SelectionX:
+	WordCX	%101100000000 | ((-96+5) & $FF), %101100000000 | ((-48+3) & $FF)
+SelectionY:
+	ByteCY	%101100000000 | ((-96+5) & $FF), %101100000000 | ((-48+3) & $FF)
+
 DialogMouse:
 	lda	mouseData
 	bpl	@0
 	rts
 @0:
-	LoadW	r3, 68
-	LoadB	r2L, 36
+	MoveW	SelectionX, r3
+	MoveB	SelectionY, r2L
+
+	ldx	#r3
+	jsr	NormalizeX
+	ldy	#r2L
+	jsr	NormalizeY
+
+	MoveW	r3, r4
+	AddVW	124, r4
 
 	clc
 	lda	r2L
 	adc	#88
 	sta	r2H
-	MoveW	r3, r4
-	AddVW	124, r4
-
+	bcc	@10
+	clc
+	lda	r4H
+	adc	#16
+	sta	r4H
+@10:
 	jsr	IsMseInRegion
 	cmp	#$FF
 	beq	@1a
@@ -244,7 +260,7 @@ DialogMouse:
 	PushW	r2
 	PushW	r3
 	PushW	r4
-	
+
 	lda	r2L
 	clc
 	adc	#73
@@ -253,23 +269,29 @@ DialogMouse:
 	; check up
 	AddVW	73, r3
 	SubVW	16, r4
-	
+
 	jsr	IsMseInRegion
 	cmp	#$FF
 	bne	@3
-	
+
 	lda	topIndex
 	beq	@3a
 	dec	topIndex
-	LoadW	r3, 68
-	LoadB	r2L, 36
+
+	MoveW	SelectionX, r3
+	MoveB	SelectionY, r2L
+
+	ldx	#r3
+	jsr	NormalizeX
+	ldy	#r2L
+	jsr	NormalizeY
 	jsr	DrawSelectionBox
 @3a:
 	PopW	r4
 	PopW	r3
 	PopW	r2
 	rts
-	
+
 	; check down
 @3:
 	AddVW	16, r3
@@ -284,8 +306,13 @@ DialogMouse:
 	cmp	entryCount
 	bcs	@4a
 	inc	topIndex
-	LoadW	r3, 68
-	LoadB	r2L, 36
+
+	MoveW	SelectionX, r3
+	MoveB	SelectionY, r2L
+	ldx	#r3
+	jsr	NormalizeX
+	ldy	#r2L
+	jsr	NormalizeY
 	jsr	DrawSelectionBox
 @4a:
 	PopW	r4
@@ -317,11 +344,17 @@ DialogMouse:
 	clc
 	adc	topIndex
 	sta	selectedEntry
-	LoadW	r3, 68
-	LoadB	r2L, 36
+
+	MoveW	SelectionX, r3
+	MoveB	SelectionY, r2L
+
+	ldx	#r3
+	jsr	NormalizeX
+	ldy	#r2L
+	jsr	NormalizeY
 	jsr	DrawSelectionBox
 	rts
-@2:	
+@2:
 	clc
 	lda 	r2L
 	adc	#12
@@ -330,20 +363,20 @@ DialogMouse:
 	lda 	r2H
 	adc	#12
 	sta	r2H
-	
+
 	inc	r13L
 	dec	r5L
 	bne	@loop
-	
+
 @1:
 	rts
-	
+
 DrawDialog:
 
 	;jsr	TestSomething
 
 	jsr	OpenDir
-	
+
 	sta	fileDesc
 	LoadB	entryCount, 0
 	LoadW	r1, $2000
@@ -354,29 +387,34 @@ DrawDialog:
 	bcc	@ok
 	jmp	@end
 	lda	entryCount
-	brk 
-	
+	brk
+
 	lda	fileDesc
 	jsr	ReadDir
 	bcs	@end
 @ok:
-	AddVW	64, r1 
+	AddVW	64, r1
 	AddVW	4, r2
-	
+
 	inc	entryCount
 	lda	entryCount
 	cmp	#192
 	bne	@next
 @end:
 
-	LoadW	r3, 68
-	LoadB	r2L, 36
 	LoadB	selectedEntry, 0
+	MoveW	SelectionX, r3
+	MoveB	SelectionY, r2L
+
+	ldx	#r3
+	jsr	NormalizeX
+	ldy	#r2L
+	jsr	NormalizeY
 	jsr	DrawSelectionBox
 
 	ldx	fileDesc
 	jsr	CloseDir
-	
+
 	rts
 
 GetEntryString:
@@ -394,62 +432,77 @@ GetEntryString:
 	rol	r0H
 	asl	r0L
 	rol	r0H
-	AddVW	$2000, r0 
+	AddVW	$2000, r0
 	rts
-	
+
 testName:
 	.byte	"Testname", NULL
-	
+
 DrawSelectionBox:
+	MoveW	r3, r4
+	AddVW	124, r4
+
 	clc
 	lda	r2L
 	adc	#88
 	sta	r2H
-	MoveW	r3, r4
-	AddVW	124, r4
+	bcc	@10
+	clc
+	lda	r4H
+	adc	#16
+	sta	r4H
+@10:
+
 	lda	#$FF
 	jsr	FrameRectangle
-	
 	PushW	r2
 	PushW	r3
 	PushW	r4
-	
+
 	lda	r2L
 	clc
 	adc	#73
 	sta	r11L
+	bcc	@20
+
+	lda	r3H
+	clc
+	adc	#16
+	sta	r3H
+@20:
 	lda	#%11111111
 	jsr	HorizontalLine
 
-	lda	r11L
 	sta	r3L
-	clc	
+	lda	r11L
+	clc
 	adc	#15
 	sta	r3H
-	
+
 	SubVW	16, r4
 	lda	#%11111111
 	jsr	VerticalLine
 
 	SubVW	16, r4
-	lda	#%11111111	
+	lda	#%11111111
 	jsr	VerticalLine
 
 	PopW	r4
 	PopW	r3
 	PopW	r2
-	
+
+.if 0
 	inc	r2L
 	IncW	r3
-	
+
 	MoveW	r3, r4
 	AddVW	122, r4
 	clc
 	lda	r2L
 	adc	#11
 	sta	r2H
-	
-	MoveB	topIndex, r13L 
+
+	MoveB	topIndex, r13L
 	lda	#6
 	cmp	entryCount
 	bcc	@1
@@ -457,12 +510,12 @@ DrawSelectionBox:
 @1:
 	sta	r5L
 	beq	@2
-	
+
 @loop:
 	PushB	r5L
 	jsr	OutputLine
 	PopB	r5L
-	
+
 	clc
 	lda 	r2L
 	adc	#12
@@ -471,13 +524,14 @@ DrawSelectionBox:
 	lda 	r2H
 	adc	#12
 	sta	r2H
-	
+
 	inc	r13L
 	dec	r5L
 	bne	@loop
+.endif
 @2:
 	rts
-	
+
 OutputLine:
 	PushB	currentMode
 	ldy	#0
@@ -497,7 +551,7 @@ OutputLine:
 	PushW	r2
 	PushW	r3
 	PushW	r4
-	
+
 	MoveW	r3, r11
 	AddVW	1, r11
 	lda	r2L
@@ -505,7 +559,7 @@ OutputLine:
 	adc	#8
 	sta	r1H
 	jsr	GetEntryString
-		
+
 	jsr	PutString
 	PopW	r4
 	PopW	r3
@@ -513,7 +567,7 @@ OutputLine:
 	PopB	r13L
 	PopB	currentMode
 	rts
-	
+
 fileDesc:
 	.byte	0
 entryCount:
@@ -531,7 +585,7 @@ CloseDir:
 	NOP
 
 	rts
-		
+
 OpenDir:
 	;; Opendir takes no arguments and returns File descriptor in A
 	LDA #$12
@@ -539,7 +593,7 @@ OpenDir:
 	NOP
 	LDX #$00
 	RTS
-	
+
 
 	;; readdir takes the file descriptor returned by opendir as argument
 	;; and gets a pointer to a MEGA65 DOS dirent structure.
@@ -552,7 +606,7 @@ OpenDir:
 	;; d_reclen = size of the dirent on disk (32 bytes)
 	;; d_type = file/directory type
 	;; d_name = name of file
-	
+
 	; input:
 	;  A  - file descritpr
 	;  r1 - pointer to 64 byte buffer for name
@@ -560,14 +614,14 @@ OpenDir:
 	; return:
 	;  A
 	;  X
-	;  CARRY: clear = success, set = error 
+	;  CARRY: clear = success, set = error
 ReadDir:
 	pha
-	
+
 	;; First, clear out the dirent
 	ldx #64+1+11+4+4
 	lda #0
-@l1:	sta DirEntry,x	
+@l1:	sta DirEntry,x
 	dex
 	bne @l1
 
@@ -578,7 +632,7 @@ ReadDir:
 
 	plx
 	;tax
-	ldy #>DirEntry 		; write dirent to DirEntry 
+	ldy #>DirEntry 		; write dirent to DirEntry
 
 	lda #$14
 	STA $D640
@@ -609,7 +663,7 @@ ReadDir:
 @l3:	lda $0477,y
 	sta (r2),y
 	dey
-	bpl @l3	
+	bpl @l3
 
 .if 0
 	;; Inode = cluster from offset 64+1+12 = 77
@@ -620,7 +674,7 @@ ReadDir:
 	bpl @l3
 
 	;; d_off stays zero as it is not meaningful here
-	
+
 	;; d_reclen we preload with the length of the file (this saves calling stat() on the MEGA65)
 	ldx #3
 @l4:	lda $0400+64+1+12+4,x
@@ -638,8 +692,8 @@ ReadDir:
 	ldx #>_readdir_dirent
 .endif
 	clc
-	RTS	
-	
+	RTS
+
 InitMountableDrives:
 	; check if current drive is mountable
 	ldx	curDrive
@@ -654,12 +708,12 @@ InitMountableDrives:
 	jsr	IsMountableDrive
 	bcc	@3
 	stx	dialogDrive
-	bra	@2	
+	bra	@2
 @3:
 	inx
 	cpx	#12
 	bne	@4
-@2:	
+@2:
 InitDriveButtons:
 	; setup drive change buttons
 	LoadW	r10, driveButton1
@@ -668,9 +722,9 @@ InitDriveButtons:
 	cpx	dialogDrive
 	beq	@5
 	jsr	IsMountableDrive
-	
+
 	bcc	@5
-	
+
 	; add drive
 	AddVW	3,r10
 	txa
@@ -684,27 +738,27 @@ InitDriveButtons:
 	tax
 	ldy	#0
 	lda	driveButtons,x
-	sta	(r10),y 
+	sta	(r10),y
 	lda	driveButtons+1,x
 	iny
 	sta	(r10),y
-	pla	
+	pla
 	tax
-	
+
 	AddVW	2, r10
 	CmpWI	r10, endButton
 	beq	@6
 @5:
-	inx	
+	inx
 	cpx	#12
 	bne	@7
-	
+
 @6:	lda	#NULL
 	ldz	#0
-	sta	(r10), z 
-	
-	rts	
-	
+	sta	(r10), z
+
+	rts
+
 ; X = drive no 8,9,10,11
 ; result: c set if mountable
 ; destroy A reg
@@ -719,28 +773,28 @@ IsMountableDrive:
 @yes:
 	sec
 	rts
-	
+
 dialogDrive:
 	.byte	0
-	
+
 emptyString:
 	.byte	"   ", NULL
 TestSomething:
 	lda	#9
 	jsr	SetDevice
 	jsr	OpenDisk
-	
+
 	; enumerate over all sectors
 	LoadB	r15L,1
 	LoadB	r15H,0
 	LoadW	r4, $5000
-	
+
 @1:
 	PushW	r15
 	PushW	r4
-	
-	; write track to screen	
-	
+
+	; write track to screen
+
 	LoadW	r11, 100
 	LoadB	r1H, 100
 	MoveB	r15L, r0L
@@ -749,7 +803,7 @@ TestSomething:
 	jsr	PutDecimal
 	LoadW	r0, emptyString
 	jsr	PutString
-	
+
 	; write sector to screen
 	LoadW	r11, 100
 	LoadB	r1H, 120
@@ -766,7 +820,7 @@ TestSomething:
 	PushW	r15
 	jsr	GetBlock
 	PopW	r15
-	
+
 	inc	r15L
 	lda	r15L
 	cmp	#81
@@ -781,7 +835,7 @@ TestSomething:
 	inc	$d020
 	bra	@2
 	rts
-	
+
 IconA:
 	.incbin "mount/IconA.map"
 IconB:
@@ -790,4 +844,3 @@ IconC:
 	.incbin "mount/IconC.map"
 IconD:
 	.incbin "mount/IconD.map"
-	

@@ -67,6 +67,7 @@
 .import _SetNewMode
 .import _GetRealSize
 .import _EndScanLine
+.import _IsMseInRegion
 
 .global _map_FollowChain
 .global _map_FindFTypes
@@ -98,6 +99,7 @@
 .global _map__CRC
 .global _map_SetNewMode
 .global _map_GetRealSize
+.global _map_IsMseInRegion
 
 .global MapUnderlay
 .global UnmapUnderlay
@@ -203,6 +205,10 @@ ApplyMapping:
 
 
 
+_map_IsMseInRegion:
+	jsr MapUnderlay
+	jsr _IsMseInRegion
+	bra __unmap2
 _map_FollowChain:
     jsr MapUnderlay
     jsr _FollowChain
@@ -365,14 +371,7 @@ MapUnderlay:
     jmp @3
 @2:
     inc countHighMap
-    pla
-    taz
-    pla
-    tay
-    pla
-    tax
-    pla
-    rts
+    bra	mapEnd
 
 UnmapUnderlay:
     pha
@@ -398,6 +397,7 @@ UnmapUnderlay:
     jmp @3
 
 @2:
+mapEnd:
     pla
     taz
     pla

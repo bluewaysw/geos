@@ -103,6 +103,10 @@ BitmapUpHelp:
 	jsr _GetScanLine
 	MoveB r2L, r3H
 .if .defined(bsw128) || .defined(mega65)
+	ldx graphMode
+	cpx #$41
+	beq @X
+	lda r3H
 	bpl @Y
 	bbsf 7, graphMode, @X
 	and #$7F
@@ -123,6 +127,8 @@ BitmapUpHelp:
 	ldy #3  ; by 8
 	lda r1L
 	bbrf 6, graphMode, @42
+
+	; handle extended graph mode here
 	bit r1L
 	bpl @41
 	bvc @41
@@ -132,12 +138,18 @@ BitmapUpHelp:
 	adc scrFullCardsX
 @41:
 	and #$7f
+	ldy graphMode
+	cpy #$41
+	beq @43b
+	ldy #3
 	bra @43
 @42:
+	; classic graph mode handling
 	lda r1L
 @43:
 	bpl @4	; not DOUBLE_B
 	bbrf 7, graphMode, @4
+@43b:
 	ldy #4  ; by 16, if DOBULE_B on C80
 @4:
     	and #$7F
@@ -219,8 +231,12 @@ BitmapUpHelp:
 BitmapDecode:
 .if .defined(bsw128) || .defined(mega65)
    ;jmp  BitmapDecodeX
+	ldx graphMode
+	cpx #$41	; alway double the bitmap in $41 mode for now
+	beq @10
 	bbrf 7, graphMode, BitmapDecodeX
 	bbrf 7, r2L, BitmapDecodeX
+@10:
 	bbrf 0, L888D, @1
 	lda L888E
 	inc L888D

@@ -78,22 +78,22 @@ _EndScanLine:
 _GetScanLine_HR:
 	lda	r11L
 	pha
-	lda r3H
+	lda 	r3H
 	lsr
 	lsr
 	lsr
 	lsr
-	ldx #5
+	ldx 	#5
 @21:
-	asl r11L
+	asl 	r11L
 	rol
 	dex
-	bne @21
+	bne 	@21
 	tay
 	pla
 	sta	r11L
-	and #$07
-	ora #$f8
+	and 	#$07
+	ora 	#$f8
 	tax
 
 ;---------------------------------------------------------------

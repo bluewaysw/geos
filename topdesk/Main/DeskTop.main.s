@@ -401,6 +401,8 @@ JmpSub:	pha
 @10:	pla
 	rts
 StartUp:
+	;brk
+	nop
 	lda	#7
 	jsr	GetModule
 	MoveW_	ModStart+3*3+1,r1
@@ -1606,11 +1608,18 @@ RedrawHead:
 	lda	#0
 	jsr	SetPattern
 	jsr	i_Rectangle
-	.byte	1,13
 .ifdef topdesk128
 ;	.word	221+DOUBLE_W,237+DOUBLE_W
-	.word	221,237
+	;.byte	1,13
+	;.word	221,237
+
+	ByteCY	%110100000000| (-19 & $FF), 1
+	ByteCY	%110100000000| (-3 & $FF), 13
+	WordCX	%110100000000| (-19 & $FF), 1
+	WordCX  %110100000000| (-3 & $FF), 13
+
 .else
+	.byte	1,13
 	.word	221,237
 .endif
 	lda	#$ff
@@ -2093,8 +2102,8 @@ GetStartPos: ldx	#00
 	jsr 	NormalizeX
 
 	rts
-@xL:	.byte	<(SC_FROM_END|(4*8)),<(STARTB_X*8),<(STARTC_X*8),<(STARTD_X*8)
-@xH:	.byte	>(SC_FROM_END|(4*8)),>(STARTB_X*8),>(STARTC_X*8),>(STARTD_X*8)
+@xL:	.byte	<(SC_FROM_END|0xE0),<(STARTB_X*8),<(STARTC_X*8),<(STARTD_X*8)
+@xH:	.byte	>(SC_FROM_END|((-4*8)&0x00FF)),>(STARTB_X*8),>(STARTC_X*8),>(STARTD_X*8)
 @y:	.byte	100,STARTB_Y,STARTC_Y,STARTD_Y
 .endif
 
@@ -2622,7 +2631,9 @@ PrintDriveNames:
 	jsr	LoadCharSet
 .ifdef topdesk128
 	lda	graphMode
-	bpl	@40
+	cmp	#$41	; TODO we should not assume that the $41 is 
+			; the squashed mode
+	bne	@40
 	jsr	UseSystemFont
 @40:
 .endif
@@ -2633,7 +2644,7 @@ PrintDriveNames:
 .ifdef topdesk128
 
 .ifdef scalable_coords
-	LoadW___	r11,(SC_FROM_END | 32)
+	LoadW___	r11,(SC_FROM_END | (-32 & $FF))
 	;LoadW___	r11,272+16
 .else
 	LoadW___	r11,272+16+DOUBLE_W
@@ -2646,8 +2657,8 @@ PrintDriveNames:
 	bpl	@loop
 	jsr	i_PutString
 .ifdef scalable_coords
-	WordCX  5, SC_FROM_END | 6	
-	ByteCY	5, SC_FROM_END | 6
+	WordCX  5, SC_FROM_END | (-6 & $FF)	
+	ByteCY	5, SC_FROM_END | (-6 & $FF)
 	.byte	NULL
 .else
 .ifdef topdesk128

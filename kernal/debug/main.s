@@ -22,6 +22,8 @@
 
 STACK_OFFSET = 4
 
+TRACE_MODE = 0
+SSTEP_MODE = $80
 
 consoleCols:  
   .byte 80
@@ -93,9 +95,12 @@ saveD058:
 	.byte 0
 saveD05E:
 	.byte 0
-
+traceMode:
+	.byte TRACE_MODE
 u_cl:
   .word 0
+u_cl_h:
+  .byte 0
 
 breakList:
   .word 0, 0, _DebugStart, 0, 0, 0, 0, 0, 0, 0
@@ -129,6 +134,8 @@ DebugMain:
   sbc #0
   sta $107+STACK_OFFSET,y
   sta u_cl+1
+  lda #0
+  sta u_cl_h
 
   PushB CPU_DATA
   LoadB CPU_DATA, IO_IN
@@ -527,11 +534,19 @@ UpdateCursor:
 @1:
   rts
 
-ProcessTrace:
+ProcessSingleStep:
+	LoadB	traceMode, SSTEP_MODE
+	LoadW	r0, singleStep
+	jsr	PutString
 
+	bra	traceNow
+
+ProcessTrace:
+	LoadB	traceMode, TRACE_MODE
 	LoadW	r0, trace
 	jsr	PutString
 
+traceNow:
 	jsr	ResetSingleStep
 
 	; calc next break address
@@ -546,9 +561,30 @@ ProcessTrace:
 	;lda 	(r0), y     ; get opcode at PC
 	jsr	GetByte
 
+	; special opcode BRK
+	cmp	#0
+	bne	@4b
+
+	IncW	r0
+	ldy	stackPointer
+	lda	r0H
+	sta	$107+STACK_OFFSET, y
+	lda	r0L
+	sta	$106+STACK_OFFSET, y
+	
+	ldy	#0
+	;lda 	(r0), y     ; get opcode at PC
+	jsr	GetByte
+
 	; special opcode handling for single step
+@4b:	bit	traceMode
+	bpl	@4e
+	cmp	#$20
+	beq	@4f
+@4e:
 	cmp	#$4C	; JMP
 	bne	@1
+@4f:
 	ldy	#1
 @4:
 	lda	(r0), y     ; get jmp address low
@@ -575,6 +611,45 @@ ProcessTrace:
 	bra	@4
 
 @3:
+	cmp	#$90	; BCC
+	bne	@3b
+	
+	ldy	stackPointer
+	lda 	$105+STACK_OFFSET, y
+	and	#1
+	bne	@3b
+@3c:	
+	; follow branch
+	ldy	#1
+	jsr	GetByte		; branch offset
+	
+	ldx	#0
+	sta	r0L
+	bit	r0L
+	bpl	@3d
+	ldx	#$FF
+@3d:	
+	stx	r0H
+	
+	ldy	stackPointer
+	lda	$106+STACK_OFFSET, y
+        clc
+	adc	r0L
+	sta	r0L
+        lda 	$107+STACK_OFFSET, y
+	adc	r0H
+	sta	r0H
+	
+	AddVW	2, r0
+	bra	@2
+
+	lda	r0L
+	sta	$106+STACK_OFFSET, y
+	lda	r0H
+	sta	$107+STACK_OFFSET, y
+	clc
+	rts
+@3b:
 	jsr	DebugOpcode_GetLen
 
 	clc
@@ -701,8 +776,12 @@ ProcessPrompt:
   LoadW r0, promptBuf
   LoadW r1, setbCommand
   jsr StrBeginsWith
-  bne @1
+  beq @4d
 
+  ; assume single step 's'
+  jmp ProcessSingleStep
+
+@4d:
   clc
   tya
   adc r0L
@@ -757,9 +836,10 @@ ProcessPrompt:
   jsr EvalAddrExpr
   bcs @6c
   MoveW r1, u_cl
-
+  MoveB r2L, u_cl_h
 @6c:
   MoveW u_cl, r0 
+  MoveB u_cl_h, r2L
 
   ldx #0
 @6b:
@@ -773,6 +853,7 @@ ProcessPrompt:
   bne @6b
 
   MoveW r0, u_cl
+  MoveB r2L, u_cl_h
 
   clc
   rts
@@ -838,11 +919,15 @@ ProcessDump:
 	jsr EvalAddrExpr
 	bcs @6c
 	MoveW r1, u_cl
+	MoveB r2L, u_cl_h
 @6c:
 	MoveW u_cl, r0 
+	MoveB u_cl_h, r2L 
 
 	lda	#'$'
 	jsr	PutChar
+	lda	r2L
+	jsr	PrintByteHex
 	lda	r0H
 	jsr	PrintByteHex
 	lda	r0L
@@ -856,7 +941,8 @@ ProcessDump:
 	pha
 	tay
 	;lda	(r0), y
-	jsr	GetByte
+	LoadB	r2L, $05
+	jsr	GetByteLong
 	jsr	PrintByteHex
 	lda	#' '
 	jsr	PutChar
@@ -870,7 +956,7 @@ ProcessDump:
 	jsr	PutChar
 
 	MoveW r0, u_cl
-
+	MoveB r2L, u_cl_h
 	clc
 	rts
 
@@ -1226,6 +1312,7 @@ EvalAddrExpr:
 
 EvalHexWord:
   LoadW r1, 0
+  LoadB r2L, 0
 @2:
   lda (r0), y
   beq @5
@@ -1242,12 +1329,16 @@ EvalHexWord:
   tax
   asl r1L
   rol r1H
+  rol r2L
   asl r1L
   rol r1H
+  rol r2L
   asl r1L
   rol r1H
+  rol r2L
   asl r1L
   rol r1H
+  rol r2L
   txa
   ora r1L
   sta r1L
@@ -1357,7 +1448,10 @@ UpdatePCBreakpoint:
   rts
 
 trace:
-  .byte "Trace!", 13, 0
+	.byte "Trace!", 13, 0
+
+singleStep:
+	.byte "Single Step!", 13, 0
 
 syntaxError:
   .byte "Syntax Error!", 13, 0
@@ -1739,7 +1833,11 @@ DebugOpcode_PrintBREL:
 	rts
 	
 GetByte:
+	LoadB r2L, 0
+
+GetByteLong:
 	PushW r0
+	PushB r2L
 	clc 
 	tya
 	adc r0L
@@ -1747,7 +1845,40 @@ GetByte:
 	lda r0H
 	adc #0
 	sta r0H
+	lda r2L
+	adc #0
+	sta r2L
+	
+	beq @zeroBank
 
+	PushW	r0
+	PushW	r1
+
+	lda	r0L
+	sec
+	sbc	#$00
+	sta	r0L
+	lda	r0H
+	sbc	#$00
+	sta	r0H
+	lda	r2L
+	sta	r1L
+	lda	#0
+	sta	r1H
+
+	LDZ	#0
+	EOM
+	lda 	(r0L), Z
+	tay
+	
+	PopW	r1
+	PopW	r0
+
+	tya
+	
+	jmp	@3
+
+@zeroBank:
 	CmpWI r0, r0
 	bne @a1
 	lda saveR0
@@ -1839,7 +1970,7 @@ GetByte:
 	CmpWI	r0, $8000
 	beq	@b5
 	bcs	@b5
-
+@b7:
 	PushW	r0
 	PushW	r1
 
@@ -1867,10 +1998,18 @@ GetByte:
 	
 	bra	@3
 @b5:
+	CmpWI	r0, $D000
+	bcc	@b6	
+	CmpWI	r0, $E000
+	beq	@b6
+	bcs	@b6
+	jmp	@b7
+@b6:
 	ldy #0
 	lda (r0), Y
 @3:
 	tay
+	PopB r2L
 	PopW r0
 	tya
 	rts 

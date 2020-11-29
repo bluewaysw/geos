@@ -519,7 +519,7 @@ DeskFormat:	MoveB	curDrive,Name+2	; nur Zwischenspeicher
 .endif
 @icontab:	.word	@icon1,@icon2,@icon3,@icon4
 @icon1:	.word	IconA,0
-	.byte	ICON_X,ICON_Y
+	.byte	128|ICON_X,ICON_Y
 	.word	@icon1+8
 	LoadB	@dr,'A'
 	LoadB	$851d,$12

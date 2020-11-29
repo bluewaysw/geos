@@ -47,13 +47,18 @@ DispMultiCount:	txa
 	lda	#0
 	jsr	SetPattern
 	jsr	i_Rectangle
-	.byte	2,12
+;	.byte	2,12
 ;	.word	222+DOUBLE_W,236+DOUBLE_W
-	.word	222,236
+;	.word	222,236
+	ByteCY	%110100000000 | (-18 & $FF), 2
+	ByteCY	%110100000000 | (-4 & $FF), 12
+	WordCX	%110100000000 | (-18 & $FF), 2
+	WordCX	%110100000000 | (-4 & $FF), 12
+	
 	MoveB	MultiCount,r0L
 	LoadB	r0H,0
 ;	LoadW___	r11,223+DOUBLE_W
-	LoadW___	r11,223
+	LoadW___	r11,%110100000000 | (-17 & $FF) 
 	LoadB	r1H,9
 	lda	#%11000000
 	jsr	PutDecimal
@@ -154,8 +159,8 @@ GetPos:
     adc #21
     sta r2H,x
     rts
-@xL:    .byte   <(SC_FROM_END|(4*8)),<(SC_FROM_END|(4*8)),<(SC_FROM_END|(4*8)),<(SC_FROM_END|(4*8))
-@xH:    .byte   (>(SC_FROM_END|(4*8)))
+@xL:    .byte   <(SC_FROM_END|((-4*8)& $FF)),<(SC_FROM_END|(4*8)),<(SC_FROM_END|(4*8)),<(SC_FROM_END|(4*8))
+@xH:    .byte   (>(SC_FROM_END|((-4*8)& $FF)))
         .byte   (>(SC_FROM_END|(4*8)))
         .byte   (>(SC_FROM_END|(4*8)))
         .byte   (>(SC_FROM_END|(4*8)))
@@ -559,7 +564,7 @@ GetEqualWindows:	; Ermittlung der Fensternummern, deren Pfadname genau mit dem
 
 .ifdef topdesk128
 .ifdef scalable_coords
-ClxL	= SC_FROM_END |  79
+ClxL	= SC_FROM_END |  ((-79) & %0000000011111111)
 ClxR	= SC_FROM_END |  0
 .else
 ;ClxL	= 240 + DOUBLE_W
@@ -632,9 +637,10 @@ ShowClock:
 	lda	#MinZehner-TagZehner
 	jsr	DivnSet
 @Ausg:
-	LoadW___	rightMargin,ClxR+1
+	LoadW___	rightMargin, SC_FROM_END | -1
+			;ClxR-1
 	jsr	i_PutString
-	.word	ClxL-DateX
+	.word	ClxL+DateX
 	.byte	ClyO+DateY
 	.byte	PLAINTEXT
 TagZehner:	.byte	"0"
@@ -655,7 +661,7 @@ JahEiner:	.byte	"0"
 	.byte	PLAINTEXT
 	.byte	"  "
 	.byte	GOTOXY
-	.word	ClxL-TimeX
+	.word	ClxL+TimeX
 	.byte	ClyO+TimeY
 	.byte	PLAINTEXT
 StdZehner:	.byte	"0"

@@ -11,6 +11,7 @@
 .include "c64.inc"
 
 .import NormalizeX
+.import NormalizeY
 
 .global _IsMseInRegion
 .global UncompactXY
@@ -23,8 +24,12 @@ _IsMseInRegion:
 .if .defined(bsw128) || .defined(mega65)
 	ldx #r3
 	jsr NormalizeX
+	ldy #r2L
+	jsr NormalizeY	
 	ldx #r4
 	jsr NormalizeX
+	ldy #r2H
+	jsr NormalizeY	
 .endif
 	PushW r0
 

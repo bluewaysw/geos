@@ -136,6 +136,11 @@ DispThisInfo:	; File-Info des Files Name darstellen
 @10:	LoadW___	r0,Name
 	jsr	StringLen
 	lsr	r1L
+	lda	graphMode
+	cmp	#$41
+	bne	@2
+	lsr	r1L		
+@2:
 	lda	#(FIB_RECHTS-FIB_LINKS)/2-10
 	sec
 	sbc	r1L
@@ -188,8 +193,10 @@ DispThisInfo:	; File-Info des Files Name darstellen
 .endif
 @tn:	.byte	0
 @db:	.byte	$01
-	.byte	FIB_OBEN,FIB_UNTEN
-	.word	FIB_LINKS,FIB_RECHTS
+	ByteCY	%101100000000 | ((-(160-FIB_LINKS)) & $FF), %101100000000 | ((-(100-FIB_OBEN)) & $FF)
+	ByteCY	%101100000000 | (((FIB_RECHTS-160)) & $FF), %101100000000 | (((FIB_UNTEN-100)) & $FF)
+	WordCX	%101100000000 | ((-(160-FIB_LINKS)) & $FF), %101100000000 | ((-(100-FIB_OBEN)) & $FF)
+	WordCX	%101100000000 | (((FIB_RECHTS-160)) & $FF), %101100000000 | (((FIB_UNTEN-100)) & $FF)
 	DbText	50,10,@boldtext
 @titelpos:	DbText	70,12,Name
 	DbText	10,30,@t1
@@ -234,9 +241,10 @@ DispThisInfo:	; File-Info des Files Name darstellen
 @t6:	.byte	"Write protect",BOLDON,0
 @t7:	.byte	"Structure:",0
 .endif
-@PutSize:	MoveW_	$8400+28,r0
-	LoadW___	r11,FIB_LINKS+55
-	LoadB	r1H,FIB_OBEN+80
+@PutSize:	
+	MoveW_	$8400+28,r0
+	LoadW___	r11,(%101100000000 | (((-(160-FIB_LINKS-55)) & $FF))) |  (((%101100000000 | (-(100-FIB_OBEN-80)) & $FF) << 4) & $f000)
+	LoadB	r1H,((%101100000000 | (-(100-FIB_OBEN-80)) & $FF)) & $ff
 	lda	KBytesFlag
 	cmp	#'*'
 	beq	@ps10
@@ -268,8 +276,9 @@ DispThisInfo:	; File-Info des Files Name darstellen
 @Blocks:	.byte	" blocks",0
 @KBytes:	.byte	" KByte(s)",0
 .endif
-@PutDate:	LoadW___	r11,FIB_LINKS+55
-	LoadB	r1H,FIB_OBEN+70
+@PutDate:
+	LoadW___	r11,(%101100000000 | (((-(160-FIB_LINKS-55)) & $FF))) |  (((%101100000000 | (-(100-FIB_OBEN-70)) & $FF) << 4) & $f000)
+	LoadB	r1H,((%101100000000 | (-(100-FIB_OBEN-70)) & $FF)) & $ff
 	ldy	#0
 	sty	a4L
 @pd05:	lda	@tab1,y
@@ -300,16 +309,29 @@ DispThisInfo:	; File-Info des Files Name darstellen
 @tab2:	.byte	".","."," ",":",0
 @tab3:	.byte	0,0,1,0,1
 @Layout:	jsr	i_FrameRectangle
-	.byte	FIB_OBEN+2,FIB_UNTEN-2
-	.word	FIB_LINKS+2,FIB_RECHTS-2
+	;.byte	FIB_OBEN+2,FIB_UNTEN-2
+	;.word	FIB_LINKS+2,FIB_RECHTS-2
+	ByteCY	%101100000000 | ((-(160-FIB_LINKS-2)) & $FF), %101100000000 | ((-(100-FIB_OBEN-2)) & $FF)
+	ByteCY	%101100000000 | (((FIB_RECHTS-160-2)) & $FF), %101100000000 | (((FIB_UNTEN-100-2)) & $FF)
+	WordCX	%101100000000 | ((-(160-FIB_LINKS-2)) & $FF), %101100000000 | ((-(100-FIB_OBEN-2)) & $FF)
+	WordCX	%101100000000 | (((FIB_RECHTS-160-2)) & $FF), %101100000000 | (((FIB_UNTEN-100-2)) & $FF)
 	.byte	%11111111
 	jsr	i_FrameRectangle
-	.byte	FIB_OBEN+4,FIB_OBEN+16
-	.word	FIB_LINKS+2,FIB_RECHTS-2
+	;.byte	FIB_OBEN+4,FIB_OBEN+16
+	;.word	FIB_LINKS+2,FIB_RECHTS-2
+	ByteCY	%101100000000 | ((-(160-FIB_LINKS-2)) & $FF), %101100000000 | ((-(100-FIB_OBEN-4)) & $FF)
+	ByteCY	%101100000000 | (((FIB_RECHTS-160-2)) & $FF), %101100000000 | ((-(100-FIB_OBEN-16)) & $FF)
+	WordCX	%101100000000 | ((-(160-FIB_LINKS-2)) & $FF), %101100000000 | ((-(100-FIB_OBEN-4)) & $FF)
+	WordCX	%101100000000 | (((FIB_RECHTS-160-2)) & $FF), %101100000000 | ((-(100-FIB_OBEN-16)) & $FF)
 	.byte	%11111111
 	jsr	i_FrameRectangle
-	.byte	FIB_OBEN+85,FIB_OBEN+92
-	.word	FIB_LINKS+50,FIB_LINKS+57
+	;.byte	FIB_OBEN+85,FIB_OBEN+92
+	;.word	FIB_LINKS+50,FIB_LINKS+57
+	ByteCY	%101100000000 | ((-(160-FIB_LINKS-50)) & $FF), %101100000000 | ((-(100-FIB_OBEN-85)) & $FF)
+	ByteCY	%101100000000 | ((-(160-FIB_LINKS-57)) & $FF), %101100000000 | ((-(100-FIB_OBEN-92)) & $FF)
+	WordCX	%101100000000 | ((-(160-FIB_LINKS-50)) & $FF), %101100000000 | ((-(100-FIB_OBEN-85)) & $FF)
+	WordCX	%101100000000 | ((-(160-FIB_LINKS-57)) & $FF), %101100000000 | ((-(100-FIB_OBEN-92)) & $FF)
+
 	.byte	%11111111
 	lda	$8400
 	and	#$40
@@ -319,10 +341,12 @@ DispThisInfo:	; File-Info des Files Name darstellen
 @Check:	lda	mouseData
 	bne	@c05
 	rts
-@c05:	LoadB	r2L,FIB_OBEN+85
-	LoadB	r2H,FIB_OBEN+92
-	LoadW___	r3,FIB_LINKS+50
-	LoadW___	r4,FIB_LINKS+57
+@c05:
+	LoadW___	r3,(%101100000000 | (((-(160-FIB_LINKS-50)) & $FF))) |  (((%101100000000 | (-(100-FIB_OBEN-85)) & $FF) << 4) & $f000)
+	LoadW___	r4,(%101100000000 | (((-(160-FIB_LINKS-57)) & $FF))) |  (((%101100000000 | (-(100-FIB_OBEN-92)) & $FF) << 4) & $f000)
+	LoadB	r2L,((%101100000000 | (-(100-FIB_OBEN-85)) & $FF)) & $ff
+	LoadB	r2H,((%101100000000 | (-(100-FIB_OBEN-92)) & $FF)) & $ff
+
 	jsr	IsMseInRegion
 	beq	@c10
 	LoadB	AlternateFlag,$ff

@@ -24,14 +24,21 @@ EditText:	; Text-Editierung
 @codeok:	dey
 	bpl	@testcodeloop
 .ifdef topdesk128
-    	;LoadW___    r3, $8000+80
-    	;ldx #r3
-    	;jsr NormalizeX
-    	;MoveW_  r3, PositionXL
-    	;LoadW___    r3, $8000 + 80 + 160
-    	;ldx #r3
-    	;jsr NormalizeX
-    	;MoveW_  r3, PositionXR
+    	MoveW_	PositionXL, r3
+    	ldx 	#r3
+    	jsr 	NormalizeX
+    	MoveW_  r3, PositionXL_norm
+	lda	PositionXL_norm+1
+	and	#$0F
+	sta	PositionXL_norm+1
+    	MoveW_  PositionXR, r3
+
+    	ldx 	#r3
+    	jsr 	NormalizeX
+    	MoveW_  r3, PositionXR_norm
+	lda	PositionXR_norm+1
+	and	#$0F
+	sta	PositionXR_norm+1
 .endif
 
 	ldy	#5
@@ -150,6 +157,7 @@ MouseRoutine:	lda	mouseData
 	bpl	@15
 	jsr	IsMseInRegion
 	beq	@05
+	inc $D020
 	MoveW_	mouseXPos,r11
 	MoveB	mouseYPos,r1H
 SetTextPtr:	jsr	TextPosition
@@ -203,7 +211,10 @@ NewDisplay:
 	clc
 	adc	#3
 @drin:	sta	r1H
-	MoveW_	PositionXL,r11
+	MoveW_	PositionXL_norm,r11
+	lda	r11H
+	and	#$0F
+	sta	r11H
 	ldy	ActualCharPointer
 	ldx	Pointer,y
 @30:	cpx	ActualCharacter
@@ -217,10 +228,14 @@ NewDisplay:
 	inc	r11H
 @35:	inx
 	bne	@30
-@40:	CmpW	r11,PositionXR
+@40:	CmpW	r11,PositionXR_norm
 	bcc	@50
-	MoveW_	PositionXR,r11
-@50:	MoveW_	r11,stringX
+	MoveW_	PositionXR_norm, r11
+@50:	lda	PositionXR+1
+	and	#$F0
+	ora	r11H
+	sta	r11H
+	MoveW_	r11,stringX
 	MoveB	r1H,stringY
 	jmp	PromptOn
 
@@ -231,7 +246,7 @@ RethinkText:
 	sty	r2L
 	sty	Pointer
 @loop2:	LoadB	r2H,0
-	MoveW_	PositionXL,r0
+	MoveW_	PositionXL_norm,r0
 	ldy	r2L
 	ldx	Pointer,y
 	dex
@@ -250,7 +265,7 @@ RethinkText:
 	sta	r0L
 	bcc	@10
 	inc	r0H
-@10:	CmpW	r0,PositionXR	;Rechter Rand erreicht
+@10:	CmpW	r0,PositionXR_norm	;Rechter Rand erreicht
 	bcc	@loop
 	lda	r2H	;Space vorhanden
 	beq	@20
@@ -282,12 +297,36 @@ TextPosition:
 ; Par:	r11,r1H: gew}nschte Textposition
 ; Ret:	ActualCharacter: Zeichenposition
 ; Des:	a,x,y,r0-r3
-	MoveW_	PositionXL,r0
-	MoveW_	r11,r2
+	MoveW	PositionXL, r2
+	MoveB	PositionYO, r3H
+	ldx	#r2
+	ldy	#r3H
+	jsr	NormalizeY
+
+	MoveB	PositionXL,r0L
+	lda	PositionXL+1
+	and	#$0F
+	sta	r0H
+
+	ldx	#r0
+	jsr	NormalizeX
+
+	MoveB	r11,r2L
+	lda	r11H
+	and	#$0F
+	sta	r11H
+	sta	r2H
+
+	ldx	#r2
+	jsr	NormalizeX
+
 	SubW	r0,r2
+
+
 	lda	r1H
 	sec
-	sbc	PositionYO
+	sbc	r3H
+
 	ldy	#0
 @10:	sec
 	sbc	#10
@@ -295,6 +334,8 @@ TextPosition:
 	iny
 	bne	@10
 @20:	sty	r3H
+
+	; y is the line number
 	ldx	Pointer,y
 	cpx	TextLength
 	bcs	@ende
@@ -433,10 +474,20 @@ DeleteChar:
 	bcc	@10
 	rts
 ;Position der EingabeBox :
-PositionYO:	.byte	136
-PositionYU:	.byte	136+39
-PositionXL:	.word	80
-PositionXR:	.word	80+160
+
+;PositionYO:	.byte	136
+;PositionYU:	.byte	136+39
+;PositionXL:	.word	80
+;PositionXR:	.word	80+160
+PositionYO:	ByteCY	%101100000000 | (-80 & $FF), %101100000000 | (36 & $FF)
+PositionYU:	ByteCY	%101100000000 | (80 & $FF), %101100000000 | ((36+39) & $FF)
+PositionXL:	WordCX	%101100000000 | (-80 & $FF), %101100000000 | (36 & $FF)
+PositionXR:	WordCX	%101100000000 | (80 & $FF), %101100000000 | ((36+39) & $FF)
+
+PositionXL_norm:	.word	0
+PositionXR_norm:	.word	0
+
+
 MaxTextLength	=	96
 TextLength:	.byte	0
 ; Offset des Abschlu~byte Null des Textes

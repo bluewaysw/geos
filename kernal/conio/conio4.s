@@ -20,6 +20,7 @@
 .import _InitTextPrompt
 
 .import NormalizeX
+.import NormalizeY
 
 .ifdef bsw128
 .import PromptOn
@@ -41,6 +42,8 @@ _GetString:
 .if .defined(bsw128) || .defined(mega65)
 	ldx #r11
 	jsr NormalizeX
+	ldy #r1H
+	jsr	NormalizeY
 .endif
 	MoveW r0, string
 	MoveB r1L, stringMargCtrl

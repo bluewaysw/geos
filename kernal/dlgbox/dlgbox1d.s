@@ -18,6 +18,8 @@
 .import TimersTab
 .import menuOptNumber
 .import L8871
+.import _NormalizeX
+.import _NormalizeY
 
 .global DBIconsHelp2
 .global DialogRestore
@@ -25,7 +27,7 @@
 .global DBDoIcons
 .global DBDoUSRICON
 
-.segment "dlgbox1d"
+.segment "dlgbox1d_ul"
 
 DialogSave:
 	ldx #0
@@ -136,6 +138,8 @@ DialogCopyTab:
 	.word NULL
 .endif
 
+.segment "dlgbox1d"
+
 ; handler for commands 1-6
 DBDoIcons:
 .ifdef wheels_button_shortcuts ; install keyVector for all button types
@@ -188,20 +192,64 @@ DBDoUSRICON:
 DBIconsHelp1:
 	clc
 	jsr CalcDialogCoords
-	lsr r3H
+	ldx #r3
+	jsr _NormalizeX
+	;ldx #r3
+	ldy #r2L
+	jsr _NormalizeY
+	lda r3H
+	lsr
 	ror r3L
-	lsr r3L
-	lsr r3L
+	lsr
+	ror r3L
+	lsr
+	ror r3L
+	lsr
+	ldx graphMode
+	cpx #$41
+	bne @10
+	lsr
+	ror r3L
+@10:
+	tax
+
 	ldy r1L
 	lda (DBoxDesc),y
+.if .defined(bsw128) || .defined(mega65)
+	bit L8871
+	bpl @2
+	;asl
+	pha
+	lda r3L
+	and #$FE
+	sta r3L
+	pla
+@2:
+.endif
 	clc
 	adc r3L
 	sta r3L
+
 	iny
 	lda (DBoxDesc),y
 	clc
 	adc r2L
 	sta r2L
+	txa
+	adc #0
+	beq @1
+
+	; overflow, by 8
+	lsr
+	ror r2L
+	lsr
+	ror r2L
+	lsr
+	ror r2L
+	lda r3L
+	ora #$80
+	sta r3L
+@1:
 	iny
 	sty r1L
 	rts
@@ -221,7 +269,7 @@ DBIconsHelp2:
 	bne @2
 	lda r3L
 .if .defined(bsw128) || .defined(mega65)
-	ora L8871
+	;ora L8871
 .endif
 @2:	cpy #3
 	bne @3
@@ -232,4 +280,3 @@ DBIconsHelp2:
 	cpy #8
 	bne @1
 @4:	rts
-

@@ -25,6 +25,16 @@
 
 .global _FirstInit
 
+.import MapUnderlay
+.import UnmapUnderlay
+
+.segment "init2b"
+
+_FirstInit:	
+	jsr	MapUnderlay
+	jsr	_FirstInit2
+	jmp	UnmapUnderlay 
+	
 .segment "init2"
 
 ;---------------------------------------------------------------
@@ -35,7 +45,7 @@
 ; Pass:      nothing
 ; Destroyed: a, y, r0 - r2l
 ;---------------------------------------------------------------
-_FirstInit:
+_FirstInit2:
 	sei
 	cld
 .ifdef mega65

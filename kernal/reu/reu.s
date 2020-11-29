@@ -37,7 +37,7 @@ _StashRAM:
 	jsr	_GetBankParams
 	sty	opToBankLow
 	sta	opToBankHigh+1
-	
+
 	lda	r0L
 	sta	opFromAddr
 	lda	r0H
@@ -71,21 +71,21 @@ _GetBankParams:
 	;ldy	#5
 	;lda	#0
 	;bne	@1
-	
+
 	lda	r3L
 
-	tax	
-	and	#$0F
-	;lda	#5
+	tax
+	;and	#$0F
+	lda	#5	; force to bank 5 of main RAM
 	tay
 	txa
-	lsr	
 	lsr
 	lsr
 	lsr
-	
-	ora	#$80
-	;lda	#0
+	lsr
+
+	;ora	#$80
+	lda	#0	; force to bank 5 of main RAM
 @1:
 	ldx	r1L
 	rts
@@ -110,8 +110,8 @@ _FetchRAM:
 	ldy	r0H
 
 	bra	_RamOp
-	
-	
+
+
 _VerifyRAM:
 _SwapRAM:
 @3:	rts

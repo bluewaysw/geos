@@ -184,7 +184,7 @@ ifeq ($(VARIANT), mega65)
 	kernal/c65/iojmp.s \
 	kernal/128k/swapdiskdriver.s \
 	kernal/files/compat.s \
-	kernal/memory/backram.s 
+	kernal/memory/backram.s
 endif
 
 # code that is in C128 back bank
@@ -498,7 +498,7 @@ SNX10C.CVT
 NX1000R.CVT
 SSG10.CVT
 TOSHP321.CVT
-endif 
+endif
 
 $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topdesk.cvt \
 	$(BUILD_DIR)/mount.cvt $(BUILD_DIR)/clock.cvt $(BUILD_DIR)/config.cvt \
@@ -585,8 +585,8 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo geoswrite $(BUILD_DIR)/mount.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/clock.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
-		echo geoswrite $(BUILD_DIR)/joydrv.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/mse1351.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite $(BUILD_DIR)/joydrv.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite gpt64.cvt | $(C1541) $@ >/dev/null; \
 		echo \*\*\* Created $@ based on $(D81_TEMPLATE).; \
 	else \
@@ -595,8 +595,8 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/mount.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/clock.cvt | $(C1541) $@ >/dev/null; \
-		echo geoswrite $(BUILD_DIR)/joydrv.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/mse1351.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite $(BUILD_DIR)/joydrv.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/autostart.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/geospace.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
@@ -889,13 +889,13 @@ $(BUILD_DIR)/topdesk.cvt: $(BUILD_DIR)/topdesk/topdesk.o $(BUILD_DIR)/topdesk/Ma
 								$(BUILD_DIR)/topdesk/Main/DeskTop.sub9.o $(BUILD_DIR)/topdesk/Main/DeskTop.sub10.o
 
 $(BUILD_DIR)/mount.cvt: $(BUILD_DIR)/mount/mount.o $(BUILD_DIR)/mount/main.o
-	$(LD) -t geos-cbm -o $@ $(BUILD_DIR)/mount/mount.o -m $(BUILD_DIR)/mount.map $(BUILD_DIR)/mount/main.o 
+	$(LD) -t geos-cbm -o $@ $(BUILD_DIR)/mount/mount.o -m $(BUILD_DIR)/mount.map $(BUILD_DIR)/mount/main.o
 
 $(BUILD_DIR)/geospace.cvt: $(BUILD_DIR)/space/space.o $(BUILD_DIR)/space/main.o
-	$(LD) -t geos-cbm -o $@ $(BUILD_DIR)/space/space.o -m $(BUILD_DIR)/space.map $(BUILD_DIR)/space/main.o 
+	$(LD) -t geos-cbm -o $@ $(BUILD_DIR)/space/space.o -m $(BUILD_DIR)/space.map $(BUILD_DIR)/space/main.o
 
 $(BUILD_DIR)/clock.cvt: $(BUILD_DIR)/clock/clock.o $(BUILD_DIR)/clock/main.o
-	$(LD) -t geos-cbm -o $@ $(BUILD_DIR)/clock/clock.o -m $(BUILD_DIR)/clock.map $(BUILD_DIR)/clock/main.o 
+	$(LD) -t geos-cbm -o $@ $(BUILD_DIR)/clock/clock.o -m $(BUILD_DIR)/clock.map $(BUILD_DIR)/clock/main.o
 
 $(BUILD_DIR)/input_driver.cvt: $(BUILD_DIR)/folder/input_driver.o
 	$(LD) -C folder/folder.cfg -o $@ $(BUILD_DIR)/folder/input_driver.o -m $(BUILD_DIR)/input_driver.map
@@ -931,10 +931,10 @@ $(BUILD_DIR)/coding.cvt: $(BUILD_DIR)/folder/coding.o
 	$(LD) -C folder/folder.cfg -o $@ $(BUILD_DIR)/folder/coding.o -m $(BUILD_DIR)/coding.map
 
 $(BUILD_DIR)/joydrv.cvt: $(BUILD_DIR)/input/joydrvHdr.o $(BUILD_DIR)/input/joydrv.o
-	$(LD) -C input/joydrv_cvt.cfg -o $@ $(BUILD_DIR)/input/joydrvHdr.o -m $(BUILD_DIR)/joydrv.map $(BUILD_DIR)/input/joydrv.o 
+	$(LD) -C input/joydrv_cvt.cfg -o $@ $(BUILD_DIR)/input/joydrvHdr.o -m $(BUILD_DIR)/joydrv.map $(BUILD_DIR)/input/joydrv.o
 
 $(BUILD_DIR)/mse1351.cvt: $(BUILD_DIR)/input/mse1351Hdr.o $(BUILD_DIR)/input/mse1351.o
-	$(LD) -C input/mse1351_cvt.cfg -o $@ $(BUILD_DIR)/input/mse1351Hdr.o -m $(BUILD_DIR)/mse1351.map $(BUILD_DIR)/input/mse1351.o 
+	$(LD) -C input/mse1351_cvt.cfg -o $@ $(BUILD_DIR)/input/mse1351Hdr.o -m $(BUILD_DIR)/mse1351.map $(BUILD_DIR)/input/mse1351.o
 
 ifeq ($(VARIANT), mega65)
 $(BUILD_DIR)/compressed.bin: $(BUILD_DIR)/kernal_combined.prg
