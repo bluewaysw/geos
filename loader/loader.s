@@ -123,8 +123,8 @@ next:	.WORD	0
 	sta	$d031
 
   ; force 1351 emulation
-	lda	#5
-	sta	$D61B
+	;lda	#5
+	;sta	$D61B
 
 	 ; Set screen ram that has 100x60 cells x 2 bytes per cell = 12,000 bytes of colour
 	 ; information for bitmap mode.
