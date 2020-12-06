@@ -31,6 +31,9 @@
 .import Ddiv
 .import IsMseInRegion
 
+.import _NormalizeX
+.import _NormalizeY
+
 .ifdef wheels
 .import DoKeyboardShortcut
 .import FetchRAM
@@ -197,15 +200,23 @@ SetupRAMOpCall:
 	asl
 	asl
 	rol r0H
+	bit graphMode
+	bpl @1b
+	addv 24
+	bra @1c
+@1b:
 	addv 12
+@1c:
 	sta r0L
 	bcc @1
 	inc r0H
 @1:
 .if .defined(bsw128) || .defined(mega65)
-	lda r0H
-	ora L8871
-	sta r0H
+	; this is not used anymore, general position has been
+	; normalized/resolved upfront
+	;lda r0H
+	;ora L8871
+	;sta r0H
 	ldx #r0
 	jsr NormalizeX
 .endif
@@ -374,6 +385,7 @@ DBGFilesHelp6:
 DBGFilesHelp7:
 	clc
 	jsr CalcDialogCoords
+
 	AddB DBGFOffsLeft, r3L
 	bcc @1
 	inc r3H
@@ -385,6 +397,13 @@ DBGFilesHelp7:
 	AddB DBGFOffsTop, r2L
 	adc #$58
 	sta r2H
+
+	ldx #r3
+	jsr _NormalizeX
+	;ldx #r3
+	ldy #r2L
+	jsr _NormalizeY
+
 	rts
 
 DBGFilesHelp8:
@@ -426,4 +445,3 @@ IncR3:	inc r3L
 	inc r3H
 @1:	rts
 .endif
-

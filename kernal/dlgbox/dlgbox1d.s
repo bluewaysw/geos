@@ -170,6 +170,8 @@ DBDoIcons:
 	ldy #4
 	lda (r5),y
 	and #$FF
+	; apply x coordinate duplication of the dialog
+	; or mode to the icon width
 	ora L8871
 	sta (r5),y
 .endif
@@ -216,9 +218,10 @@ DBIconsHelp1:
 	ldy r1L
 	lda (DBoxDesc),y
 .if .defined(bsw128) || .defined(mega65)
+	bbsf 6, graphMode, @2
 	bit L8871
 	bpl @2
-	;asl
+	asl
 	pha
 	lda r3L
 	and #$FE
@@ -269,7 +272,10 @@ DBIconsHelp2:
 	bne @2
 	lda r3L
 .if .defined(bsw128) || .defined(mega65)
-	;ora L8871
+	bit L8871
+	bpl @2b
+	asl r3L
+@2b:
 .endif
 @2:	cpy #3
 	bne @3

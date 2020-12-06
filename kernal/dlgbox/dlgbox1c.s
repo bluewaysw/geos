@@ -135,9 +135,13 @@ DrwDlgSpd1:
 	sec
 	jsr CalcDialogCoords
 .if .defined(bsw128) || .defined(mega65)
-	;lda r3H
-	;and #$80
-	;sta L8871
+	bbsf 6, graphMode, @2
+	; this is set inside CaldDialogCoords for advanced modules
+	; override here
+	lda r3H
+	and #$80
+	sta L8871
+@2:
 .endif
 	jsr Rectangle
 .endif
@@ -205,8 +209,10 @@ CalcDialogCoords:
 	LoadW DBoxDesc, DBDefinedPosScalable-1
 @2c:
 	ldy	graphMode
+	bmi	@2d
 	cpy	#$41
 	bne	@2b
+@2d:
 	ldy	#$80
 	bra	@2
 @2b:
