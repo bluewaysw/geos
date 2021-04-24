@@ -204,6 +204,7 @@
 .import _map_SetNewMode
 .import _map_GetRealSize
 .import _map_IsMseInRegion
+.import _map_SetMsePic
 .else
 .import _InsertRecord
 .import _NextRecord
@@ -432,6 +433,9 @@
 .import __io_FrameRectangle
 .import __io_GraphicsString
 .import __io_SetPattern
+.import __io_DrawLine
+.import __io_DrawPoint
+.import __io_TestPoint
 .endif
 
 .ifdef wheels
@@ -518,9 +522,9 @@ RecoverRectangle:
 	jmp _RecoverRectangle
 .endif
 DrawLine:
-	jmp _DrawLine
+	jmp __io_DrawLine
 DrawPoint:
-	jmp _DrawPoint
+	jmp __io_DrawPoint
 GraphicsString:
 .ifdef mega65
 	jmp __io_GraphicsString
@@ -532,7 +536,7 @@ SetPattern:
 GetScanLine:
 	jmp _GetScanLineExt
 TestPoint:
-	jmp _TestPoint
+	jmp __io_TestPoint
 BitmapUp:
 	jmp _BitmapUp
 PutChar:
@@ -1009,7 +1013,7 @@ ColorRectangle:
 TempHideMouse:
 	UNIMPLEMENTED_NO_ACTION
 SetMsePic:
-	UNIMPLEMENTED_NO_ACTION
+	jmp _map_SetMsePic
 SetNewMode:
 .import _SetNewMode
 	jmp _map_SetNewMode

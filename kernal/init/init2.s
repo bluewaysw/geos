@@ -91,6 +91,12 @@ _FirstInit2:
 	LoadB mob0clr, BLUE
 	sta mob1clr
 	LoadB extclr, BLACK
+	sta mob2clr
+	sta mob3clr
+	sta mob4clr
+	sta mob5clr
+	sta mob6clr
+	sta mob7clr
 	LoadB bakclr0, BLACK	;XXX workaround a
 				; bug in the current MEGA65
 				; bitstream showing parts of

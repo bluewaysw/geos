@@ -68,6 +68,8 @@
 .import _GetRealSize
 .import _EndScanLine
 .import _IsMseInRegion
+.import _ProcessMouseInt
+.import _SetMsePic
 
 .global _map_FollowChain
 .global _map_FindFTypes
@@ -100,6 +102,7 @@
 .global _map_SetNewMode
 .global _map_GetRealSize
 .global _map_IsMseInRegion
+.global _map_SetMsePic
 
 .global MapUnderlay
 .global UnmapUnderlay
@@ -123,7 +126,7 @@ _MapHigh:
     beq @done
 
 @not_done:
-    cmp #0
+    cmp #$80
     beq @0
     pha
     lda countHighMap
@@ -140,7 +143,7 @@ _MapHigh:
     sta $8895
     jsr ApplyMapping
 @done:
-	rts
+    rts
 
 
 ;---------------------------------------------------------------
@@ -167,7 +170,7 @@ _MapLow:
     jsr ApplyMapping
 
 @done:
-	rts
+    rts
 
 
 ApplyMapping:
@@ -198,17 +201,15 @@ ApplyMapping:
     tax
     pla
 
-	map
-	eom
+    map
+    eom
 
     rts
 
-
-
 _map_IsMseInRegion:
-	jsr MapUnderlay
-	jsr _IsMseInRegion
-	bra __unmap2
+    jsr MapUnderlay
+    jsr _IsMseInRegion
+    bra __unmap2
 _map_FollowChain:
     jsr MapUnderlay
     jsr _FollowChain
@@ -242,15 +243,14 @@ _map_RstrAppl:
     jsr _RstrAppl
     jmp UnmapUnderlay
 _map_LdApplic:
-
-	jsr UNK_5
-	jsr LdFile
-	bnex @1
-	bbsf 0, A885E, @1
-	jsr UNK_4
-	MoveW_ fileHeader+O_GHST_VEC, r7
-	jmp StartAppl
-@1:	rts
+    jsr UNK_5
+    jsr LdFile
+    bnex @1
+    bbsf 0, A885E, @1
+    jsr UNK_4
+    MoveW_ fileHeader+O_GHST_VEC, r7
+    jmp StartAppl
+@1: rts
     ;jsr MapUnderlay
     ;jsr _LdApplic
     ;jmp UnmapUnderlay
@@ -344,8 +344,11 @@ _map_GetRealSize:
     jsr MapUnderlay
     jsr _GetRealSize
     bra __unmap
-
-
+_map_SetMsePic:
+    jsr MapUnderlay
+    jsr _SetMsePic
+    bra __unmap
+	
 MapUnderlay:
     pha
     txa
@@ -360,15 +363,16 @@ MapUnderlay:
     sta lastHighMap
     lda highMapBnk
     sta lastHighMapBnk
-    lda #0
+    lda #$80
     ldx #0
     jsr _MapHigh
     jmp @2
 @1: lda highMap
-    cmp #0
+    cmp #$80
     beq @2
 @3:
-    jmp @3
+    brk
+    ;jmp @3
 @2:
     inc countHighMap
     bra	mapEnd
@@ -386,12 +390,12 @@ UnmapUnderlay:
     lda lastHighMap
     ldx lastHighMapBnk
     jsr _MapHigh
-    lda #0
+    lda #$80
     sta lastHighMap
     jmp @2
 @1:
     lda highMap
-    cmp #0
+    cmp #$80
     beq @2
 @3:
     jmp @3

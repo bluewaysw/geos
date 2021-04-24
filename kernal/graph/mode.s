@@ -33,6 +33,7 @@
 .import VIC_IniTbl
 .import VIC_IniTbl_end
 .import SetVICRegs
+.import _MapLow
 .endif
 
 ;.import screenMaxX
@@ -47,6 +48,8 @@
 .import i_MoveData
 .import ColTab
 .import RowTab
+.import UnmapUnderlay
+.import MapUnderlay
 
 .global SetRightMargin
 _SetNewMode:
@@ -114,6 +117,8 @@ SetNewMode0:
 
 @14:
 	lda	#0
+	tax
+	jsr	_MapLow
 	jsr	InitVideoMode
     	END_IO
     	rts
@@ -157,10 +162,12 @@ SetRightMargin:
 InitVideoMode:
 	pha
 
+	jsr	MapUnderlay
 	LoadW 	r0, VIC_IniTbl
 	.assert * - VIC_IniTbl_end - VIC_IniTbl < 256, error, "VIC_IniTbl must be < 256 bytes"
 	ldy 	#<(VIC_IniTbl_end - VIC_IniTbl)
 	jsr 	SetVICRegs
+	jsr	UnmapUnderlay
 
 	pla
 	tax

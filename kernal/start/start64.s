@@ -93,6 +93,21 @@ ASSERT_NOT_BELOW_IO
 	LoadW NMI_VECTOR, _NMIHandler
 	LoadW IRQ_VECTOR, _IRQHandler
 
+	; move underlayr from $0A000 to $1A000
+	lda	#>underlaylist
+	ldy	#<underlaylist
+
+	sta	$d701
+	lda	#0
+	sta	$d702
+	sta	$d704	;	enhanced bank
+	sty	$d705
+
+	lda	#0
+	sta	countHighMap
+	lda	#$80
+	sta	lastHighMap
+	
 	; draw background pattern
 .ifndef mega65
 	LoadW r0, SCREEN_BASE
@@ -479,6 +494,20 @@ loadZDriveOffset:
 	PopW	r0
 	ldz	#3
 	rts
+
+underlaylist:
+	; enchanced dma mode header
+	.byte	$0a
+	.byte	$80, $00
+	.byte	$81, $00
+	.byte 	0
+	.byte	0	; swap
+	.word	$2000	; $6000-$8000
+	.word	$A000
+	.byte	0				; bank 0
+	.word	$A000
+	.byte	1				; bank 1
+	.word	0				; unsued mod
 
 .ifdef debugger
 debuggerlist:

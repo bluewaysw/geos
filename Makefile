@@ -590,7 +590,7 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo geoswrite gpt64.cvt | $(C1541) $@ >/dev/null; \
 		echo \*\*\* Created $@ based on $(D81_TEMPLATE).; \
 	else \
-		echo format mega65\\ geos,00 d81 $@ | $(C1541) >/dev/null; \
+		echo format \"mega65 geos,00\" d81 $@ | $(C1541) >/dev/null; \
 		echo write $< $(GEOS_OUT) | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/mount.cvt | $(C1541) $@ >/dev/null; \

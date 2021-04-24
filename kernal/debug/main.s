@@ -922,10 +922,10 @@ ProcessDump:
 	MoveB r2L, u_cl_h
 @6c:
 	MoveW u_cl, r0 
-	MoveB u_cl_h, r2L 
 
 	lda	#'$'
 	jsr	PutChar
+	MoveB u_cl_h, r2L 
 	lda	r2L
 	jsr	PrintByteHex
 	lda	r0H
@@ -934,6 +934,7 @@ ProcessDump:
 	jsr	PrintByteHex
 	lda	#' '
 	jsr	PutChar
+	MoveB u_cl_h, r2L 
 
 	ldx #0
 @6b:
@@ -941,7 +942,6 @@ ProcessDump:
 	pha
 	tay
 	;lda	(r0), y
-	LoadB	r2L, $05
 	jsr	GetByteLong
 	jsr	PrintByteHex
 	lda	#' '

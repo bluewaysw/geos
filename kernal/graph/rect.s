@@ -23,6 +23,7 @@
 .global _RecoverRectangle
 .global _ImprintRectangle
 .global _FrameRectangle
+.global _EndScanLine
 
 .segment "graph2c"
 
@@ -92,6 +93,7 @@ _Rectangle:
 rectEnd:
 	PopW  	r4
 	PopW	r3
+rectEnd2:
 	PopW	r2
 	rts
 
@@ -145,8 +147,7 @@ _InvertRectangle:
 	;PopB  	r5H
 	PopB  	r4H
 	PopB	r3H
-	PopW	r2
-	rts
+	bra	rectEnd2
 
 .segment "graph2e"
 
@@ -167,7 +168,7 @@ _RecoverRectangle:
 	inc r11L
 	cmp r2H
 	bne @1
-	rts
+	jmp _EndScanLine
 
 .segment "graph2g"
 
@@ -188,7 +189,7 @@ _ImprintRectangle:
 	inc r11L
 	cmp r2H
 	bne @1
-	rts
+	jmp _EndScanLine
 
 .segment "graph2i1"
 

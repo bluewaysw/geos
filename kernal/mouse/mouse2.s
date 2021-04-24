@@ -32,6 +32,8 @@
 .endif
 .ifdef mega65
 .import UncompactXY
+.import i_FillRam
+.import i_MoveData
 .endif
 
 .global _MouseOff
@@ -39,12 +41,83 @@
 .global ProcessMouse
 .global _ClearMouseMode
 .global _MouseUp
+.global _ProcessMouseInt
+.global _SetMsePic
 
 .ifdef wheels
 .global ResetMseRegion
 .endif
 
+.segment "mouse2int"
+_SetMsePic:
+	lda	r0L
+	ora	r0H
+	sta	VDCMouseSet
+
+	AddVW	16, r0
+	ldy	#0	; input offset
+	ldx	#0	; output offset
+@1:
+	lda	(r0), y
+	sta	VDCPointer, x
+	inx
+	iny
+	lda	(r0), y
+	sta	VDCPointer, x
+	inx
+	iny
+	lda	#0
+	sta	VDCPointer, x
+	inx
+	cpx	#24
+	bne	@1
+	rts
+
 .segment "mouse2"
+
+_ProcessMouseInt:
+.if .defined(bsw128) 
+	bbsf 7, graphMode, @X
+.endif
+.if .defined(mega65) 
+	lda	VDCMouseSet
+	beq	@X3
+	bbsf 7, graphMode, @X2
+@X3b:
+.endif
+	MoveW msePicPtr, r4
+@X3c:
+	jsr DrawSprite
+.if .defined(mega65) 
+	bra @X1
+@X3:
+	bbrf 7, graphMode, @X3b	
+	LoadW r4, mousePicData
+	bra @X3c
+@X2:
+	jsr i_FillRam
+	.word 63
+	.word spr0pic
+	.byte 0
+	jsr i_MoveData
+	.word VDCPointer
+	.word spr0pic
+	.word 24
+@X1:
+.endif
+	
+@X:	MoveW mouseXPos, r4
+	MoveB mouseYPos, r5L
+	jsr PosSprite
+.ifndef bsw128
+	jmp EnablSprite
+.else
+	rts
+.endif
+
+
+VDCMouseSet:	
+	.byte	0
 
 _StartMouseMode:
 	bcc @1
@@ -122,18 +195,8 @@ ProcessMouse:
 	jsr	@1
 
 	LoadB r3L, 0
-.ifdef bsw128
-	bbsf 7, graphMode, @X
-.endif
-	MoveW msePicPtr, r4
-	jsr DrawSprite
-@X:	MoveW mouseXPos, r4
-	MoveB mouseYPos, r5L
-	jsr PosSprite
-.ifndef bsw128
-	jsr EnablSprite
-.endif
-	rts
+
+	jmp _ProcessMouseInt
 @1:
 	; compact mouse position
 	lda mouseXPos+1
@@ -306,3 +369,9 @@ DoMouseFault:
 	bbsf 6, menuOptNumber, @3
 @2:	jsr _DoPreviousMenu
 @3:	rts
+
+VDCPointer:	
+	.byte	$f0
+	.repeat 23
+		.byte 0
+	.endrep

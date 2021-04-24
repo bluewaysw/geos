@@ -22,7 +22,81 @@
 .ifdef mega65
 
 REU_BASE_BANK = $00
+.if 0
 
+_DoRAMOp:
+	cpy	#%10010000
+	beq	_StashRAM
+_FetchRAM:
+	ldy	#0
+@1:
+	lda	r2, y
+	pha
+	iny
+	cpy	#12
+	bne	@1
+
+	MoveW	r0, r6
+	LoadW	r7, $0000
+
+	MoveW	r1, r4
+	LoadW	r5, $0005
+
+	bra	_ExecRamOp
+
+_StashRAM:
+	ldy	#0
+@1:
+	lda	r2, y
+	pha
+	iny
+	cpy	#12
+	bne	@1
+
+	MoveW	r0, r4
+	lda	#0
+	sta	r5L
+	sta	r5H
+	sta	r7H
+	;LoadW	r5, $0000
+
+	MoveW	r1, r6
+	;LoadW	r7, $0080
+	LoadB	r7L, $05
+
+
+_ExecRamOp:
+@2:
+	LDZ	#0
+	EOM
+	lda 	(r4), Z
+	EOM
+	sta 	(r6), Z
+
+	IncW	r4
+	IncW	r6
+	dec	r2L
+	lda	r2L
+	cmp	#$ff
+	bne	@10
+	dec	r2H
+@10:	ora	r2H
+	bne	@2
+	
+	ldy	#12
+@1:
+	pla
+	sta	r2-1, y
+	dey
+	bne	@1
+
+_VerifyRAM:
+_SwapRAM:
+@3:	
+	ldx	#0
+	rts
+
+.else
 _StashRAM:
 	lda	#0
 	sta	opFromBankLow
@@ -75,8 +149,8 @@ _GetBankParams:
 	lda	r3L
 
 	tax
-	;and	#$0F
-	lda	#5	; force to bank 5 of main RAM
+	and	#$0F
+	;lda	#5	; force to bank 5 of main RAM
 	tay
 	txa
 	lsr
@@ -84,8 +158,8 @@ _GetBankParams:
 	lsr
 	lsr
 
-	;ora	#$80
-	lda	#0	; force to bank 5 of main RAM
+	ora	#$80
+	;lda	#0	; force to bank 5 of main RAM
 @1:
 	ldx	r1L
 	rts
@@ -136,6 +210,7 @@ opToAddr:
 opToBankLow:
 	.byte	5				; bank 1
 	.word	0				; unsued mod
+.endif
 
 .else
 
