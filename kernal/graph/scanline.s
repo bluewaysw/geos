@@ -44,14 +44,14 @@ _col80MemLayout:
 _GetScanLineExt:
 	bit	graphMode
 	bpl	_GetScanLine
-	
+
 	; if 80 col compat mode
 	jsr	MapUnderlay
 	jsr	Ensure80ColMemLayout
 	jsr	GSC80
 	jsr	UnmapUnderlay
-	txa	
-	
+	txa
+
 _EndScanLine:
 	bit	graphMode
 	bpl	@1
@@ -61,7 +61,7 @@ _EndScanLine:
 	jsr	_MapHigh
 	;ldx	#$00
 	;lda	#$80
-	
+
 	lda	#$00
 	tax
 	jsr	_MapLow
@@ -69,7 +69,7 @@ _EndScanLine:
 	tax
 @1:
 	rts
-	
+
 ;---------------------------------------------------------------
 ; GetScanLine_HR
 ;
@@ -166,7 +166,7 @@ _GetScanLine:
 	lsr
 	lsr
 	lsr
-	
+
 	; card line in A now
 .ifdef mega65
 @_2:
@@ -194,6 +194,37 @@ _GetScanLine:
 	pha
 	tza
 	pha
+
+	lda	graphMode
+	bne	@slow
+
+	lda	#$B0		; of $c0 -> background fix map $12000
+	ldx	#1
+	jsr	_MapHigh
+
+	lda	#0		; of $c0 -> background fix map $12000
+	tax
+	jsr	_MapLow
+
+	ldx	#$60	; r6 off
+	ldy	#$a0	; r5 off
+	bbsf	6, dispBufferOn, @2_A ; ST_WR_BACK
+	ldx	#$a0	; non-back
+@2_A:
+	bbsf	7, dispBufferOn, @2_B ; ST_WR_FORE
+	ldy	#$60	; non-fore
+@2_B:
+	tya
+	clc
+	adc	r5H
+	sta	r5H
+	txa
+	clc
+	adc	r6H
+	bra	gslend
+
+
+@slow:
 
 	; screen buffer offset in r5H/r6H now
 
@@ -223,30 +254,23 @@ _GetScanLine:
 
 	; a/x lower, y/z highter
 	lda	r5H
-	ldx	graphMode
-	bne	@X1		; use buffer offset directly in col40 mode
-	and	#%11100000
-@X1:
+	ldx 	#2
 	add	#$60		; add the base address
 	bcc	@Y2
 	clc
-	ror
-	ldx 	#2
+	;ror
 	bra	@Y1
 
 @Y2:
+	dex	;ldx	#1
 	sec
-	ror
-	ldx	#1
+	;ror
 @Y1:
+	ror
     	jsr	_MapHigh
 
 	lda	r5H
-	and	#%00011111
-	ldx	graphMode
-	beq	@X2
 	and	#%00000001
-@X2:
 	add	#$a0
 	sta 	r5H
 	bra	gslend
@@ -275,24 +299,22 @@ _GetScanLine:
 	;pha
 
 ; a/x lower, y/z highter
+	LDX	#0
 	lda	r5H
-	ldx	graphMode
-	bne	@X2___
-	and	#%11100000
-@X2___:
 	add	#$60
 	bcs	@Y2__
 	sec
-	ror			; div page by 2 for map offset
-	ldx 	#0		; map bank offset
+	;ror			; div page by 2 for map offset
+	;ldx 	#0		; map bank offset
 	bra	@Y1__
 
 @Y2__:
 	clc
-	ror			; div page by 2 for map offset
-	ldx	#1		; map bank offset
+	;ror			; div page by 2 for map offset
+	inx	;ldx	#1		; map bank offset
 @Y1__:
-	ldz	#1		; 
+	ror
+	ldz	#0		;
 	bra 	gslend2
 
 ;	jsr	_MapLow
@@ -329,24 +351,22 @@ _GetScanLine:
 
 	; a/x lower, y/z highter
 	lda	r5H
-	ldx	graphMode
-	bne	@X1_
-	and	#%11100000
-@X1_:
 	pha
 
+	ldx	#1
 	add	#$60
 	bcc	@Y2_
 	clc
-	ror
-	ldx 	#2
+	;ror
+	inx	;ldx 	#2
 	bra	@Y1_
 
 @Y2_:
 	sec
-	ror
-	ldx	#1
+	;ror
+	;ldx	#1
 @Y1_:
+	ror
 	jsr	_MapHigh
 
 	;sub #$40
@@ -355,37 +375,29 @@ _GetScanLine:
 	add	#$60
 	bcs	@Y2___
 	sec
-	ror
+	;ror
 	ldx 	#0
 	bra	@Y1___
 
 @Y2___:
 	clc
-	ror
+	;ror
 	ldx	#1
 @Y1___:
+	ror
 	ldz	#$40
 gslend2:
 	stz	r6H
-	ldy	graphMode
-	bne	@Z1
-	ldx	#0
-	lda	#0		; of $c0 -> background fix map $12000
-@Z1:
     	jsr 	_MapLow
 
 	lda	r5H
-	and	#%00011111
-	ldx	graphMode
-	beq	@X2_
 	and 	#%00000001
-@X2_:
 	add	#$60		; add back buffer base
 	add	r6H		; add offset between front and back buffer
 	sta 	r5H		;
 
 	sub 	r6H		; sub offset between front and back buffer
-gslend:	
+gslend:
 	sta	r6H
 
 	pla
@@ -413,7 +425,7 @@ Ensure80ColMemLayout:
 	jsr	SwitchTo80ColMemLayout
 @1:
 	rts
-	
+
 SwitchToStandardMemLayout:
 	pha
 	txa
@@ -434,7 +446,7 @@ SwitchToStandardMemLayout:
 	LoadW	r3, $0001
 
 	;inc	$D020
-	
+
 	ldy	#0
 @1:
 	cpy	#100
@@ -448,15 +460,15 @@ SwitchToStandardMemLayout:
 	lda 	(r0), Z
 	EOM
 	sta 	(r2), Z
-	
+
 	IncW	r0
 	AddVW	8, r2
 
-	inx	
+	inx
 	cpx	#80
 	bne	@2
 
-	iny	
+	iny
 	tya
 	and	#7
 	beq	@4
@@ -468,12 +480,12 @@ SwitchToStandardMemLayout:
 @5:
 	cpy	#200
 	bne	@1
-	
+
 	PopW	r3
 	PopW	r2
 	PopW	r1
 	PopW	r0
-	
+
 	LoadB	_col80MemLayout, 0
 
 	pla
@@ -524,11 +536,11 @@ SwitchTo80ColMemLayout:
 	IncW	r0
 	AddVW	8, r2
 
-	inx	
+	inx
 	cpx	#80
 	bne	@2
 
-	iny	
+	iny
 	tya
 	and	#7
 	beq	@4

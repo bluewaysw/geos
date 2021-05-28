@@ -134,7 +134,8 @@ _MoveData:
 	PushB r3L
 .ifdef REUPresent
 	lda sysRAMFlg
-	bpl @1
+	bra @1
+	;bpl @1
 .ifdef bsw128
 	lda r2H
 	cmp #>$3800
@@ -271,4 +272,3 @@ _CmpFString:
 	lda #0
 .endif
 @3:	rts
-

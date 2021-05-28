@@ -390,7 +390,7 @@ UnmapUnderlay:
     lda lastHighMap
     ldx lastHighMapBnk
     jsr _MapHigh
-    lda #$80
+    lda #$00
     sta lastHighMap
     jmp @2
 @1:

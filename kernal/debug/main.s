@@ -594,7 +594,7 @@ traceNow:
 	sta	r0H
 	stx	r0L
 
-	bra	@2
+	jmp	@2
 
 @1:
 	cmp	#$6C	; JMP ($xyza)
@@ -612,12 +612,14 @@ traceNow:
 
 @3:
 	cmp	#$90	; BCC
-	bne	@3b
+	bne	@4a
 	
 	ldy	stackPointer
 	lda 	$105+STACK_OFFSET, y
 	and	#1
-	bne	@3b
+	beq	@3c
+	lda	#$90
+	jmp	@3b
 @3c:	
 	; follow branch
 	ldy	#1
@@ -643,12 +645,55 @@ traceNow:
 	AddVW	2, r0
 	bra	@2
 
-	lda	r0L
-	sta	$106+STACK_OFFSET, y
-	lda	r0H
-	sta	$107+STACK_OFFSET, y
-	clc
-	rts
+	;lda	r0L
+	;sta	$106+STACK_OFFSET, y
+	;lda	r0H
+	;sta	$107+STACK_OFFSET, y
+	;clc
+	;rts
+@4a:
+	cmp	#$10	; BPL
+	bne	@4c
+
+	ldy	stackPointer
+	lda 	$105+STACK_OFFSET, y
+	and	#$80
+	beq	@3c	; it is positiv, branch off
+	lda	#$10
+	bne	@3b
+@4c:
+	cmp	#$F0	; BEQ
+	bne	@4d
+	ldy	stackPointer
+	lda 	$105+STACK_OFFSET, y
+	and	#$02
+	bne	@3c	; it is zero/equal, branch off
+	lda	#$F0
+	bra	@3b
+@4d:
+	cmp	#$D0	; BNE
+	bne	@4g
+	ldy	stackPointer
+	lda 	$105+STACK_OFFSET, y
+	and	#$02
+	beq	@3c	; it is zero/equal, branch off
+	lda	#$D0
+	bra	@3b
+
+@4g:
+	cmp	#$60	; RTS
+	bne	@3b
+	
+	; return
+	ldy	stackPointer
+	lda	$108+STACK_OFFSET, y
+	sta	r0L
+        lda 	$109+STACK_OFFSET, y
+	sta	r0H
+	
+	AddVW	3, r0
+	bra	@2
+
 @3b:
 	jsr	DebugOpcode_GetLen
 

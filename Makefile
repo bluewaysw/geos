@@ -438,7 +438,10 @@ tgg1128.cvt:
 
 tgg2128.cvt:
 	curl --output $@ http://cbmfiles.com/geos/geosfiles/TGG2128.CVT
-
+dt128.cvt:
+	curl --output $(BUILD_DIR)/G1281581.ZIP http://cbmfiles.com/geos/geosfiles/G1281581.ZIP
+	unzip $(BUILD_DIR)/G1281581.ZIP
+	echo geosread \"128 DESKTOP\" dt128.cvt | $(C1541) GEOS128.D81 >/dev/null;
 %.CVT:
 	curl --output $@ http://cbmfiles.com/geos/geosfiles/$@
 
@@ -498,6 +501,7 @@ SNX10C.CVT
 NX1000R.CVT
 SSG10.CVT
 TOSHP321.CVT
+dt128.cvt
 endif
 
 $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topdesk.cvt \
@@ -572,7 +576,8 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 	SNX10C.CVT \
 	SSG10.CVT \
 	TOSHP321.CVT \
-	$(BUILD_DIR)/geospace.cvt
+	$(BUILD_DIR)/geospace.cvt \
+	dt128.cvt
 	@if [ -e $(D81_TEMPLATE) ]; then \
 		cp $(D81_TEMPLATE) $@; \
 		echo delete geos $(GEOS_OUT) configure geoboot | $(C1541) $@ >/dev/null; \
@@ -612,6 +617,7 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo geoswrite $(BUILD_DIR)/other_data.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/coding.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/misc.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite dt128.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite gw128.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite gpt128.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite photo_mgr.cvt | $(C1541) $@ >/dev/null; \
@@ -786,6 +792,8 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo \*\*\* Created fresh $@.; \
 	fi;
 
+#		echo rename \"65 desktop\" \"65 topdesk\" | $(C1541) $@ >/dev/null;
+#		echo rename \"128 desktop\" \"65 desktop\" | $(C1541) $@ >/dev/null;
 
 ifeq ($(VARIANT), mega65)
 
@@ -835,7 +843,7 @@ $(BUILD_DIR)/space/space.o:
 $(BUILD_DIR)/clock/clock.o:
 	@mkdir -p `dirname $@`
 	$(AS) clock/clockIcon.s -o $(BUILD_DIR)/clock/clockIcon.o
-	$(LD) -C clock/clockIcon.cfg $(BUILD_DIR)/clock/clockIcon.o -o $(BUILD_DIR)/clock/clock.bf
+	$(LD) -C clock/clockIcon.cfg $(BUILD_DIR)/clock/clockIcon.o -m $(BUILD_DIR)/clock.map -o $(BUILD_DIR)/clock/clock.bf
 	$(GRC) -s $(BUILD_DIR)/clock/clock.s2 -o $(BUILD_DIR)/clock/clock.c clock/clock.grc
 	sed 's/192/1/g' $(BUILD_DIR)/clock/clock.s2 > $(BUILD_DIR)/clock/clock.s
 	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/clock/clock.s -o $@
