@@ -1814,6 +1814,8 @@ DA_Call2:
 DAReturn:	
 	txa
 	pha
+	MoveB	oldGraphMode, graphMode
+	jsr	SetNewMode
 .ifdef topdesk128
 	jsr	SetMyNewMode
 .else
@@ -3232,8 +3234,9 @@ File_Selected:	; Auswertung einer File-Selection
     ldy #63
     sta (r4),y
 .endif
-	jsr	InitForIO
-	jsr	DoneWithIO
+	; unclear why this call is here?
+	;jsr	InitForIO
+	;jsr	DoneWithIO
 	LoadB	ghostFile,1
 	jsr	InitForIO
 .ifdef topdesk128
@@ -3242,27 +3245,25 @@ File_Selected:	; Auswertung einer File-Selection
 	MoveB	$d027,$d028	; Farbe des Ghost-Sprites von Mauszeiger
 .endif
 .ifdef topdesk128
-    lda graphMode
-    bmi @q80
+	lda graphMode
+	bmi @q80
 @q40:
-    lda $d01d
-    and #%11111011
-    sta $d01d
-    jmp @qend
+	lda $d01d
+	and #%11111011
+	bra @qend
 @q80:
 .ifdef mega65
-    lda $d01d
-    and #%11111011
-    sta $d01d
+	lda $d01d
+	and #%11111011
 .else
-    lda SchmalFlag
-    cmp #'*'
-    beq @q40
-    lda $d01d
-    ora #%100
-    sta $d01d
+	lda SchmalFlag
+	cmp #'*'
+	beq @q40
+	lda $d01d
+    	ora #%100
 .endif
 @qend:
+	sta $d01d
 .endif
 	jsr	DoneWithIO
 	rts
@@ -3372,23 +3373,27 @@ OpenFile:
 	bcs	@18
 	lda	graphMode
 	eor	#$80
+@04b:
 	sta	graphMode
 	jsr	SetNewMode
+	
+	; clear screen (for legacy modes)
+	lda	#2
+	jsr	SetPattern
+	jsr	i_Rectangle
+	.byte	0,199
+	.word	0,319|DOUBLE_W|ADD1_W
 	jmp	@04
 
 @16b:	cmp	#19	; force col40
 	bne	@16c
 	lda	#0
-	sta	graphMode
-	jsr	SetNewMode
-	jmp	@04
+	bra	@04b
 
 @16c:	cmp	#20	; force col80
 	bne	@16d
 	lda	#$80
-	sta	graphMode
-	jsr	SetNewMode
-	jmp	@04
+	bra	@04b
 
 @16d:
 	cpx	#21	; force col40 or col80 (one of the compatibility modes)

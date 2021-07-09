@@ -1088,11 +1088,13 @@ DA0:
 	lda	FileClassNr
 	cmp	#05
 	bne	@20
-	lda	c128Flag
-	bpl	@19
-	lda	graphMode
-	bpl	@19
-	jsr	CLS
+	; this feels wrong, should not just by default clear the
+	; screen when running 80 col mode
+	;lda	c128Flag
+	;bpl	@19
+	;lda	graphMode
+	;bpl	@19
+	;jsr	CLS
 @19:	jmp	DA_Call2
 @20:	jsr	TestTopDesk
 	bcc	@td10
@@ -1110,7 +1112,7 @@ TestGraphMode:
 	LoadW___	r9,$8400
 	jsr	GetFHdrInfo
 	lda	$8160
-	cmp	#$80
+	cmp	#$80		; c64 only?
 	bne	@05
 	ldx	#15
 	rts
