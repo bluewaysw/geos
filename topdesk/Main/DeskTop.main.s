@@ -3370,7 +3370,9 @@ OpenFile:
 	bne	@16b
 	jsr	StashMain
 	jsr	TestTopDesk
-	bcs	@18
+	bcc	@18b
+	jmp	@18
+@18b:
 	lda	graphMode
 	eor	#$80
 @04b:
@@ -3387,30 +3389,33 @@ OpenFile:
 
 @16b:	cmp	#19	; force col40
 	bne	@16c
+@16b2:
 	lda	#0
-	bra	@04b
-
+	ldx	graphMode
+	cpx	#$40
+	bne	@04b
+@04b2:
+	sta	graphMode
+	jsr	SetNewMode
+	jmp	@04
+	
 @16c:	cmp	#20	; force col80
 	bne	@16d
+@16c2:
 	lda	#$80
-	bra	@04b
-
+	ldx	graphMode
+	cpx	#$41
+	bne	@04b
+	bra	@04b2
 @16d:
 	cpx	#21	; force col40 or col80 (one of the compatibility modes)
 	bne	@16
 
 	lda	graphMode
 	cmp	#$40
-	bne	@16e
-	lda	#$00
-@16f:
-	sta	graphMode
-	jsr	SetNewMode
-	jmp	@04
+	beq	@16b2
 @16e:
-	lda	#$80
-	bra	@16f
-
+	bra	@16c2
 @16:	
 	cpx	#15
 	bne	@17

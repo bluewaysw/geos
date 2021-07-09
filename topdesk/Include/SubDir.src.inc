@@ -1116,7 +1116,7 @@ TestGraphMode:
 	bne	@05
 	ldx	#15
 	rts
-@05:	cmp	#$40
+@05:	cmp	#$40		; 40 or 80 col, not extended
 	beq	@10
 ;	lda	$d505
 ;	bmi	@05a	; 40/80-Zeichentaste gedr}ckt?
@@ -1133,7 +1133,7 @@ TestGraphMode:
 	rts
 @06a:	ldx	#INCOMPATIBLE
 	rts
-@07:	cmp	#$c0
+@07:	cmp	#$c0		; 80 col only
 	bne	@10
 	; force col80
 	lda	graphMode

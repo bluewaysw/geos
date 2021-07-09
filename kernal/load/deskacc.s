@@ -9,6 +9,7 @@
 .include "config.inc"
 .include "kernal.inc"
 .include "c64.inc"
+.include "jumptab.inc"
 
 .import Dialog_2
 .import _MNLP
@@ -19,19 +20,10 @@
 .import DlgBoxPrep
 .import GetStartHAddr
 
-.import MoveBData
-.import UseSystemFont
-.import ReadFile
-.import GetFHdrInfo
-
 .ifdef mega65
 .import CheckAppCompat
 .endif
 
-.ifndef bsw128
-.import FastDelFile
-.import GetFile
-.endif
 .import A885D
 
 .ifdef wheels
@@ -126,6 +118,12 @@ tmp3:	.byte 0
 	jsr CheckAppCompat
 	bne LDAcc1
 .endif
+.ifdef mega65
+	PushW r1
+	jsr SaveSwapFile
+	PopW r1
+	bnex LDAcc1
+.else
 .ifdef useRamExp
 ; swap to other bank
 	PushW r1
@@ -147,6 +145,7 @@ tmp3:	.byte 0
 	jsr SaveSwapFile
 	PopW r1
 	bnex LDAcc1
+.endif
 .endif
 	jsr GetStartHAddr
 	lda #$ff
@@ -193,7 +192,7 @@ _RstrAppl:
 	PushW DeskAccPC
 	rts
 .else
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 ; restore from back RAM
 	ldy #0
 	sty r3L
@@ -255,7 +254,7 @@ SwapFileName:
 
 .segment "deskacc3"
 
-.if (!.defined(wheels)) && (!.defined(useRamExp)) && (!.defined(bsw128))
+.if (!.defined(wheels)) && (!.defined(useRamExp)) && (!.defined(bsw128)) && (!.defined(mega65))
 SaveSwapFile:
 	LoadB fileHeader+O_GHGEOS_TYPE, TEMPORARY
 	LoadW fileHeader, SwapFileName
@@ -263,6 +262,41 @@ SaveSwapFile:
 	LoadB r10L, NULL
 
 ;.assert * = _SaveFile, error, "Code must run into _SaveFile"
+.elseif .def(mega65)
+;.import MoveBData
+SaveSwapFile:
+	lda fileHeader+O_GHST_ADDR
+	sta r0L
+	sta dAccStart
+	lda fileHeader+O_GHST_ADDR+1
+	sta r0H
+	sta dAccStart+1
+	ldx #$0B
+	lda fileHeader+O_GHEND_ADDR
+	sec
+	sbc r0L
+	sta r2L
+	sta dAccLength
+	lda fileHeader+O_GHEND_ADDR+1
+	sbc r0H
+	sta r2H
+	sta dAccLength+1
+	cmp #$60 ; maximum DACC size to swap into RAM
+	bcs @1
+	ldy #$00
+	sty r3H
+	sty r1L
+	iny
+	sty r3L
+	lda #$20 ; DACC space start highbyte
+	sta r1H
+	jsr MoveBData
+	ldx #0
+@1:	rts
+
+dAccStart:	.word 0
+dAccLength:	.word 0
+
 .elseif .def(bsw128)
 .import MoveBData
 SaveSwapFile:
