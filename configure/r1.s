@@ -2339,7 +2339,10 @@ L2060:  lda     #$FF                            ; 2060 A9 FF                    
 L2062:  sta     r4H                             ; 2062 85 0B                    ..
         jsr     L20BA                           ; 2064 20 BA 20                  .
 .endif
-L2067:  ldx     r2H                             ; 2067 A6 07                    ..
+	LoadB	r6H, %11111000
+L2067:  ldy     r2H                             ; 2067 A6 07                    ..
+	ldx	r6H
+	PushB	r6H
         jsr     GetScanLine                     ; 2069 20 3C C1                  <.
         lda     r2L                             ; 206C A5 06                    ..
         asl                                    ; 206E 0A                       .
@@ -2369,7 +2372,13 @@ L208D:  clc                                     ; 208D 18                       
 L2094:  tay                                     ; 2094 A8                       .
         dec     r4L                             ; 2095 C6 0A                    ..
         bne     L207A                           ; 2097 D0 E1                    ..
+	PopB	r6H
+	inc	r6H
+	lda	r6H
+	bne	@10
+	LoadB	r6H, %11111000
         inc     r2H                             ; 2099 E6 07                    ..
+@10:
         dec     r3H                             ; 209B C6 09                    ..
         bne     L2067                           ; 209D D0 C8                    ..
         rts                                     ; 209F 60                       `
@@ -2763,6 +2772,55 @@ L233C:  lda     vdcdata                         ; 233C AD 01 D6                 
 
 .endif
 ; ----------------------------------------------------------------------------
+.ifdef mega65
+	; extended modes standard dialog coordinates are
+dlgCooridnates:
+	ByteCY	%101100000000 | ((-96) & $FF), %101100000000 | ((-48) & $FF)
+	ByteCY	%101100000000 | ((95) & $FF), %101100000000 | ((47) & $FF)
+	WordCX 	%101100000000 | ((-96) & $FF), %101100000000 | ((-48) & $FF)
+	WordCX	%101100000000 | ((95) & $FF), %101100000000 | ((47) & $FF)
+L2340:
+	PushW	r2
+	PushW	r3
+
+	ldy     #$07                            ; 2344 A0 07                    ..
+L2346:  lda     L235C,y                         ; 2346 B9 5C 23                 .\#
+        sta     L236C,y                         ; 2349 99 6C 23                 .l#
+        dey                                     ; 234C 88                       .
+        bpl     L2346                           ; 234D 10 F7    
+
+	;
+	MoveW	dlgCooridnates+2, r3	
+	MoveB	dlgCooridnates, r2L	
+	ldx	#r3
+	jsr	NormalizeX
+	ldy	#r2L
+	jsr	NormalizeY
+
+	lda	r3H
+	lsr
+	ror	r2L
+	lsr
+	ror	r2L
+	lsr
+	ror	r2L
+	lda	r2L
+	sta	L236C+1
+
+	lda	r3L
+	asr	r3H
+	ror		
+	asr	r3H
+	ror		
+	asr	r3H
+	ror		
+	sta	L236C
+
+	PopW	r3
+	PopW	r2
+	rts
+.else
+
 L2340:  bit     graphMode                       ; 2340 24 3F                    $?
         bmi     L2350                           ; 2342 30 0C                    0.
         ldy     #$07                            ; 2344 A0 07                    ..
@@ -2779,12 +2837,16 @@ L2352:  lda     L2364,y                         ; 2352 B9 64 23                 
         dey                                     ; 2358 88                       .
         bpl     L2352                           ; 2359 10 F7                    ..
         rts                                     ; 235B 60                       `
+.endif
 
 ; ----------------------------------------------------------------------------
-L235C:  php                                     ; 235C 08                       .
-        jsr     L6819                           ; 235D 20 19 68                  .h
-        brk                                     ; 2360 00                       .
-        asl     $2C0E                           ; 2361 0E 0E 2C                 ..,
+L235C:  ;php                                     ; 235C 08                       .
+        ;jsr     L6819                           ; 235D 20 19 68                  .h
+        ;brk                                     ; 2360 00                       .
+        ;asl     $2C0E                           ; 2361 0E 0E 2C                 ..,
+	.byte	$08, $20, $19, $68
+	.byte	$00, $01, $0E, $2C+6
+	
 L2364:  ;bpl     L2386                           ; 2364 10 20                    .
         .byte   $10, $20, $32                             ; 2366 32                       2
         pla                                     ; 2367 68                       h
