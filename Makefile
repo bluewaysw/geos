@@ -350,100 +350,100 @@ $(BUILD_DIR)/$(D64_RESULT): $(BUILD_DIR)/kernal_compressed.prg
 	fi;
 
 prmgr128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/PRMGR128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/PRMGR128.CVT
 
 pdmgr128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/PDMGR128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/PDMGR128.CVT
 
 calc128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/CALC128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/CALC128.CVT
 
 spell128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/SPELL128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/SPELL128.CVT
 
 spelldata.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/DICT.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/DICT.CVT
 
 merge128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/GM128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/GM128.CVT
 
 alarm128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/ALARM128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/ALARM128.CVT
 
 california.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/CALIF.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/CALIF.CVT
 
 cory.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/CORY.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/CORY.CVT
 
 dwinelle.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/DWIN.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/DWIN.CVT
 
 roma.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/ROMA.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/ROMA.CVT
 
 university.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/UNIV.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/UNIV.CVT
 
 commfont.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/COMMFONT.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/COMMFONT.CVT
 
 lwroma.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/LWROMA.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/LWROMA.CVT
 
 lwcal.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/LWCAL.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/LWCAL.CVT
 
 lwgreek.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/LWGREEK.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/LWGREEK.CVT
 
 lwbarrows.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/LWBARR.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/LWBARR.CVT
 
 notepad.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/NOTE128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/NOTE128.CVT
 
 photo_mgr.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/PHMGR128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/PHMGR128.CVT
 
 text_mgr.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/TXMGR128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/TXMGR128.CVT
 
 gw128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/GW128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/GW128.CVT
 
 gpt128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/GPT128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/GPT128.CVT
 
 paint_drivers.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/PNTDRVRS.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/PNTDRVRS.CVT
 
 geolaser.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/GEOLASER.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/GEOLASER.CVT
 
 text_grabber128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/TG128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/TG128.CVT
 
 tgfs4128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/TGFS4128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/TGFS4128.CVT
 
 tgpc2128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/TGPC2128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/TGPC2128.CVT
 
 tgww128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/TGWW128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/TGWW128.CVT
 
 tgg1128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/TGG1128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/TGG1128.CVT
 
 tgg2128.cvt:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/TGG2128.CVT
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/TGG2128.CVT
 dt128.cvt:
-	curl --output $(BUILD_DIR)/G1281581.ZIP http://cbmfiles.com/geos/geosfiles/G1281581.ZIP
+	curl --output $(BUILD_DIR)/G1281581.ZIP https://cbmfiles.com/geos/geosfiles/G1281581.ZIP
 	unzip $(BUILD_DIR)/G1281581.ZIP
 	echo geosread \"128 DESKTOP\" dt128.cvt | $(C1541) GEOS128.D81 >/dev/null;
 %.CVT:
-	curl --output $@ http://cbmfiles.com/geos/geosfiles/$@
+	curl --output $@ https://cbmfiles.com/geos/geosfiles/$@
 
 ifdef XCV
 1526.CVT
