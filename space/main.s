@@ -866,9 +866,9 @@ welcomeText:
 geosVersionText:
 	.byte	BOLDON, "GEOS V6.0 for the MEGA65", PLAINTEXT, NULL
 versionDetails:
-	.byte	"(09/21/20, alpha preview)", NULL
+	.byte	"(11/21/21, beta)", NULL
 coreInfo:
-	.byte	"MEGA65 dev core: @192/56 3990bec", NULL
+	.byte	"MEGA65 stable core: master@009727e, build 4", NULL
 warranties:
 	.byte	"Work in progress...", NULL
 warranties2:
