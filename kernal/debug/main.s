@@ -25,9 +25,9 @@ STACK_OFFSET = 4
 TRACE_MODE = 0
 SSTEP_MODE = $80
 
-consoleCols:  
+consoleCols:
   .byte 80
-consoleLines: 
+consoleLines:
   .byte 25
 posX:
   .byte 0
@@ -118,10 +118,10 @@ DebugMain:
 	; on any entry?
 	tsx
 	stx	stackPointer
-	
+
 	MoveW	IRQ_VECTOR, saveIRQ_VECTOR
 	LoadW	IRQ_VECTOR, IRQHandler
-	
+
 
   ; correct PC after BRK
   ldy stackPointer
@@ -203,7 +203,7 @@ ClearConsole:
   ldx #0
   stx posX  ; output position top left
   stx posY
-  MoveW consoleBufAddr, r0 
+  MoveW consoleBufAddr, r0
 @2:
   lda #' '
   ldy #0
@@ -264,7 +264,7 @@ PutChar:
   txa
   bne @7
 
-  ldy posX 
+  ldy posX
   lda (r1), y
   eor #%10000000
   sta (r1), y
@@ -290,7 +290,7 @@ PutChar:
   sec
   sbc #96
 @6:
-  ldy posX 
+  ldy posX
   sta (r1), y
   inc posX
   iny
@@ -304,7 +304,7 @@ PutChar:
   tay
   rts
 @3:
-  ldy posX 
+  ldy posX
   lda (r1), y
   and #%01111111
   sta (r1), y
@@ -403,7 +403,7 @@ Prompt:
   jsr PutChar
   jsr EnterConsole
 
-	
+
   MoveB promptLen, promptLenOld
   LoadB promptLen, 0
 
@@ -431,7 +431,7 @@ Prompt:
   cpy #100
   bcs @4
   sta promptBuf, y
-  inc promptLen 
+  inc promptLen
   jsr PutChar
 @4:
   bra @1
@@ -458,7 +458,7 @@ Prompt:
   bra @1
 
 GetKeyPress:
-  
+
   ; wait to receive next key press from buffer
   jsr _GetNextChar
 
@@ -475,7 +475,7 @@ IRQHandler:
 	PushB CPU_DATA
 	LoadB CPU_DATA, IO_IN
 	ldx #0
-@2:	
+@2:
 	lda r0,x
 	pha
 	inx
@@ -487,14 +487,14 @@ IRQHandler:
 
 	lda #1
 	sta $D019
-	
+
 	lda cursorCount
 	beq @7
 	ldx #0
 	dec cursorCount
 @7:
 	ldx #31
-@6:	
+@6:
 	pla
 	sta r0,x
 	dex
@@ -571,7 +571,7 @@ traceNow:
 	sta	$107+STACK_OFFSET, y
 	lda	r0L
 	sta	$106+STACK_OFFSET, y
-	
+
 	ldy	#0
 	;lda 	(r0), y     ; get opcode at PC
 	jsr	GetByte
@@ -613,26 +613,26 @@ traceNow:
 @3:
 	cmp	#$90	; BCC
 	bne	@4a
-	
+
 	ldy	stackPointer
 	lda 	$105+STACK_OFFSET, y
 	and	#1
 	beq	@3c
 	lda	#$90
 	jmp	@3b
-@3c:	
+@3c:
 	; follow branch
 	ldy	#1
 	jsr	GetByte		; branch offset
-	
+
 	ldx	#0
 	sta	r0L
 	bit	r0L
 	bpl	@3d
 	ldx	#$FF
-@3d:	
+@3d:
 	stx	r0H
-	
+
 	ldy	stackPointer
 	lda	$106+STACK_OFFSET, y
         clc
@@ -641,7 +641,7 @@ traceNow:
         lda 	$107+STACK_OFFSET, y
 	adc	r0H
 	sta	r0H
-	
+
 	AddVW	2, r0
 	bra	@2
 
@@ -652,6 +652,16 @@ traceNow:
 	;clc
 	;rts
 @4a:
+	cmp	#$B0	; BCS
+	bne	@4c2
+
+	ldy	stackPointer
+	lda 	$105+STACK_OFFSET, y
+	and	#$10
+	bne	@3c	; it is positiv, branch off
+	lda	#$B0
+	bne	@3b
+@4c2:
 	cmp	#$10	; BPL
 	bne	@4c
 
@@ -672,7 +682,7 @@ traceNow:
 	bra	@3b
 @4d:
 	cmp	#$D0	; BNE
-	bne	@4g
+	bne	@4d2
 	ldy	stackPointer
 	lda 	$105+STACK_OFFSET, y
 	and	#$02
@@ -680,17 +690,21 @@ traceNow:
 	lda	#$D0
 	bra	@3b
 
+@4d2:
+	cmp	#$80	; BRA
+	bne	@4g
+	bra	@3c	; it is zero/equal, branch off
 @4g:
 	cmp	#$60	; RTS
 	bne	@3b
-	
+
 	; return
 	ldy	stackPointer
 	lda	$108+STACK_OFFSET, y
 	sta	r0L
         lda 	$109+STACK_OFFSET, y
 	sta	r0H
-	
+
 	AddVW	3, r0
 	bra	@2
 
@@ -711,7 +725,7 @@ traceNow:
 	jsr	SetupSingleStep
 	jsr 	EnterConsole
 
-	sec	
+	sec
 	rts
 
 
@@ -741,7 +755,7 @@ ResetSingleStep:
   lda breakList,y
   ora breakList+1,y
   beq @1
-  
+
   lda breakList,y
   sta r1L
   lda breakList+1,y
@@ -883,7 +897,7 @@ ProcessPrompt:
   MoveW r1, u_cl
   MoveB r2L, u_cl_h
 @6c:
-  MoveW u_cl, r0 
+  MoveW u_cl, r0
   MoveB u_cl_h, r2L
 
   ldx #0
@@ -966,11 +980,11 @@ ProcessDump:
 	MoveW r1, u_cl
 	MoveB r2L, u_cl_h
 @6c:
-	MoveW u_cl, r0 
+	MoveW u_cl, r0
 
 	lda	#'$'
 	jsr	PutChar
-	MoveB u_cl_h, r2L 
+	MoveB u_cl_h, r2L
 	lda	r2L
 	jsr	PrintByteHex
 	lda	r0H
@@ -979,7 +993,7 @@ ProcessDump:
 	jsr	PrintByteHex
 	lda	#' '
 	jsr	PutChar
-	MoveB u_cl_h, r2L 
+	MoveB u_cl_h, r2L
 
 	ldx #0
 @6b:
@@ -1197,14 +1211,14 @@ colloop:
 	STA	$D069
 	LDA	#0
 	STA	$D06A
-		
+
 	MoveB	$D058, saveD058
 	MoveB	$D05E, saveD05E
 
 	LDA   #80
 	STA   $D058
 	STA   $D05E
-	
+
 	; video ram @ 0800, chargen @1800
 	MoveB $d018, saveD018
 	lda #$26
@@ -1269,23 +1283,23 @@ ExitConsole:
   MoveB saveD021, $d021
   MoveB saveD015, $d015
 
-  MoveB	saveD060, $D060 
-  MoveB	saveD061, $D061 
-  MoveB	saveD062, $D062 
-  MoveB	saveD063, $D063 
-  MoveB	saveD068, $D068 
-  MoveB	saveD069, $D069 
-  MoveB	saveD06A, $D06A 
-  MoveB	saveD058, $D058 
-  MoveB	saveD05E, $D05E 
+  MoveB	saveD060, $D060
+  MoveB	saveD061, $D061
+  MoveB	saveD062, $D062
+  MoveB	saveD063, $D063
+  MoveB	saveD068, $D068
+  MoveB	saveD069, $D069
+  MoveB	saveD06A, $D06A
+  MoveB	saveD058, $D058
+  MoveB	saveD05E, $D05E
 
   jsr SwapConsoleBuf
   LoadW consoleBufAddr, consoleBuf
   rts
 
 SwapConsoleBuf:
-  LoadW r2, consoleBuf 
-  LoadW r3, $0800 
+  LoadW r2, consoleBuf
+  LoadW r3, $0800
   ldx #0
 @2:
   ldy #0
@@ -1458,7 +1472,7 @@ RestorePCBreakpoint:
   lda breakOpList, y
   ldy #0
   sta (r1), y
-  
+
   rts
 
 @3:
@@ -1484,7 +1498,7 @@ UpdatePCBreakpoint:
   ldy #0
   tya
   sta (r1), y
-  
+
 @1:
   inx
   inx
@@ -1545,8 +1559,8 @@ OpcodeLength:
   .byte 2   ;INDZ  = 11
   .byte 2   ;INDY  = 12
   .byte 3   ;ABS   = 13
-  .byte 2   ;BREL  = 14 
-  .byte 3   ;WINDX = 15 
+  .byte 2   ;BREL  = 14
+  .byte 3   ;WINDX = 15
 
 ; in:  A = opcode
 ; out: A = len
@@ -1568,12 +1582,12 @@ DebugOpcode_GetLen:
   lda #>Opcodes
   adc r1H
   sta r1H
-  
+
   ldx #1
 
   ldy #3
   lda (r1), y
-  
+
   tax
   lda OpcodeLength,x
 
@@ -1764,7 +1778,7 @@ DebugOpcode_Print:
 @8:
   cmp #BREL
   bne @9
-  
+
   	jsr	DebugOpcode_PrintBREL
 	bra @done
 
@@ -1818,13 +1832,13 @@ DebugOpcode_Print:
   adc #0
   sta r0H
   rts
-  
+
 DebugOpcode_PrintIND:
 	lda #'('
 	jsr PutChar
 	lda #'$'
 	jsr PutChar
-	
+
 	ldy #2
 	jsr GetByte
 	jsr PrintByteHex
@@ -1841,22 +1855,22 @@ DebugOpcode_PrintBREL:
 
 	lda #'$'
         jsr PutChar
-      
+
       	PushW	r0
-      
-      
+
+
       	ldy #1
               ;lda (r0), Y
               jsr GetByte
       	pha
-      	
+
       	clc
       	adc	r0L
       	sta	r0L
       	lda	r0H
       	adc	#0
       	sta	r0H
-      
+
       	lda	r0L
       	clc
       	adc	#2
@@ -1864,7 +1878,7 @@ DebugOpcode_PrintBREL:
       	lda	r0H
       	adc	#0
       	sta	r0H
-      
+
       	pla
       	bpl	@8a
       	dec	r0H
@@ -1873,17 +1887,17 @@ DebugOpcode_PrintBREL:
       	jsr	PrintByteHex
       	lda	r0L
       	jsr	PrintByteHex
-      
+
       	PopW	r0
 	rts
-	
+
 GetByte:
 	LoadB r2L, 0
 
 GetByteLong:
 	PushW r0
 	PushB r2L
-	clc 
+	clc
 	tya
 	adc r0L
 	sta r0L
@@ -1893,7 +1907,7 @@ GetByteLong:
 	lda r2L
 	adc #0
 	sta r2L
-	
+
 	beq @zeroBank
 
 	PushW	r0
@@ -1915,12 +1929,12 @@ GetByteLong:
 	EOM
 	lda 	(r0L), Z
 	tay
-	
+
 	PopW	r1
 	PopW	r0
 
 	tya
-	
+
 	jmp	@3
 
 @zeroBank:
@@ -1941,7 +1955,7 @@ GetByteLong:
 @a3_:
 	CmpWI r0, r1+1
 	bne @a4
-	lda saveR1+1	
+	lda saveR1+1
 	jmp @3
 @a4:
 	CmpWI r0, r2
@@ -1959,7 +1973,7 @@ GetByteLong:
 	lda saveR3
 	jmp @3
 @a7:
-	CmpWI r0, r3+1	
+	CmpWI r0, r3+1
 	bne @a8
 	lda saveR3+1
 	jmp @3
@@ -1992,7 +2006,7 @@ GetByteLong:
 	CmpWI 	consoleBufAddr, $800
 	bne     @a3
 	CmpWI	r0, $800
-	bcc	@a3	
+	bcc	@a3
 	CmpWI	r0, $800+80*25
 	beq	@a3
 	bcs	@a3
@@ -2011,7 +2025,7 @@ GetByteLong:
 @a3:
 	; check mapped area $6000-$7FFF
 	CmpWI	r0, $6000
-	bcc	@b5	
+	bcc	@b5
 	CmpWI	r0, $8000
 	beq	@b5
 	bcs	@b5
@@ -2035,16 +2049,16 @@ GetByteLong:
 	EOM
 	lda 	(r0L), Z
 	tay
-	
+
 	PopW	r1
 	PopW	r0
 
 	tya
-	
+
 	bra	@3
 @b5:
 	CmpWI	r0, $D000
-	bcc	@b6	
+	bcc	@b6
 	CmpWI	r0, $E000
 	beq	@b6
 	bcs	@b6
@@ -2057,7 +2071,7 @@ GetByteLong:
 	PopB r2L
 	PopW r0
 	tya
-	rts 
+	rts
 
 Opcodes:
   .byte "BRK", 0
@@ -2073,7 +2087,7 @@ Opcodes:
   .byte "ASL", 0
   .byte "TSY", 0
   .byte "TSB", ABS
-  .byte "ORA", ABS 
+  .byte "ORA", ABS
   .byte "ASL", ABS
   .byte "BBR", ZP ; BBR0
 
@@ -2094,7 +2108,7 @@ Opcodes:
   .byte "ASL", ABSX
   .byte "BBR", ZP  ; BBR1
 
-  .byte "JSR", ABS 
+  .byte "JSR", ABS
   .byte "AND", INDX
   .byte "JSR", IND
   .byte "JSR", WINDX
@@ -2102,13 +2116,13 @@ Opcodes:
   .byte "AND", ZP
   .byte "ROL", ZP
   .byte "RMB", ZP ; RMB2
-  .byte "PLP", 0 
-  .byte "AND", IMM 
-  .byte "ROL", 0 
+  .byte "PLP", 0
+  .byte "AND", IMM
+  .byte "ROL", 0
   .byte "TYS", 0
   .byte "BIT", ABS
-  .byte "AND", ABS 
-  .byte "ROL", ABS 
+  .byte "AND", ABS
+  .byte "ROL", ABS
   .byte "BBR", ZP   ; BBR2
 
   .byte "BMI", BREL
@@ -2128,7 +2142,7 @@ Opcodes:
   .byte "ROL", ABSX
   .byte "BBR", ZP  ; BBR3
 
-  .byte "RTI", 0 
+  .byte "RTI", 0
   .byte "EOR", INDX
   .byte "NEG", 0
   .byte "ASR", 0
@@ -2162,7 +2176,7 @@ Opcodes:
   .byte "LSR", ABSX
   .byte "BBR", ZP   ; BBR5
 
-  .byte "RTS", 0 
+  .byte "RTS", 0
   .byte "ADC", INDX
   .byte "RTN", 0
   .byte "BSR", WREL
@@ -2189,15 +2203,15 @@ Opcodes:
   .byte "RMB", ZP   ; RMB7
   .byte "SEI", 0
   .byte "ADC", ABSY
-  .byte "PLY", ABSY 
+  .byte "PLY", ABSY
   .byte "TBA", ABSY
   .byte "JMP", WINDX
   .byte "ADC", ABSX
   .byte "ROR", ABSX
   .byte "BBR", ZP ; BBR7
 
-  .byte "BRU", BREL 
-  .byte "STA", INDX 
+  .byte "BRU", BREL
+  .byte "STA", INDX
   .byte "STA", IDSP
   .byte "BRU", WREL
   .byte "STY", ZP
@@ -2213,7 +2227,7 @@ Opcodes:
   .byte "STX", ABS
   .byte "BBS", ZP                ;BBS0
 
-  .byte "BCC", BREL 
+  .byte "BCC", BREL
   .byte "STA", INDY
   .byte "STA", INDZ
   .byte "BCC", WREL
@@ -2230,7 +2244,7 @@ Opcodes:
   .byte "STZ", ABSX
   .byte "BBS", ZP                       ;BBS1
 
-  .byte "LDY", IMM 
+  .byte "LDY", IMM
   .byte "LDA", INDX
   .byte "LDX", IMM
   .byte "LDZ", IMM
@@ -2264,7 +2278,7 @@ Opcodes:
   .byte "LDX", ABSY
   .byte "BBS", ZP   ; BBS3
 
-  .byte "CPY", IMM 
+  .byte "CPY", IMM
   .byte "CMP", INDX
   .byte "CPZ", IMM
   .byte "DEW", ZP
@@ -2272,7 +2286,7 @@ Opcodes:
   .byte "CMP", ZP
   .byte "DEC", ZP
   .byte "SMB", ZP      ; SMB4
-  .byte "INY", 0 
+  .byte "INY", 0
   .byte "CMP", IMM
   .byte "DEX", 0
   .byte "ASW", ABS
@@ -2281,7 +2295,7 @@ Opcodes:
   .byte "DEC", ABS
   .byte "BBS", ZP     ; BBS4
 
-  .byte "BNE", BREL 
+  .byte "BNE", BREL
   .byte "CMP", INDY
   .byte "CMP", INDZ
   .byte "BNE", WREL
@@ -2315,7 +2329,7 @@ Opcodes:
   .byte "INC", ABS
   .byte "BBS", ZP     ; BBS6
 
-  .byte "BEQ", BREL 
+  .byte "BEQ", BREL
   .byte "SBC", INDY
   .byte "SBC", INDZ
   .byte "BEQ", WREL
@@ -2323,7 +2337,7 @@ Opcodes:
   .byte "SBC", ZPX
   .byte "INC", ZPX
   .byte "SMB", ZP          ; SMB7
-  .byte "SED", 0 
+  .byte "SED", 0
   .byte "SBC", ABSY
   .byte "PLX", 0
   .byte "PLZ", 0
