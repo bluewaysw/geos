@@ -2735,12 +2735,12 @@ PutDrive:	; schreibt DriveName
 	sta	@nr+1
 	LoadW___ r0, @dr
 @52:
-	AddVW	10,r11L	; nur low, da immer noch }ber 256
-	jmp	@50
+	SubVW_	10,r11L	; nur low, da immer noch }ber 256
+	bra	@50
 @51:	sty	r0L
 	stx	r0H
-	ldx	#r11
-	jsr	NormalizeX
+	;ldx	#r11
+	;jsr	NormalizeX
 	SubVW_	7, r11
 	bra	@50
 
