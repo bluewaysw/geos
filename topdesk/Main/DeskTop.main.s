@@ -1328,13 +1328,13 @@ Speziell_Menue:	lda	#PLAINTEXT
 	jsr	MySubMenu
 	.byte	13,28+28+14+14+14
 	.word	174,SPCRIGHT
-	.byte	$86
+	.byte	$84
 	mpt	@t1,MENU_ACTION,NeuerOrdner
 	mpt	@t2,MENU_ACTION,GetTime
-	mpt	@t3,MENU_ACTION,MakeRamTop
+;	mpt	@t3,MENU_ACTION,MakeRamTop
 	mpt	@t4,MENU_ACTION,Reset
 	mpt	AutoSwapFlag,MENU_ACTION,AutoSwap
-	mpt	@t5,MENU_ACTION,GoToBasic
+;	mpt	@t5,MENU_ACTION,GoToBasic
 ;	mpt	@t2,MENU_ACTION,EmptyAllDirs
 ;	mpt	@t4,MENU_ACTION,SaveWindowStat
 .ifdef lang_de
@@ -2836,7 +2836,7 @@ Handler:	ldx	messageBuffer+1	; File/Icontabellenadresse nach r0
 	ldx	messageBuffer+1
 	jsr	GetWorkArea
 	bcs	@05a
-	;jsr	DispSizeRectangle
+	jsr	DispSizeRectangle
 	jsr	MyDispFiles
 	txa
 	beq	@05a
