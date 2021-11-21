@@ -7,7 +7,7 @@
 .include "geossym.inc"
 .include "geossym2.inc"
 .include "geosmac.inc"
-
+.include "diskdrv.inc"
 
 .segment "OVERLAY1"
 
@@ -66,6 +66,9 @@ vdcdata = $d601
 .export V20D9
 .export V2102
 .export V2103
+.export VarImageFileName
+.export VarImageFileNames
+.export VarImageDriveType
 .export V2104
 .export V2105
 .export V2106
@@ -391,7 +394,35 @@ L147F:  lda     #$80                            ; 147F A9 80                    
         tay                                     ; 1489 A8                       .
         lda     $8486,y                         ; 148A B9 86 84                 ...
         sta     V2105                           ; 148D 8D 05 21                 ..!
-        jsr     L0FB3 ; check for reu                          ; 1490 20 B3 0F                  ..
+        
+	; fetch all mounted image file names
+	ldy	#8
+	LoadW	r1, VarImageFileNames
+@11:
+	tya	
+	pha
+	tax
+	lda	driveType-8,y
+	sta	VarImageDriveType-8, y
+	cmp	#DRV_SD_81
+	bne	@10
+	txa
+	jsr	SetDevice
+	jsr	GetImageFile
+	ldx	#r0
+	ldy	#r1
+	jsr	CopyString
+@10:
+	AddVW	64, r1
+	pla
+	tay
+	iny	
+	cpy	#4+8
+	bne	@11
+	lda     V2104
+	jsr	SetDevice
+	
+	jsr     L0FB3 ; check for reu                          ; 1490 20 B3 0F                  ..
         lda     #$01                            ; 1493 A9 01                    ..
         sta     NUMDRV                          ; 1495 8D 8D 84                 ...
         jsr     L14FC                           ; 1498 20 FC 14                  ..
@@ -1021,7 +1052,8 @@ REUTextSuffix:
 MenuSaveConfig:
         jsr     DoPreviousMenu                  ; 1990 20 90 C1                  ..
         lda     V2104                           ; 1993 AD 04 21                 ..!
-        jsr     InitDrive                           ; 1996 20 3E 07                  >.
+        brk
+	jsr     InitDrive                           ; 1996 20 3E 07                  >.
         LoadW   r0, V20D9
         jsr     OpenRecordFile                  ; 19A1 20 74 C2                  t.
         txa                                     ; 19A4 8A                       .
@@ -2060,7 +2092,7 @@ L1E48:  bne     L1EB0                           ; 1E48 D0 66                    
 L1E4A:  sty     L1E04                           ; 1E4A 8C 04 1E                 ...
         jsr     L0739                           ; 1E4D 20 39 07                  9.
         lda     L1E04                           ; 1E50 AD 04 1E                 ...
-        jsr     Init                           ; 1E53 20 C5 1F                  ..
+	jsr     Init                           ; 1E53 20 C5 1F                  ..
         jsr     PurgeTurbo                      ; 1E56 20 35 C2                  5.
 L1E59:  ldx     #>PluginDlg                            ; 1E59 A2 1F                    ..
         lda     #<PluginDlg                            ; 1E5B A9 A1                    ..
@@ -2082,7 +2114,7 @@ L1E59:  ldx     #>PluginDlg                            ; 1E59 A2 1F             
         lda     V212F                           ; 1E79 AD 2F 21                 ./!
         sta     $8486,y                         ; 1E7C 99 86 84                 ...
         lda     V212B                           ; 1E7F AD 2B 21                 .+!
-        jsr     Init                           ; 1E82 20 C5 1F                  ..
+	jsr     Init                           ; 1E82 20 C5 1F                  ..
         lda     V212B                           ; 1E85 AD 2B 21                 .+!
         sta     curDevice                       ; 1E88 85 BA                    ..
         sta     curDrive                        ; 1E8A 8D 89 84                 ...
@@ -2101,7 +2133,7 @@ L1E98:  lda     L1E04                           ; 1E98 AD 04 1E                 
         bvc     L1EB0                           ; 1EA6 50 08                    P.
 L1EA8:  lda     V212B                           ; 1EA8 AD 2B 21                 .+!
         eor     #$01                            ; 1EAB 49 01                    I.
-        jsr     Init                           ; 1EAD 20 C5 1F                  ..
+	jsr     Init                           ; 1EAD 20 C5 1F                  ..
 L1EB0:  jsr     CheckAllDrives                           ; 1EB0 20 B0 1D                  ..
         rts                                     ; 1EB3 60                       `
 ; ----------------------------------------------------------------------------
@@ -2222,7 +2254,6 @@ PluginDlg2:
         .byte   0                                     ; 1FB2 00                       .
 
 Init:  
-	brk
 	bit     sysRAMFlg                       ; 1FC5 2C C4 88                 ,..
         bvc     L1FEE                           ; 1FC8 50 24                    P$
         pha                                     ; 1FCA 48                       H
@@ -2868,7 +2899,10 @@ V20FA   = V20D9 + 33
 V20EA   = V20D9 + 17
 V2102   = V20D9 + 17 + 24
 V2103   = V2102 + 1
-V2104   = V2103 + 1
+
+VarImageFileName = V2103 + 1
+
+V2104   = VarImageFileName + 64
 V2105   = V2104 + 1 ;+ 35 + 1
 V2106   = V2105 + 1
 V2107   = V2106 + 1
@@ -2884,5 +2918,9 @@ V212E   = V212D + 1
 V212F   = V212E + 1
 V2130   = V212F + 1
 V2150   = V2130 + 1  + 31
+
+VarImageDriveType = V2150
+VarImageFileNames = V2150+4	; 4x 64 for file name
+ 
 V2550   = V2150 + $400
 V2551	= V2550 + 1

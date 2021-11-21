@@ -7,6 +7,7 @@
 .include "geossym.inc"
 .include "geossym2.inc"
 .include "geosmac.inc"
+.include "diskdrv.inc"
 
         ;.cpu 6502
         ;.to "r0.bin",plain
@@ -70,6 +71,9 @@ L6216           = $6216;
 .import V20D9
 .import V2102
 .import V2103
+.import VarImageFileName
+.import VarImageFileNames
+.import VarImageDriveType
 .import V2104
 .import V2105
 .import V2106
@@ -123,6 +127,18 @@ L0418:  bit     c128Flag                        ; 0418 2C 13 C0                 
         tay                                     ; 0423 A8                       .
         lda     $8486,y                         ; 0424 B9 86 84                 ...
         sta     V2105                           ; 0427 8D 05 21                 ..!
+	
+	; remember mounted image file, to resort
+	cmp	#DRV_SD_81
+	bne	@10
+	
+	; fetch image name
+	jsr	GetImageFile
+	LoadW	r1, VarImageFileName
+	ldx	#r0
+	ldy	#r1
+	jsr	CopyString	
+@10:
 	jsr     L0FB3                           ; 042A 20 B3 0F                  ..
         jsr     i_MoveData                      ; 042D 20 B7 C1                  ..
         .word   $5000
@@ -137,8 +153,20 @@ L0418:  bit     c128Flag                        ; 0418 2C 13 C0                 
         jsr     L0558                           ; 043B 20 58 05                  X.
 L043E:        lda     V2104                           ; 043E AD 04 21                 ..!
         jsr     InitDrive                           ; 0441 20 3E 07                  >.
-        jsr     L1081                           ; 0444 20 81 10                  ..
+        
+	jsr     L1081                           ; 0444 20 81 10                  ..
         jsr     L0FA0                           ; 0447 20 A0 0F                  ..
+
+	lda	firstBoot
+	cmp	#$FF
+	beq	@10
+	lda	V2105
+	cmp	#DRV_SD_81
+	bne 	@10
+	LoadW	r0, VarImageFileName
+	jsr	SetImageFile
+@10:
+
 .ifndef config128
         ; for config64 if no RAM exp is available, only
         ; multiple drives are supported if they are of the same type
@@ -315,6 +343,7 @@ L0563:  and     #$A0                            ; 0563 29 A0                    
         sta     sysRAMFlg                       ; 0565 8D C4 88                 ...
         sta     sysFlgCopy                      ; 0568 8D 12 C0                 ...
 .if 1
+	; check boot driver to be 1541 or 1571
 	lda     V2105                           ; 056B AD 05 21                 ..!
         cmp     #$02                            ; 056E C9 02                    ..
         bcs     L057B                           ; 0570 B0 09                    ..
@@ -326,6 +355,8 @@ L0563:  and     #$A0                            ; 0563 29 A0                    
         bne     L057B                           ; 0577 D0 02                    ..
         lda     #$01                            ; 0579 A9 01                    ..
 L057B: 
+	;ldx	V2104
+	;sta	V2106-8,x	
 	sta     V2106                           ; 057B 8D 06 21                 ..!
 .endif
 .if 1
@@ -358,9 +389,9 @@ L05A5:  sta     V2108                           ; 05A5 8D 08 21                 
 	jsr     L06B2                           ; 05AE 20 B2 06                  ..
         
 	; setup default drive
-	ldx	V2104
-	lda	V2105
-	sta	V2106-8,x
+	;ldx	V2104
+	;lda	V2105
+	;sta	V2106-8,x
 	jsr	SetupDefaulDrives
 	
 	; load required drivers?
@@ -728,6 +759,27 @@ InitDrive:
 	jsr     SetDevice                       ; 073E 20 B0 C2                  ..
         txa                                     ; 0741 8A                       .
         bne     L0768                           ; 0742 D0 24                    .$
+
+	lda	firstBoot
+	cmp     #$FF                    
+        bne     @10	
+	ldy	curDrive
+	lda	VarImageDriveType-8,y
+	cmp	#DRV_SD_81
+	bne 	@10
+	cmp	driveType-8,y
+	bne	@10
+	LoadW	r0, VarImageFileNames
+@12:
+	cpy	#8
+	beq 	@11
+	AddVW	64, r0
+	dey
+	bra	@12
+@11:
+	jsr	SetImageFile
+@10:
+
 .ifndef config128
         lda     ramExpSize                      ; 0744 AD C3 88                 ...
         bne     L075F                           ; 0747 D0 16                    ..
@@ -878,7 +930,7 @@ InitVirtual:
         beq     L07FE                           ; 07F4 F0 08                    ..
         lda     #$08                            ; 07F6 A9 03                    ..
         sta     V212F                           ; 07F8 8D 2F 21                 ./!
-        jmp     InitNewDrive                           ; 07FB 4C D7 08                 L..
+	jmp     InitNewDrive                           ; 07FB 4C D7 08                 L..
 ; ----------------------------------------------------------------------------
 InitSD:
 	lda     V212C                           ; 07EF AD 2C 21                 .,!
@@ -1020,7 +1072,18 @@ InitNewDrive:  ; init drive driver
         lda     V212F                           ; 08EA AD 2F 21                 ./!
         sta     $8486,y                         ; 08ED 99 86 84                 ...
         inc     NUMDRV                          ; 08F0 EE 8D 84                 ...
-        clv                                     ; 08F3 B8                       .
+.if 0
+	cmp	#DRV_SD_81
+	bne	@10
+	;brk
+	cpy	V2104
+	bne	@10
+	;brk
+	LoadW	r0, VarImageFileName
+	jsr	SetImageFile
+@10:
+.endif
+	clv                                     ; 08F3 B8                       .
         bvc     L08FF                           ; 08F4 50 09                    P.
 L08F6:
         ; handle non first boot setup, using dialogs
@@ -1034,6 +1097,18 @@ L08FF:  dec     L180C                           ; 08FF CE 0C 18                 
         lda     #$00                            ; 090B A9 00                    ..
         sta     driveData,y                     ; 090D 99 BF 88                 ...
 
+	lda     $8486,y                         ; 0905 B9 86 84                 ...
+.if 0
+	cmp	#DRV_SD_81
+	bne	@10
+	;brk
+	cpy	V2104
+	bne	@10
+	;brk
+	LoadW	r0, VarImageFileName
+	jsr	SetImageFile
+@10:
+.endif
         rts                                     ; 0910 60                       `
 ; ----------------------------------------------------------------------------
 L0911:  pha                                     ; 0911 48                       H
@@ -1175,7 +1250,8 @@ L0A0B:  ldy     $848F                           ; 0A0B AC 8F 84                 
         jsr     L0A3D
 
 	ldy	$848F
-        jsr     StashRAM
+
+	jsr     StashRAM
 
 	; stash driver c driver
 L0A18:  ldy     $8490                           ; 0A18 AC 90 84                 ...
