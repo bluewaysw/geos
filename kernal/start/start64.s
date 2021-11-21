@@ -53,7 +53,7 @@
 .import SetNewMode
 .endif
 
-.ifdef debugger 
+.ifdef debugger
 .global _DebugStart
 .endif
 
@@ -107,7 +107,7 @@ ASSERT_NOT_BELOW_IO
 	sta	countHighMap
 	lda	#$80
 	sta	lastHighMap
-	
+
 	; draw background pattern
 .ifndef mega65
 	LoadW r0, SCREEN_BASE
@@ -161,7 +161,7 @@ ASSERT_NOT_BELOW_IO
 	bpl @6
 	;
 	jsr FirstInit
-	
+
 	LDA #0
 	STA $D05D
 
@@ -182,7 +182,7 @@ ASSERT_NOT_BELOW_IO
 	sta	$d702
 	sta 	$d704	;	enhanced bank
 	sty	$d705
- 
+
 	jsr FirstInit
 .endif
 .if 0
@@ -190,7 +190,7 @@ ASSERT_NOT_BELOW_IO
 	STA $D640
 	NOP
 	tax
-	ldy #>$0400 		; write dirent to DirEntry 
+	ldy #>$0400 		; write dirent to DirEntry
 
 	lda #$14
 	STA $D640
@@ -199,11 +199,11 @@ ASSERT_NOT_BELOW_IO
 .if 0
 	; run a raster line cycle counter
 	sei	; interrupts off
-	
+
 	; 1 mhz
-	lda     $d031                           
+	lda     $d031
         and 	#%10111111
-        sta     $D031             
+        sta     $D031
 
 	lda	#0
 	ldx	#0
@@ -214,8 +214,8 @@ ASSERT_NOT_BELOW_IO
 	sta	$4300, x
 	inx
 	bne     @aaa
-	
-	
+
+
 @eee:
 	ldx	rasreg
 	bne	@eee
@@ -224,12 +224,12 @@ ASSERT_NOT_BELOW_IO
 	beq	@eee1
 
 	lda	$D011
-	bmi 	@eee	
+	bmi 	@eee
 
 @ccc2:
 	ldx	rasreg
 	beq	@bbb
-	
+
 @ccc:
 	; inc
 	inc	$4000, x
@@ -239,14 +239,14 @@ ASSERT_NOT_BELOW_IO
 	inc	$4200, x
 	bne	@ccc1
 	inc	$4300, x
-@ccc1:		
+@ccc1:
 	; wait for next line
 	cpx	rasreg
 	beq	@ccc
-	
+
 	ldx	rasreg
 	jmp	@ccc2
-	
+
 @bbb:
 	cli
 
@@ -261,24 +261,24 @@ ASSERT_NOT_BELOW_IO
 	sta NUMDRV
 	ldy $BA
 	sty curDrive
-	
+
 	lda #DRV_TYPE ; see config.inc
 
-.ifdef mega65	
+.ifdef mega65
 	; determ proper drive type,
 	; from MEGA65 BASIC 10.0 coming there are following options:
-	; 1.) 
+	; 1.)
 	; preconditions:
-	; curDrive is one of the BASIC mapped drives, directing us to 
+	; curDrive is one of the BASIC mapped drives, directing us to
 	; F011-0 or F011-1, we don't support booting from other drives and
 	; could/should hard reset here? In general we assume that GEOS
 	; holds an disk driver that is in some way compatible to the boot drive.
-	
+
 	lda	#C65_VIC_INIT1
 	sta	$d02f
 	lda 	#C65_VIC_INIT2
 	sta	$d02f
-	
+
 	; get MEGA65 DOS drive 0 device number
 	; 10113/10114 clear device numbers of the f011 drive, we will
 	; manage those independent of dos
@@ -297,7 +297,7 @@ ASSERT_NOT_BELOW_IO
 	lda 	(r0), Z
 	cmp	curDrive
 	beq	@detectDrive0
-	
+
 	; get MEGA65 DOS drive 1 device number
 	;LDZ	#4
 	inz
@@ -305,17 +305,17 @@ ASSERT_NOT_BELOW_IO
 	lda 	($02), Z
 	cmp	curDrive
 	beq	@detectDrive1
-	
+
 	; unclear how this has been booted
 	; still could try to setup drive 0 as real or sd mount
-	
+
 @detectDrive0:
 	; is virtual enabled?
-	ldx	#DRV_F011_V	
+	ldx	#DRV_F011_V
 	lda	$D68A
 	bit	#4
 	bne	@detected
-	
+
 	; check if real drive
 	ldx	#DRV_F011_0	; real internal floppy
 	lda	$D6A1
@@ -324,8 +324,9 @@ ASSERT_NOT_BELOW_IO
 
 	ldx	#DRV_SD_81
 	; setup d81 offset
+	LoadB	r2L, 0 		; remember the drive number
 	bra	@detected
-	
+
 @detectDrive1:
 	; potentially now drive 1 may be virtual,
 	; but because monitor-load does not support this
@@ -337,10 +338,11 @@ ASSERT_NOT_BELOW_IO
 	bne	@detected
 	ldx	#DRV_SD_81
 	; setup d81 offset
+	LoadB	r2L, 1 		; remember the drive number
 	bra	@detected
-	
+
 @detected:
-	; redirect DOS device numbers of ther internal drives
+	; redirect DOS device numbers of the internal drives
 	; so GEOS only looks at real serial drives using the DOS
 	;LDZ	#3
 	jsr	loadZDriveOffset
@@ -353,14 +355,38 @@ ASSERT_NOT_BELOW_IO
 	sta 	(r0), Z
 	txa
 .endif
-	sta curType
-	sta _driveType,y
-	
+	sta	curType
+	sta	_driveType,y
+
 	cmp	#DRV_SD_81
 	bne	@detectDone
-	LoadW	r0, imageFileName
-	jsr	SetImageFile
 	
+	; get the current tasks mounted image file names via HYPPO
+	; load the process descriptor to $4F00 just before the boot code
+	LDY	#$4F
+	
+	LDA 	#$48	; HYPPO_DOS_GET_PROC_DESC
+	STA 	$D640
+	NOP
+	bcc	@10	; branch if error/unsupported
+	lda	r2L
+	bne	@31	; branch if current drive is not device 0
+	LoadW	r0, $4F00+21
+	ldy	$4F00+19
+	bra	@30
+@31:
+	LoadW	r0, $4F00+21+32
+	ldy	$4F00+20
+@30:
+	lda	#0
+	sta	(r0), y
+	bra	@20
+	
+@10:	; unsupported by HYPPO use default
+	LoadW	r0, imageFileName
+@20:
+	jsr	SetImageFile
+
 @detectDone:
 	; on MEGA65 we check if we are able to transform
 	; from F011 mode to direct access SD mount
@@ -368,7 +394,7 @@ ASSERT_NOT_BELOW_IO
 	;lda #8  ; DRV_F011_V, see config.inc
 	;sta curType
 	;sta _driveType,y
-	
+
 
 ; This is the original code the cbmfiles version
 ; has at $5000.
@@ -398,8 +424,8 @@ OrigResetHandle:
 	jsr DetectRamCart
 .endif
 _DebugStart:
-	brk
-	
+	;brk
+
 	jsr GetDirHead
 	MoveB bootSec, r1H
 	MoveB bootTr, r1L
@@ -444,21 +470,21 @@ _DebugStart:
 	LoadW EnterDeskTop+1, OrigResetHandle
 	LoadB r0L, 0
 	jsr LdApplic
-	
+
 loadZDriveOffset:
 
 	; ok, different ROM version have different locations of the
 	; device numbers map for the internal/F011 drives
 	; for 910110 ROM it is 010112/010113
 	; for 9110XY ROM it is 010113/010114
-	
+
 	; as a simple solution for now we detect the ROM and use
 	; ROM < 10 to be 010112/010113, otherwise 010113/010114
 	; default is 2, so for old ROM or unrecognized situations
 
 	PushW	r0
 	PushW	r1
-	
+
 	lda	#$16
 	sta 	r0L
 	lda 	#$00
@@ -478,7 +504,7 @@ loadZDriveOffset:
 	lda	(r0), z
 	cmp	#'9'
 	bne	@1
-	
+
 	inz
 	inz
 	EOM
@@ -526,7 +552,7 @@ debuggerlist:
 .endif
 
 imageFileName:
-	.byte	"GEOS.D81", NULL
+	.byte	"GEOSX.D81", NULL
 bootTr:
 	.byte DIR_1581_TRACK
 bootSec:
