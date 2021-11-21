@@ -1737,7 +1737,6 @@ currentImageCluster:
 				; for disc image
 	.word	$FFFF
 currentImageName:
-	.byte	"GEOS.D81", NULL
 	.repeat 64
 		.byte 0
 	.endrep
@@ -1773,4 +1772,3 @@ borderFlag:
 cname:  
 	.byte "#"
 cname_end:
-
