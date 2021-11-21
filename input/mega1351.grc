@@ -1,0 +1,8 @@
+HEADER APPLICATION "MEGA 1351" "Input Drvr" "V6.0" {
+    author    "Falk Rehwagen"
+    dostype   USR
+    structure SEQ
+    info      "Input driver for the Commodore 1351 proportional mouse on MEGA65."
+    date      20 03 03 21 47
+    icon      "build/mega65/input/mega1351.bf"
+}
