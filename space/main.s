@@ -866,11 +866,11 @@ welcomeText:
 geosVersionText:
 	.byte	BOLDON, "GEOS V6.0 for the MEGA65", PLAINTEXT, NULL
 versionDetails:
-	.byte	"(11/21/21, beta)", NULL
+	.byte	"(11/21/21, BETA)", NULL
 coreInfo:
-	.byte	"MEGA65 stable core: master@009727e, build 4", NULL
+	.byte	"M65 Core: master@009727e, build 4", NULL
 warranties:
-	.byte	"Work in progress...", NULL
+	.byte	"M65 Core: V920254", NULL
 warranties2:
 	.byte	BOLDON, "Use with care, no warranties!", PLAINTEXT, NULL
 geoSpaceInfo:
