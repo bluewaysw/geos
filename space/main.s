@@ -870,7 +870,7 @@ versionDetails:
 coreInfo:
 	.byte	"M65 Core: master@009727e, build 4", NULL
 warranties:
-	.byte	"M65 Core: V920254", NULL
+	.byte	"M65 ROM versaion: V920254", NULL
 warranties2:
 	.byte	BOLDON, "Use with care, no warranties!", PLAINTEXT, NULL
 geoSpaceInfo:

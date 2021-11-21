@@ -3,8 +3,7 @@ HEADER APPLICATION "GEOSPACE" "GeoSpace" "V1.0" {
     dostype   USR
     structure SEQ
     info      "Service hub for the user and developer community of GEOS."
-    date      21 09 20 07 01
+    date      21 11 21 07 01
     mode      80only
     icon      "build/mega65/space/space.bf"
 }
-

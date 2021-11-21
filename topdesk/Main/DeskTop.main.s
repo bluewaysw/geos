@@ -1326,7 +1326,7 @@ Speziell_Menue:	lda	#PLAINTEXT
 	lda	#ITALICON
 @10:	sta	@t3
 	jsr	MySubMenu
-	.byte	13,28+28+14+14+14
+	.byte	13,28+28+14	;+14+14
 	.word	174,SPCRIGHT
 	.byte	$84
 	mpt	@t1,MENU_ACTION,NeuerOrdner
