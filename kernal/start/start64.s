@@ -383,6 +383,7 @@ ASSERT_NOT_BELOW_IO
 	bra	@20
 	
 @10:	; unsupported by HYPPO use default
+	inc	$D020
 	LoadW	r0, imageFileName
 @20:
 	jsr	SetImageFile
