@@ -21,7 +21,7 @@ GEOS_OUT     = autoboot.c65
 DESKTOP_CVT  = desktop.cvt
 WEEIP_SRC    = test/mega65-weeip/src
 
-CONFIRM_CBMFILES_PERSONAL_USE_LICENSE	= NO
+CONFIRM_CBMFILES_PERSONAL_USE_LICENSE	?= NO
 
 ASFLAGS      = -I inc -I .
 
