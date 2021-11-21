@@ -6,6 +6,7 @@
 
 
 .export __STARTUP_RUN__
+.export EndOfCode
 
 .segment "STARTUP"
 
@@ -23,7 +24,8 @@ DirEntry:
 	.endrep
 
 __STARTUP_RUN__:
-
+	LoadW	r0, EndOfCode
+	
 	lda	firstBoot
 	cmp	#$FF
 	beq	@1b
@@ -99,14 +101,14 @@ __STARTUP_RUN__:
 
 
 serialText:
-	.byte 	"$XXXX", NULL
+	.byte 	BOLDON, "No mountable drive configured.", NULL
 NoDriveDialog:
 	.byte	$81	; standard dialog, light bachground
 
 	.byte	OK
-	.byte	17, 42
+	.byte	17, 70
 
-	.byte	DBTXTSTR, 10,10
+	.byte	DBTXTSTR, 10,20
 	.word	serialText
 
 	.byte	NULL
@@ -125,11 +127,11 @@ SelectDialog:
 	.byte	CANCEL
 	.byte	17, 76
 
-	.byte	DBTXTSTR, 17*8-5,11
-	.word	driveText
+	;.byte	DBTXTSTR, 17*8-5,11
+	;.word	driveText
 
-	.byte	DBTXTSTR, 17*8-5,21
-	.word	imageName
+	;.byte	DBTXTSTR, 17*8-5,21
+	;.word	imageName
 
 	;.byte	DBUSRICON,26,26
 	;.word	@icon4
@@ -241,7 +243,11 @@ DialogMouse:
 
 	MoveW	r3, r4
 	AddVW	124, r4
-
+	lda	graphMode
+	cmp	#$41
+	bne	@100
+	AddVW	124, r4	
+@100:
 	clc
 	lda	r2L
 	adc	#88
@@ -265,11 +271,21 @@ DialogMouse:
 	clc
 	adc	#73
 	sta	r2L
-
+	bcc	@600
+	clc
+	lda	r3H
+	adc	#16
+	sta	r3H
+@600:
 	; check up
 	AddVW	73, r3
 	SubVW	16, r4
-
+	lda	graphMode
+	cmp	#$41
+	bne	@200
+	AddVW	73, r3
+	SubVW	16, r4
+@200:
 	jsr	IsMseInRegion
 	cmp	#$FF
 	bne	@3
@@ -296,6 +312,12 @@ DialogMouse:
 @3:
 	AddVW	16, r3
 	AddVW	16, r4
+	lda	graphMode
+	cmp	#$41
+	bne	@201
+	AddVW	16, r3
+	AddVW	16, r4
+@201:
 	jsr	IsMseInRegion
 	cmp	#$FF
 	bne	@4
@@ -329,10 +351,21 @@ DialogMouse:
 
 	MoveW	r3, r4
 	AddVW	122, r4
+	lda	graphMode
+	cmp	#$41
+	bne	@300
+	AddVW	124, r4
+@300:
 	clc
 	lda	r2L
 	adc	#11
 	sta	r2H
+	bcc	@500
+	clc
+	lda	#16
+	adc	r4H
+	sta	r4H
+@500:
 
 @loop:
 	jsr	IsMseInRegion
@@ -359,11 +392,22 @@ DialogMouse:
 	lda 	r2L
 	adc	#12
 	sta	r2L
+	bcc	@401
+	clc	
+	lda	r3H
+	adc	#16
+	sta	r3H
+@401:
 	clc
 	lda 	r2H
 	adc	#12
 	sta	r2H
-
+	bcc	@402
+	clc	
+	lda	r4H
+	adc	#16
+	sta	r4H
+@402:
 	inc	r13L
 	dec	r5L
 	bne	@loop
@@ -393,14 +437,78 @@ DrawDialog:
 	jsr	ReadDir
 	bcs	@end
 @ok:
+	MoveB	entryCount, r13L
+	jsr	GetEntryString
+
+	ldy	#0
+@nextLen:
+	lda	(r0), y
+	beq	@len
+	iny	
+	bra	@nextLen
+@len:
+	cpy	#4
+	bcc	@next
+
+	dey	
+	lda	(r0), y
+	cmp	#'1'
+	bne	@next
+	dey
+	lda	(r0), y
+	cmp	#'8'
+	bne	@next
+	dey
+	lda	(r0), y
+	cmp	#'D'
+	beq	@good
+	cmp	#'d'
+	bne	@next
+@good:
+	dey
+	lda	(r0), y
+	cmp	#'.'
+	bne	@next
+
 	AddVW	64, r1
 	AddVW	4, r2
-
+	
 	inc	entryCount
 	lda	entryCount
 	cmp	#192
 	bne	@next
 @end:
+	jsr	SortImageList
+	
+	MoveW	SelectionX, r11
+	MoveB	SelectionY, r1H
+
+	ldx	#r11
+	jsr	NormalizeX
+	ldy	#r1H
+	jsr	NormalizeY
+	
+	AddVW	130, r11
+	lda	graphMode
+	cmp	#$41
+	bne	@101
+	AddVW	130, r11
+
+@101:
+	AddVB	6, r1H
+	bcc	@11
+	AddVB	16, r11H
+@11:
+	LoadW	r0, driveText
+	PushW	r11
+	jsr	PutString
+	PopW	r11
+	AddVB	10, r1H
+	bcc	@12
+	AddVB	16, r11H
+@12:
+	LoadW	r0, imageName
+	jsr 	PutString
 
 	LoadB	selectedEntry, 0
 	MoveW	SelectionX, r3
@@ -415,6 +523,84 @@ DrawDialog:
 	ldx	fileDesc
 	jsr	CloseDir
 
+	rts
+
+SortImageList:
+	LoadB	a0L, 0
+
+@loop:
+	LoadB	a1L, 0
+@loop2:
+	MoveB	a0L, r13L
+	jsr	GetEntryString
+	MoveW	r0, r5
+
+	MoveB	a1L, r13L
+	jsr	GetEntryString
+	MoveW	r0, r6
+
+	ldx	#r5
+	ldy	#r6
+	jsr	CmpString
+
+	bcs	@keep
+
+	; swap
+	MoveB	a0L, a2L
+	LoadB	a2H, 0
+	
+	; by 64
+	clc
+	ldx	#6
+	beq	@10
+@11:
+	rol	a2L
+	rol	a2H
+	dex
+	bne	@11
+@10:
+	AddVW	$2000, a2
+
+	MoveB	a1L, a3L
+	LoadB	a3H, 0
+
+	; by 64
+	clc
+	ldx	#6
+	beq	@20
+@21:
+	rol	a3L
+	rol	a3H
+	dex
+	bne	@21
+@20:
+	AddVW	$2000, a3
+
+	ldy	#0
+@swap1:
+	lda	(a2), y
+	tax
+	lda	(a3), y
+	sta	(a2), y
+	txa
+	sta	(a3), y
+	iny
+	cpy	#64
+	bne	@swap1
+
+@keep:
+	inc 	a1L
+	lda	a1L
+	cmp	entryCount
+	beq	@_loop2
+	jmp	@loop2
+@_loop2:
+	inc 	a0L
+	lda	a0L
+	cmp	entryCount
+	beq	@_loop
+	jmp	@loop
+@_loop:
 	rts
 
 GetEntryString:
@@ -441,6 +627,11 @@ testName:
 DrawSelectionBox:
 	MoveW	r3, r4
 	AddVW	124, r4
+	lda	graphMode
+	cmp	#$41
+	bne	@100
+	AddVW	124, r4
+@100:
 
 	clc
 	lda	r2L
@@ -455,6 +646,7 @@ DrawSelectionBox:
 
 	lda	#$FF
 	jsr	FrameRectangle
+
 	PushW	r2
 	PushW	r3
 	PushW	r4
@@ -470,9 +662,70 @@ DrawSelectionBox:
 	adc	#16
 	sta	r3H
 @20:
+	PushW	r2
+	PushW	r3
+	PushW	r4
+	PushB	r11L
+
+	MoveB	r11L, r2L
+
+	AddVW	(124-32), r3
+	SubVW	16, r4
+	lda	graphMode
+	cmp	#$41
+	bne	@101
+	AddVW	(124-32), r3	
+	SubVW	16, r4
+@101:
+
+	lda	#$FF
+	jsr	FrameRectangle
+
+	MoveB	r2, r11L
+	AddVW	4, r3
+	lda	graphMode
+	cmp	#$41
+	bne	@202
+	AddVW	4, r3
+@202:
+	AddVB	10, r11L
+	bcc	@21
+	AddVB	16, r3H
+@21:
+	LoadB	r0L, $FF
+	PushW	r3
+	PushB	r11L
+	jsr	DrawArrow
+	PopB	r11L
+	PopW	r3
+
+	AddVW	16, r3
+	lda	graphMode
+	cmp	#$41
+	bne	@203
+	AddVW	16, r3
+@203:
+	sec
+	lda	r11L
+	sbc	#3
+	sta	r11L
+	bcs	@22
+	sec
+	lda	r3H
+	sbc	#16
+	sta	r3H
+@22:	
+	LoadB	r0L, 0
+	jsr	DrawArrow
+
+	PopB	r11L
+	PopW	r4
+	PopW	r3
+	PopW	r2
+
 	lda	#%11111111
 	jsr	HorizontalLine
-
+.if 0
 	sta	r3L
 	lda	r11L
 	clc
@@ -486,17 +739,22 @@ DrawSelectionBox:
 	SubVW	16, r4
 	lda	#%11111111
 	jsr	VerticalLine
-
+.endif
 	PopW	r4
 	PopW	r3
 	PopW	r2
 
-.if 0
+.if 1
 	inc	r2L
 	IncW	r3
 
 	MoveW	r3, r4
 	AddVW	122, r4
+	lda	graphMode
+	cmp	#$41
+	bne	@107
+	AddVW	124, r4
+@107:
 	clc
 	lda	r2L
 	adc	#11
@@ -520,10 +778,22 @@ DrawSelectionBox:
 	lda 	r2L
 	adc	#12
 	sta	r2L
+	bcc	@400
+	clc
+	lda	r3H
+	adc	#16
+	sta	r3H
+@400:
 	clc
 	lda 	r2H
 	adc	#12
 	sta	r2H
+	bcc	@401
+	clc
+	lda	r4H
+	adc	#16
+	sta	r4H
+@401:
 
 	inc	r13L
 	dec	r5L
@@ -558,6 +828,12 @@ OutputLine:
 	clc
 	adc	#8
 	sta	r1H
+	bcc	@20
+	clc
+	lda	r11H
+	adc	#16
+	sta	r11H
+@20:
 	jsr	GetEntryString
 
 	jsr	PutString
@@ -568,6 +844,48 @@ OutputLine:
 	PopB	currentMode
 	rts
 
+DrawArrow:
+	LoadB	r2H, 4
+	
+	MoveW	r3, r4
+	AddVW	7, r4
+	lda	graphMode
+	cmp	#$41
+	bne	@100
+	AddVW	7, r4
+@100:
+@20:
+	lda	#%11111111
+	jsr	HorizontalLine
+	
+	IncW	r3
+	DecW	r4
+	lda	graphMode
+	cmp	#$41
+	bne	@101
+	DecW	r4
+	IncW	r3
+@101:
+	lda	r0L
+	bne	@11
+	inc	r11L
+	bne	@10
+	AddVB	16, r3H
+@10:
+	bra	@21
+@11:
+	lda	r11L
+	bne	@22
+	sec
+	lda	r3H
+	sbc	#16
+	sta	r3H
+@22:
+	dec	r11L
+@21:
+	dec	r2H
+	bne	@20
+	rts
 fileDesc:
 	.byte	0
 entryCount:
@@ -766,8 +1084,8 @@ IsMountableDrive:
 	lda	driveType-8,x
 	cmp	#DRV_SD_81
 	beq	@yes
-	cmp	#DRV_SD_71
-	beq	@yes
+	;cmp	#DRV_SD_71
+	;beq	@yes
 	clc
 	rts
 @yes:
@@ -844,3 +1162,6 @@ IconC:
 	.incbin "mount/IconC.map"
 IconD:
 	.incbin "mount/IconD.map"
+
+EndOfCode:
+	.byte 0
