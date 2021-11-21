@@ -383,7 +383,6 @@ ASSERT_NOT_BELOW_IO
 	bra	@20
 	
 @10:	; unsupported by HYPPO use default
-	inc	$D020
 	LoadW	r0, imageFileName
 @20:
 	jsr	SetImageFile
@@ -425,13 +424,7 @@ OrigResetHandle:
 	jsr DetectRamCart
 .endif
 _DebugStart:
-	brk
-
-	LDY	#$4F
-	
-	LDA 	#$48	; HYPPO_DOS_GET_PROC_DESC
-	STA 	$D640
-	NOP
+	;brk
 
 	jsr GetDirHead
 	MoveB bootSec, r1H
