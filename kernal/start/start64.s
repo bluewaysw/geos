@@ -427,6 +427,12 @@ OrigResetHandle:
 _DebugStart:
 	brk
 
+	LDY	#$4F
+	
+	LDA 	#$48	; HYPPO_DOS_GET_PROC_DESC
+	STA 	$D640
+	NOP
+
 	jsr GetDirHead
 	MoveB bootSec, r1H
 	MoveB bootTr, r1L
