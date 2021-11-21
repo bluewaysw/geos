@@ -43,6 +43,7 @@ HTTP_STATE_ERROR	=	4
 HTTP_STATE_REDIRECT	=	5
 
 __STARTUP_RUN__:
+.if 0
 	;jsr	CountMissingFiles		; -> r0
 
 	;brk
@@ -58,7 +59,7 @@ __STARTUP_RUN__:
 	;jsr	eth_init
 
 	jsr	prepare_network
-
+.endif
 	LoadW	r0, WelcomeDialog
 	jsr	DoDlgBox
 @10:
