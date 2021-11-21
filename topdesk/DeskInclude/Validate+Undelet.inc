@@ -163,8 +163,17 @@ Validate:
 ; Des: a,y,r1,r4,r5-r8
 ClearBAM:	lda	curType
 	and	#DRIVE_MASK
-	cmp	#3
+	cmp	#3 ;DRV_1581
+	beq	@is1581
+	cmp	#4 ;DRV_F011_0
+	beq	@is1581
+	cmp	#5 ;DRV_F011_1
+	beq	@is1581
+	cmp	#6 ;DRV_SD_81
+	beq	@is1581
+	cmp	#8 ;DRV_F011_V
 	bne	@no1581
+@is1581:
 	ldy	#16
 @3a:	lda	#40
 	sta	dir2Head,y

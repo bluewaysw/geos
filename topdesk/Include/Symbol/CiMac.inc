@@ -1,13 +1,13 @@
 
-.macro DecW addr
-    .local @10
-	dec	addr
-	lda	addr
-	cmp	#$ff
-	bne	@10
-	dec	addr+1
-@10:
-.endmacro
+;.macro DecW addr
+;    .local @10
+;	dec	addr
+;	lda	addr
+;	cmp	#$ff
+;	bne	@10
+;	dec	addr+1
+;@10:
+;.endmacro
 
 
 ;.macro IncW addr
@@ -30,7 +30,7 @@
 .endmacro
 
 .macro SubSW source, dest
-	SubB source+0, dest+0  
+	SubB source+0, dest+0
 	lda dest+1
 	sbc #$00
 	sta dest+1
