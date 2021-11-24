@@ -1851,6 +1851,7 @@ HRBustCache:
 	PushW	r0
 	PushW	r1
 	
+.if 0
 	LoadW	r0, $FFF2
 	LoadW	r1, $0BFF
 
@@ -1863,7 +1864,7 @@ HRBustCache:
 	ldz	#0
 	eom
 	sta 	(r0), z
-	
+.endif	
 	PopW	r1
 	PopW	r0
 	
