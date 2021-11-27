@@ -357,7 +357,7 @@ MapUnderlay:
     pha
     tza
     pha
-    bit countHighMap
+    lda countHighMap
     bne @1
     lda highMap
     sta lastHighMap

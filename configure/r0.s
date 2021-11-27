@@ -342,7 +342,7 @@ L0558:  jsr     ExitTurbo                       ; 0558 20 32 C2                 
 L0563:  and     #$A0                            ; 0563 29 A0                    ).
         sta     sysRAMFlg                       ; 0565 8D C4 88                 ...
         sta     sysFlgCopy                      ; 0568 8D 12 C0                 ...
-.if 1
+.if 0
 	; check boot driver to be 1541 or 1571
 	lda     V2105                           ; 056B AD 05 21                 ..!
         cmp     #$02                            ; 056E C9 02                    ..
@@ -359,7 +359,7 @@ L057B:
 	;sta	V2106-8,x	
 	sta     V2106                           ; 057B 8D 06 21                 ..!
 .endif
-.if 1
+.if 0
         lda     curDrive                        ; 057E AD 89 84                 ...
         eor     #$01                            ; 0581 49 01                    I.
 	jsr     SetDevice                       ; 0583 20 B0 C2                  ..
@@ -369,7 +369,7 @@ L057B:
         lda     #$00                            ; 058D A9 00                    ..
 L058F:  sta     V2107                           ; 058F 8D 07 21                 ..!
 .endif
-.if 1
+.if 0
         lda     ramExpSize                      ; 0592 AD C3 88                 ...
         beq     L05A3                           ; 0595 F0 0C                    ..
         
