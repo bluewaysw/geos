@@ -2,7 +2,7 @@
 
 by Berkeley Softworks, reverse engineered by *Maciej Witkowiak*, *Michael Steil*.
 
-[MEGA65](https://www.mega65.org/) version initiated and maintained by "Falk Rehwagen".
+[MEGA65](https://www.mega65.org/) version initiated and maintained by *Falk Rehwagen*.
 
 ## Description
 
