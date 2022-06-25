@@ -1,6 +1,8 @@
-# GEOS Source Code
+# GEOS Source Code (enhanced to support MEGA65 capabilities)
 
 by Berkeley Softworks, reverse engineered by *Maciej Witkowiak*, *Michael Steil*.
+
+[MEGA65](https://www.mega65.org/) version initiated by "Falk Rehwagen".
 
 ## Description
 
