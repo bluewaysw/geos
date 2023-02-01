@@ -613,8 +613,6 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo geoswrite $(BUILD_DIR)/joydrv.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/autostart.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
-		echo geoswrite prmgr128.cvt | $(C1541) $@ >/dev/null; \
-		echo geoswrite pdmgr128.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/input_driver.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/document.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/desk_accessory.cvt | $(C1541) $@ >/dev/null; \
@@ -631,6 +629,8 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo geosfolder "Input\\ Drivers" "JOYSTICK"| $(C1541) $@ >/dev/null; \
 		echo geosfolder "Input\\ Drivers" "MEGA\\ 1351"| $(C1541) $@ >/dev/null; \
 		if [ "$(CONFIRM_CBMFILES_PERSONAL_USE_LICENSE)" = "ACCEPT_CBMFILES_LICENSE" ]; then \
+			echo geoswrite prmgr128.cvt | $(C1541) $@ >/dev/null; \
+			echo geoswrite pdmgr128.cvt | $(C1541) $@ >/dev/null; \
 			echo geoswrite gw128.cvt | $(C1541) $@ >/dev/null; \
 			echo geoswrite gpt128.cvt | $(C1541) $@ >/dev/null; \
 			echo geoswrite photo_mgr.cvt | $(C1541) $@ >/dev/null; \
