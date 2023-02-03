@@ -1,3 +1,5 @@
 GEOS64.D64
 desktop.cvt
 build
+*.CVT
+*.cvt

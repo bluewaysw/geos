@@ -17,18 +17,23 @@
 ; out: r5, r6   card address
 ;      X        bit number
 .global GetLeftXAddress
+.if 0
 GetLeftXAddress:
 	PushB r3H
 	lda r3L
 	and #$07
 	pha
 	lda r3L
+.ifndef mega65
 	lsr r3H
 	ror a
 	lsr r3H
 	ror a
 	lsr r3H
 	ror a
+.else
+    and #$F8
+.endif
 	clc
 	adc r5L
 	sta r5L
@@ -45,3 +50,4 @@ GetLeftXAddress:
 	tax
 	PopB r3H
 	rts
+.endif

@@ -4,7 +4,7 @@
 .include "config.inc"
 
 ;addresses defined so-so
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 Z45             =       $46
 Z46             =       $47
 Z47             =       $48
@@ -21,7 +21,7 @@ z8e             =       $8e
 z8f             =       $8f
 
 ; GEOS Kernal internal zpage vectors (not for use by apps)
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 IconDescVec     =       $40
 IconDescVecH    =       $41
 CallRLo         =       $42
@@ -111,7 +111,7 @@ E8800           =       $8800
 .endif
 ;A8860           =       $8860 ; XXX unused
 
-.ifdef bsw128
+.if .defined(bsw128)
 FontTVar1 = $880E
 FontTVar2 = $880F
 .elseif .defined(wheels)
@@ -130,9 +130,26 @@ L8893 = $8893
 krnlSaveRcr = $8894
 krnlSaveConfig = $8895
 L8896 = $8896
+.ifdef bsw128
 bank0SaveRcr = $8897
 bank0SaveA = $8898
 bank0SavePS = $8899
+.endif
+.ifdef mega65
+lowMap = $8897
+lowMapBnk = $8892
+highMap = $8898
+highMapBnk = $8893
+lastHighMap = $8899
+countHighMap = $8894
+lastHighMapBnk = $889A
+
+uncompactedY0 = $888D
+uncompactedY1 = $888E
+uncompactedY2 = $888F
+
+.endif
+
 L8A7F = $8A7F ; only written to once
 
 fileHeadMemBuff	= $d8c0		;$0100 len

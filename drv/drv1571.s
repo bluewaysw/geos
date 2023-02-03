@@ -1,4 +1,4 @@
-; GEOS by Berkeley Softworks
+; GEOS by Brkeley Softworks
 ; reverse engineered by Maciej Witkowiak, Michael Steil
 ;
 ; Commodore 1571 disk driver
@@ -94,7 +94,11 @@ __GetDirHead:
 	jsr SetDirHead_2
 	jsr __GetBlock
 	lda #6
+.ifdef config128
+    .byte   $2c
+.else
 	bne GDH_1
+.endif
 GDH_0:
 	lda #8
 GDH_1:
@@ -102,7 +106,11 @@ GDH_1:
 	rts
 
 _ReadBuff:
+.ifdef config128
+    jsr LoadDiskBlkBuf
+.else
 	LoadW r4, diskBlkBuf
+.endif
 __GetBlock:
 	jsr EnterTurbo
 	bne GetBlk0
@@ -111,6 +119,12 @@ __GetBlock:
 	jsr DoneWithIO
 GetBlk0:
 	rts
+
+.ifdef config128
+LoadDiskBlkBuf:
+	LoadW r4, diskBlkBuf
+    rts
+.endif
 
 __PutDirHead:
 	jsr EnterTurbo
@@ -132,11 +146,16 @@ PDH_0:
 	bbrf 7, curDirHead+3, PDH_1
 	jsr SetDirHead_2
 	jsr VerWriteBlock
+	bnex PDH_1
 PDH_1:
 	jmp DoneWithIO
 
 _WriteBuff:
+.ifdef config128
+    jsr LoadDiskBlkBuf
+.else
 	LoadW r4, diskBlkBuf
+.endif
 __PutBlock:
 	jsr EnterTurbo
 	bne PutBlk1
@@ -233,7 +252,11 @@ BlkAlc1:
 	MoveW r2, r5
 BlkAlc2:
 	jsr SetNextFree
+.ifdef config128
+	bne BlkAlc4
+.else
 	bnex BlkAlc4
+.endif
 	ldy #0
 	lda r3L
 	sta (r4),y
@@ -249,8 +272,12 @@ BlkAlc2_1:
 	lda r5L
 	ora r5H
 	bne BlkAlc2
+.ifdef config128
+    tay
+.else
 	ldy #0
 	tya
+.endif
 	sta (r4),y
 	iny
 	lda r8L
@@ -283,13 +310,21 @@ _GetNxtDirEntry:
 	AddVW $20, r5
 	CmpWI r5, diskBlkBuf+$ff
 	bcc GNDirEntry1
+.ifdef config128
+    dey
+.else
 	ldy #$ff
+.endif
 	MoveW diskBlkBuf, r1
 	bne GNDirEntry0
 	lda borderFlag
 	bne GNDirEntry1
+.ifdef config128
+	dec borderFlag
+.else
 	lda #$ff
 	sta borderFlag
+.endif
 	jsr GetBorder
 	bnex GNDirEntry1
 	tya
@@ -329,7 +364,11 @@ ChkDkG0:
 	inx
 	cpx #11
 	bne ChkDkG0
+.ifdef config128
+    dec isGEOS
+.else
 	LoadB isGEOS, $ff
+.endif
 ChkDkG1:
 	lda isGEOS
 	rts
@@ -357,11 +396,11 @@ GFDirBlk11:
 	lda diskBlkBuf
 	bne GFDirBlk2
 	jsr AddDirBlock
-	bra GFDirBlk1
+	bra_ GFDirBlk1
 GFDirBlk2:
 	sta r1L
 	MoveB diskBlkBuf+1, r1H
-	bra GFDirBlk0
+	bra_ GFDirBlk0
 GFDirBlk3:
 	ldy #FRST_FILE_ENTRY
 	ldx #0
@@ -478,9 +517,9 @@ SNxtFree7:
 	adc #4
 	adc interleave
 	sta r6H
-	bra SNxtFree00
+	bra_ SNxtFree00
 SNxtFreeEnd_OK:
-	MoveW r6, r3
+	MoveW_ r6, r3
 	ldx #0
 	rts
 SNxtFreeEnd_Err:
@@ -514,7 +553,7 @@ SNFHlp2_1:
 	cmp r7L
 	bcc SNFHlp2_2
 	sub r7L
-	bra SNFHlp2_1
+	bra_ SNFHlp2_1
 SNFHlp2_2:
 	sta r6H
 
@@ -530,7 +569,7 @@ AllBlk0:
 	lda r8H
 	eor dir2Head,x
 	sta dir2Head,x
-	bra AllBlk2
+	bra_ AllBlk2
 AllBlk1:
 	lda r8H
 	eor curDirHead,x
@@ -540,7 +579,7 @@ AllBlk2:
 	plp
 	beq AllBlk3
 	dec curDirHead,x
-	bra AllBlk4
+	bra_ AllBlk4
 AllBlk3:
 	inc curDirHead,x
 AllBlk4:
@@ -598,7 +637,7 @@ FBBBitTab:
 	.byte $10, $20, $40, $80
 
 __CalcBlksFree:
-	LoadW r4, 0
+	LoadW_ r4, 0
 	ldy #OFF_TO_BAM
 CBlksFre0:
 	lda (r5),y
@@ -640,13 +679,17 @@ __SetGEOSDisk:
 	lda r4L
 	ora r4H
 	beq SetGDisk2
-	LoadB r3L, DIR_TRACK+1
 	LoadB r3H, 0
+	LoadB r3L, DIR_TRACK+1
 	jsr SetNextFree
+.ifdef config128
+    beq SetGDisk0
+.else
 	beqx SetGDisk0
 	LoadB r3L, 1
 	jsr SetNextFree
 	bnex SetGDisk2
+.endif
 SetGDisk0:
 	MoveW r3, r1
 	jsr ClearAndWrite
@@ -671,7 +714,9 @@ __InitForIO:
 	sei
 	lda CPU_DATA
 	sta tmpCPU_DATA
+.if (!.defined(config128)) || (.defined(mega65))
 	LoadB CPU_DATA, KRNL_IO_IN
+.endif
 	lda grirqen
 	sta tmpgrirqen
 	lda clkreg
@@ -685,12 +730,20 @@ __InitForIO:
 	sta cia2base+13
 	lda #>D_IRQHandler
 	sta irqvec+1
+.if .defined(config128) & (!.defined(mega65))
+	sta nmivec+1
+.endif
 	lda #<D_IRQHandler
 	sta irqvec
+.if .defined(config128) & (!.defined(mega65))
+	sta nmivec
+.endif
+.if (!.defined(config128)) || .defined(mega65)
 	lda #>D_NMIHandler
 	sta nmivec+1
 	lda #<D_NMIHandler
 	sta nmivec
+.endif
 	lda #%00111111
 	sta cia2base+2
 	lda mobenble
@@ -728,6 +781,10 @@ IniForIO1:
 	rts
 
 D_IRQHandler:
+.if .defined(config128) &(!.defined(mega65))
+    pla
+    sta $ff00
+.endif
 	pla
 	tay
 	pla
@@ -746,8 +803,19 @@ __DoneWithIO:
 	lda cia2base+13
 	lda tmpgrirqen
 	sta grirqen
+
+	lda #C65_VIC_INIT1
+	sta $d02f
+	lda #C65_VIC_INIT2
+	sta $d02f
+	lda $d031
+	ora #$40
+	sta $d031
+
+.if (!.defined(config128)) || (.defined(mega65))
 	lda tmpCPU_DATA
 	sta CPU_DATA
+.endif
 	lda tmpPS
 	pha
 	plp
@@ -791,6 +859,9 @@ __EnterTurbo:
 EntTur0:
 	and #%01000000
 	bne EntTur3
+.if .defined(config128) & (!.defined(mega65))
+	jsr DoClearCache2
+.endif
 	jsr InitForIO
 	ldx #>EnterCommand
 	lda #<EnterCommand
@@ -889,17 +960,24 @@ SndCHNK2:
 WriteCommand:
 	.byte "M-W"
 WriteAddy:
-	.word $0300
+;XXX	.word $0300
+	.word $0000
 
 NibbleTab:
 	.byte $0f, $07, $0d, $05, $0b, $03, $09, $01
 	.byte $0e, $06, $0c, $04, $0a, $02, $08, $00
 NibbleTab2:
-	.byte $05, $85, $25, $a5, $45, $c5, $65, $e5
-	.byte $15, $95, $35, $b5, $55, $d5, $75, $f5
+;XXX	.byte $05, $85, $25, $a5, $45, $c5, $65, $e5
+    .byte $00, $80, $20, $a0, $40, $c0, $60, $e0
+;XXX	.byte $15, $95, $35, $b5, $55, $d5, $75, $f5
+    .byte $10, $90, $30, $b0, $50, $d0, $70, $f0
+
+
 E96F8:
-	.byte $05, $25, $05, $25, $15, $35, $15, $35
-	.byte $05, $25, $05, $25, $15, $35, $15, $35
+;XXX	.byte $05, $25, $05, $25, $15, $35, $15, $35
+    .byte $00, $20, $00, $20, $10, $30, $10, $30
+;XXX	.byte $05, $25, $05, $25, $15, $35, $15, $35
+    .byte $00, $20, $00, $20, $10, $30, $10, $30
 
 Hst_RecvByte:
 	PushB r0L
@@ -909,8 +987,8 @@ Hst_RecvByte_0:
 	sec
 Hst_RecvByte_1:
 	lda rasreg
-	sbc #$31
-	bcc Hst_RecvByte_2
+	sbc #$28
+	bcc Hst_RecvByte_1
 	and #6
 	beq Hst_RecvByte_1
 Hst_RecvByte_2:
@@ -974,8 +1052,8 @@ Hst_SendByte_01:
 	sec
 Hst_SendByte_1:
 	lda rasreg
-	sbc #$31
-	bcc Hst_SendByte_2
+	sbc #$28
+	bcc Hst_SendByte_1
 	and #6
 	beq Hst_SendByte_1
 Hst_SendByte_2:
@@ -1064,6 +1142,9 @@ DUNK5:
 
 GetSync:
 	sei
+	lda $d031
+	and #%10111111
+	sta $d031
 	MoveB TURBO_DD00, cia2base
 GetSync0:
 	bbrf 7, cia2base, GetSync0
@@ -1100,6 +1181,11 @@ __NewDisk:
 	bne NewDsk2
 	sta errCount
 	sta r1L
+
+.if .defined(config128) & (!.defined(mega65))
+	jsr DoClearCache2
+.endif
+
 	jsr InitForIO
 NewDsk0:
 	ldx #>Drv_NewDisk
@@ -1119,16 +1205,27 @@ NewDsk2:
 __ReadBlock:
 _ReadLink:
 	jsr CheckParams
-	bcc RdLink1
+	bcc RdLink1_
+.if .defined(config128) & (!.defined(mega65))
+    jsr DoCacheWrite
+    bne RdLink1_
+.endif
 RdLink0:
 	jsr e990b
 	jsr Hst_RecvByte
 	jsr GetDError
-	beqx RdLink1
+	beqx RdLink1_
 	inc errCount
 	cpy errCount
-	beq RdLink1
+	beq RdLink1_
 	bcs RdLink0
+RdLink1_:
+.if .defined(config128) & (!.defined(mega65))
+    txa
+    bne RdLink1
+    jsr DoCacheRead
+.endif
+
 RdLink1:
 	ldy #0
 	rts
@@ -1175,7 +1272,11 @@ VWrBlock1:
 	cpx #0
 	bne VWrBlock2
 	tax
+.ifdef config128
+	beq VWrBlock3_
+.else
 	beq VWrBlock3
+.endif
 	ldx #$25
 VWrBlock2:
 	dec tryCount
@@ -1191,6 +1292,11 @@ VWrBlock2:
 	beqx VWrBlock0
 VWrBlock3:
 	rts
+
+VWrBlock3_:
+.if .defined(config128) & (!.defined(mega65))
+	jmp DoCacheRead
+.endif
 
 e990b:
 	ldx #>Drv_ReadSec
@@ -1788,6 +1894,39 @@ e06f9:
 
 .segment "drv1571_b"
 
+; for now no cache support with GEOS65
+.if .defined(config128) & (!.defined(mega65))
+DoClearCache2:
+    ldy #$ff
+    jmp AccessCache
+
+DoCacheRead:
+	ldy #%10010000
+	bne DCW10
+DoCacheWrite:
+	ldy #%10010001
+DCW10:
+    lda r1L
+    cmp     #$12
+    bne DCW20
+    lda r1H
+    beq DCW20
+    jsr AccessCache
+
+    ldy     #$00                            ; 9C5F A0 00                    ..
+    lda     (r4L),y                         ; 9C61 B1 0A                    ..
+    iny                                     ; 9C63 C8                       .
+    ora     (r4L),y                         ; 9C64 11 0A                    ..
+
+    rts
+
+DCW20:
+    ldx     #$00                            ; 9C67 A2 00                    ..
+    rts                                     ; 9C69 60                       `
+.endif
+
+
+
 tmpclkreg:
 	.byte 0
 tmpPS:
@@ -1813,4 +1952,3 @@ tryCount:
 	.byte 0
 borderFlag:
 	.byte 0
-

@@ -14,9 +14,11 @@
 .import BitMaskLeadingSet
 .import BitMaskLeadingClear
 .import _GetScanLine
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 .import _TempHideMouse
 .import _NormalizeX
+.endif
+.ifdef bsw128
 .import VDCFillr4LA
 .import LF4B7
 .import ShareTop
@@ -31,6 +33,12 @@
 .import StaBackbuffer80
 .import GetLeftXAddress
 .endif
+.ifdef mega65
+.import GetLeftXAddress
+.import _NormalizeY
+.import _GetScanLine_HR
+.import _EndScanLine
+.endif
 
 .global ImprintLine
 .global _HorizontalLine
@@ -42,21 +50,41 @@
 .endif
 
 .segment "graph2a"
+;   params:
+;       r3  x1
+;       r4  x2
+;		r11L	y
+;   return:
+;       r8L Begin positiv mask
+;       r8H End negative mask
+
 
 PrepareXCoord:
+.if .defined(bsw128) || .defined(mega65)
 .ifdef bsw128
 	jsr _TempHideMouse
+.endif
 	ldx #r3
 	jsr _NormalizeX
 	ldx #r4
 	jsr _NormalizeX
-	lda r4L
-	ldx r4H
-	cpx r3H
+
+	ldy r3H
+	tya
+	and #$0F
+	sta r3H
+	lda r4H
+	and #$0F
+	cmp r3H
+	sty r3H
 	bne @1
+	lda r4L
 	cmp r3L
 @1:	bcs @2
-	ldy r3H
+; swap coordintaes
+	lda r4L
+	ldx r4H
+	;ldy r3H
 	sty r4H
 	ldy r3L
 	sty r4L
@@ -64,8 +92,52 @@ PrepareXCoord:
 	stx r3H
 @2:
 .endif
-	ldx r11L
-	jsr _GetScanLine
+.ifdef mega65
+	;lda	r11L
+	;pha
+	;lda r3H
+	;lsr
+	;lsr
+	;lsr
+	;lsr
+	;asl r11L
+	;rol
+	;asl r11L
+	;rol
+	;asl r11L
+	;rol
+	;asl r11L
+	;rol
+	;asl r11L
+	;rol
+	;tay
+	;pla
+	;sta	r11L
+	;and #$07
+	;ora #$f8
+	;tax
+.else
+	lda r11L
+	pha
+	lda r3H
+	lsr
+	lsr
+	lsr
+	lsr
+	asl r11L
+	rol
+	asl r11L
+	rol
+	asl r11L
+	rol
+	tay
+	pla
+	sta	r11L
+	and #$03
+	ora #$f8
+	tax
+.endif
+	jsr _GetScanLine_HR
 	lda r4L
 	and #%00000111
 	tax
@@ -76,9 +148,9 @@ PrepareXCoord:
 	tax
 	lda BitMaskLeadingSet,x
 	sta r8L
-.ifdef bsw128
-	bbrf 7, graphMode, @3
-	jsr GetLeftXAddress
+.if .defined(bsw128) || .defined(mega65)
+	;bbrf 7, graphMode, @3
+	;jsr GetLeftXAddress
 @3:
 .endif
 	lda r3L
@@ -87,7 +159,7 @@ PrepareXCoord:
 	lda r4L
 	and #%11111000
 	sta r4L
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	cmp r3L
 	bne @4
 	lda r4H
@@ -108,12 +180,37 @@ _InvertLine:
 	PushW r3
 	PushW r4
 	jsr PrepareXCoord
+.ifndef mega65
 	ldy r3L
 	lda r3H
+	and #$0F
+	sta r3H
 	beq @1
 	inc r5H
 	inc r6H
-@1:	lda r3H
+@1:
+.else
+	;bbrf	7, graphMode, @11
+	;ldy #0
+	;bra	@12
+@11:
+	ldy r3L
+	lda r3H
+	and #$0F
+	sta r3H
+	beq @12
+	pha
+	add r5H
+	sta r5H
+	pla
+	add r6H
+	sta r6H
+@12:
+	lda r4H
+	and #$0F
+	sta r4H
+.endif
+	lda r3H
 	cmp r4H
 	bne @2
 	lda r3L
@@ -129,7 +226,8 @@ _InvertLine:
 @4:	bit WheelsTemp
 	bpl @5
 	eor #$FF
-@5:	sta (r6),y
+@5:
+	sta (r6),y
 	sta (r5),y
 	tya
 	add #8
@@ -147,7 +245,16 @@ _InvertLine:
 @7:	lda r8L
 	ora r8H
 	bra @9
-@8:	lda r8H
+@8:
+.ifdef mega65
+	lda r4H
+	cmp #0
+ 	beq @9b
+	dec r4H
+	bra @4
+@9b:
+.endif
+    lda r8H
 @9:	bit WheelsTemp
 	bmi @A
 	jsr LineCommon
@@ -159,7 +266,7 @@ _InvertLine:
 LineEnd:
 	PopW r4
 	PopW r3
-	rts
+	jmp _EndScanLine
 
 LineCommon:
 	sta r11H
@@ -206,8 +313,11 @@ _HorizontalLine:
 	SubW r3, r4
 	lsr r4H
 	ror r4L
-	lsr r4L
-	lsr r4L
+	lsr r4H
+	ror r4L
+	lsr r4H
+	ror r4L
+
 	lda r8L
 .endif
 	jsr HLineHelp
@@ -482,12 +592,28 @@ ImprintLine:
 	ldy r6H
 	sta r6H
 	sty r5H
-@2:	ldy r3L
+@2:
+.ifndef mega65
+	ldy r3L
 	lda r3H
 	beq @3
 	inc r5H
 	inc r6H
-@3:	CmpW r3, r4
+@3:
+.else
+	;bbrf	7, graphMode, @11
+	;ldy #0
+	;bra	@12
+;@11:
+	ldy r3L
+	lda r3H
+	beq @12
+	inc r5H
+	inc r6H
+@12:
+.endif
+
+	CmpW r3, r4
 	beq @6
 	jsr LineHelp2
 	lda r8L
@@ -525,8 +651,15 @@ LineHelp2:
 	SubW r3, r4
 	lsr r4H
 	ror r4L
+.ifdef mega65
+	lsr r4H
+	ror r4L
+	lsr r4H
+	ror r4L
+.else
 	lsr r4L
 	lsr r4L
+.endif
 	rts
 .else
 	PushW r3
@@ -688,52 +821,119 @@ Read80Help:
 ;            r3L top of line (0-199)
 ;            r3H bottom of line (0-199)
 ;            r4  x position of line (0-319)
+;            If in expanded mode, top 4 bits of r4 hold the
+;            4 MSB to expand r3H. If those 4 bits are != 0
+;            then we expect r5L to hold the top 4 MSB ro expand
+;            r3L.
 ; Return:    draw the line
 ; Destroyed: a, x, y, r4 - r8, r11
 ;---------------------------------------------------------------
 _VerticalLine:
-	sta r8L
+	sta 	r8L
+	PushB	r9H
+.if .defined(bsw128) || .defined(mega65)
 .ifdef bsw128
-	jsr _TempHideMouse
-	ldx #r4
-	jsr _NormalizeX
-	bbsf 7, graphMode, VLin80
+	jsr 	_TempHideMouse
 .endif
-	PushB r4L
-	and #%00000111
+	ldx 	#r4
+	jsr 	_NormalizeX
+	LoadB	r9H, 0
+	bbrf 	6, graphMode, @10
+	lda	r4H
+	and	#$F0
+	beq	@10
+	lda	r5L
+	and	#$F0
+	sta	r9H	
+@10:
+	ldx 	#r9
+	ldy 	#r3L
+	jsr 	_NormalizeY	
+	ldx 	#r4
+	ldy 	#r3H
+	jsr	_NormalizeY
+
+.endif
+.ifdef bsw128
+	bbsf 	7, graphMode, VLin80
+.endif
+	;PushB 	r4L
+	lda	r4L
+	and 	#%00000111
 	tax
-	lda BitMaskPow2Rev,x
-	sta r7H
-	lda r4L
-	and #%11111000
-	sta r4L
-	ldy #0
-	ldx r3L
-@1:	stx r7L
-	jsr _GetScanLine
-	AddW r4, r5
-	AddW r4, r6
-	lda r7L
-	and #%00000111
+	lda 	BitMaskPow2Rev,x
+	sta	r7H
+	lda 	r4L
+	and 	#%11111000
+	sta 	r4L
+	ldx 	r3L
+@1:	stx 	r7L
+	;PushB 	r9H
+	PushB 	r3H
+	stx 	r11L
+	lda 	r9H
+	sta 	r3H
+	jsr 	_GetScanLine_HR
+	PopB 	r3H
+	;PopB 	r9H
+
+	lda	r5L
+	clc	
+	adc	r4L
+	sta	r5L
+	lda	r4H
+	and	#$0F
+	tay
+	adc	r5H
+	sta	r5H
+	lda	r6L
+	clc
+	adc	r4L
+	sta	r6L
+	tya
+	adc	r6H
+	sta	r6H
+	
+	ldy 	#0
+	lda 	r7L
+	and 	#%00000111
 	tax
-	lda BitMaskPow2Rev,x
-	and r8L
-	bne @2
-	lda r7H
-	eor #$FF
-	and (r6),Y
-	bra @3
-@2:	lda r7H
-	ora (r6),Y
-@3:	sta (r6),Y
-	sta (r5),Y
-	ldx r7L
+	lda 	BitMaskPow2Rev,x
+	and 	r8L
+	bne 	@2
+	lda 	r7H
+	eor 	#$FF
+	and 	(r6),Y
+	bra 	@3
+@2:	lda 	r7H
+	ora 	(r6),Y
+@3:	sta 	(r6),Y
+	sta 	(r5),Y
+	
+	; next line
+	ldx 	r7L
 	inx
-	cpx r3H
-	beq @1
-	bcc @1
-	PopB r4L
-	rts
+	bne	@4
+	
+	; advance high level bits
+	lda	r9H
+	clc
+	adc	#16
+	sta	r9H
+@4:
+	lda	r4H
+	and	#$F0
+	cmp	r9H
+	beq	@4b
+	bcs 	@1	; branch if r9H is smaller than r4H
+@4b:
+	cpx 	r3H
+	beq 	@1
+	bcc 	@1
+@5:	
+	;PopB 	r4L
+	PopB 	r9H
+	jmp 	_EndScanLine
 
 .ifdef bsw128
 VLin80:

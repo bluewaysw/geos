@@ -122,31 +122,34 @@ FindClkIcon:
 	lda (IconDescVec),y
 	iny
 	ora (IconDescVec),y
-	beq @2
+	bne @22
+	jmp @2
+@22:
 	iny
 	lda mouseXPos+1
+	and #%00001111
 	lsr
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	sta L888F
 .endif
 	lda mouseXPos
 	ror
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	lsr L888F
 	ror
 .else
 	lsr
 .endif
 	lsr
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	pha
 	lda (IconDescVec),y
-	jsr LFCCC
+	jsr LFCCC_
 	sta L888F
 	pla
 .endif
 	sec
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	sbc L888F
 .else
 	sbc (IconDescVec),y
@@ -154,7 +157,7 @@ FindClkIcon:
 	bcc @2
 	iny
 	iny
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	pha
 	lda (IconDescVec),y
 	jsr LFCCC
@@ -166,22 +169,75 @@ FindClkIcon:
 .endif
 	bcs @2
 	dey
+	LoadB L8890, 0
+	dey
+	lda (IconDescVec),y
+	bpl @11
+
+
+	iny
+	; in GEOS6 scalable mode
+	lda (IconDescVec),y
+	bbrf 6, graphMode, @111
+	bit #%01000000
+	beq @23
+
+	lda (IconDescVec),y
+
+	clc
+	ora #%10000000
+	adc scrFullCardsX+1
+@23:
+
+	; we are in cards, so mult by 8
+	asl
+	rol L8890
+	asl
+	rol L8890
+	asl
+	rol L8890
+	bra @111
+@11:
+	iny
+	lda (IconDescVec),y
+
+@111:
+	sta L888F
+
+	lda mouseXPos+1
+	lsr
+	lsr
+	lsr
+	lsr
+	pha
+
 	lda mouseYPos
 	sec
-	sbc (IconDescVec),y
+	sbc L888F
+	sta L888F
+
+	pla
+	sbc L8890
+
 	bcc @2
+	bne @2
 	iny
 	iny
+	lda L888F
 	cmp (IconDescVec),y
 	bcc @3
 @2:	inc r0L
 	lda r0L
 	ldy #0
 	cmp (IconDescVec),y
-	bne @1
+	beq @19
+	jmp @1
+@19:
 	clc
 	rts
-@3:	sec
+@3:
+
+	sec
 	rts
 
 CalcIconCoords:
@@ -196,18 +252,18 @@ CalcIconCoords:
 	sta r2L
 	dey
 	lda (IconDescVec),y
-.ifdef bsw128
-        jsr LFCCC
+.if .defined(bsw128) || .defined(mega65)
+        jsr LFCCC_
 .endif
 	sta r3L
 	iny
 	iny
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	lda (IconDescVec),y
         jsr LFCCC
 .endif
 	clc
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	adc r3L
 .else
 	adc (IconDescVec),y
@@ -229,8 +285,14 @@ CalcIconCoords:
 	rts
 .endif
 
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 LFCCC:	pha
+	lda graphMode
+	cmp #$41
+	beq LFCCC_2a
+	pla
+LFCCC2:
+	pha
 	and #DOUBLE_B
 	bpl @1
 	pla
@@ -241,5 +303,33 @@ LFCCC:	pha
 @3:	rts
 @1:	pla
 	rts
+LFCCC_2a:
+	pla
+	asl
+	rts
 .endif
 
+.if .defined(bsw128) || .defined(mega65)
+LFCCC_:
+	bbrf 6, graphMode, LFCCC
+	pha
+	and #%11000000
+
+	bpl @1
+	cmp #%11000000
+	bne @2
+
+	pla
+	; x negative case
+	clc
+	adc scrFullCardsX
+@3:
+	bra LFCCC
+@2:
+	pla
+	and #%01111111
+	bra @3
+@1:
+	pla
+	bra @3
+.endif

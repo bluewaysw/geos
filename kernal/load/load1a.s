@@ -20,6 +20,7 @@
 .import _InitMachine
 .import ClrScr
 .import _UseSystemFont
+.import _MapLow
 
 .import MainLoop
 .import CallRoutine
@@ -54,8 +55,20 @@ _EnterDeskTop:
 	stx firstBoot
 .endif
 	txs
-	jsr ClrScr
 	jsr _InitMachine
+;	ldx #$41
+;	lda graphMode
+;	bmi @2
+;	;asl
+;	;bmi @1
+;	;dex
+;@2:
+;	stx graphMode
+@1:
+	jsr ClrScr
+	ldx	#$00
+	lda	#$00
+	jsr	_MapLow
 .ifdef useRamExp
 	MoveW DeskTopStart, r0
 	MoveB DeskTopLgh, r2H
@@ -138,9 +151,8 @@ _StartAppl:
 	lda r7L
 .ifdef bsw128
 	jsr CallRoutine
-	cli                
+	cli
 	jmp MainLoop
 .else
 	jmp _MNLP
 .endif
-

@@ -39,6 +39,12 @@ CheckErrors             =       $9045
 AllocateBlock           =       $9048
 ReadLink                =       $904b
 
+; G6 extension (SD81/SD71 driver)
+SetImageFile            =       $9050
+SetImageCluster         =       $9053
+GetImageFile            =       $9056
+
+
 ; Wheels only
 ddriveType              =       $904e
 driverVersion           =       $904f

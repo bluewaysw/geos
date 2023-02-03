@@ -25,6 +25,16 @@
 
 .global _FirstInit
 
+.import MapUnderlay
+.import UnmapUnderlay
+
+.segment "init2b"
+
+_FirstInit:	
+	jsr	MapUnderlay
+	jsr	_FirstInit2
+	jmp	UnmapUnderlay 
+	
 .segment "init2"
 
 ;---------------------------------------------------------------
@@ -35,9 +45,12 @@
 ; Pass:      nothing
 ; Destroyed: a, y, r0 - r2l
 ;---------------------------------------------------------------
-_FirstInit:
+_FirstInit2:
 	sei
 	cld
+.ifdef mega65
+	LoadB screencolors, $BF
+.endif
 .ifdef bsw128
 	LoadB screencolors, $BF
 	sta @1
@@ -64,6 +77,7 @@ _FirstInit:
 .import sysScrnColors
 	MoveB sysScrnColors, screencolors
 .else
+.ifndef mega65
 .ifndef bsw128
 	LoadB screencolors, (DKGREY << 4)+LTGREY
 	sta @1
@@ -72,12 +86,41 @@ _FirstInit:
 	.word 1000
 	.word COLOR_MATRIX
 @1:	.byte (DKGREY << 4)+LTGREY
+.endif
 	START_IO_X
 	LoadB mob0clr, BLUE
 	sta mob1clr
 	LoadB extclr, BLACK
+	sta mob2clr
+	sta mob3clr
+	sta mob4clr
+	sta mob5clr
+	sta mob6clr
+	sta mob7clr
+	LoadB bakclr0, BLACK	;XXX workaround a
+				; bug in the current MEGA65
+				; bitstream showing parts of
+				; the background (in blue)
 	END_IO_X
 .endif
+.if .defined(mega65)
+	ldy CPU_DATA
+	LoadB	CPU_DATA, RAM_64K
+
+	lda #0
+	ldx #62
+@2:	
+	cpx #24
+	bpl @2_
+	lda InitMsePic,x
+@2_:
+	sta mousePicData,x
+	dex
+	bpl @2
+
+	sty	CPU_DATA
+.else
+
 	ldy #62
 @2:	lda #0
 	sta mousePicData,Y
@@ -92,6 +135,8 @@ _FirstInit:
 	sta mousePicData-1,x
 	dex
 	bne @3
+.endif
+
 .ifdef wheels
 .import sysMob0Clr
 .import sysExtClr

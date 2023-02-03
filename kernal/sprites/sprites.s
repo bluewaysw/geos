@@ -16,12 +16,18 @@
 .import scr_mobx
 
 .import NormalizeX
+.import NormalizeY
+
+.import UncompactXY
 
 ; syscalls
 .global _DisablSprite
 .global _DrawSprite
 .global _EnablSprite
 .global _PosSprite
+
+.import spriteXPosOff
+.import spriteYPosOff
 
 .segment "sprites"
 
@@ -62,17 +68,52 @@ SprTabH:
 ; Destroyed: a, x, y, r6
 ;---------------------------------------------------------------
 _PosSprite:
-.ifdef bsw128
+;	PushB	r5H
+
+;	lda	r4H
+;	jsr	UncompactXY
+;	sta 	r4H
+;	sty 	r5H
+
+;;	jsr	_HR_PosSprite
+
+
+_HR_PosSprite:
+
+.if .defined(bsw128) || .defined(mega65)
 	ldx #r4
 	jsr NormalizeX
+	ldy #r5L
+	jsr NormalizeY
 .endif
 	START_IO
+
 	lda r3L
-	asl
+	rol
 	tay
 	lda r5L
-	addv VIC_Y_POS_OFF
+	clc
+	adc spriteYPosOff
+	;sta r6L
 	sta mob0ypos,Y
+
+	;lda r5H
+	php
+	lda	r4H
+	jsr	UncompactXY
+	sta	r4H
+	plp
+	tya
+	ldy $D077
+	ldx #1
+	jsr @2__
+	sta $D077
+
+	lda #2
+	ldy $D078
+	jsr @2_
+	sta $D078
+
 .ifdef bsw128
 	lda graphMode
 	bpl @X
@@ -86,27 +127,56 @@ _PosSprite:
 	sta r4L
 @X:
 .endif
+;.ifdef mega65
+	;MoveW r4, r6
+	;lda graphMode
+	;bpl @X
+	;asr r6H
+	;ror r6L
+;@X:
+;	AddVW    VIC_X_POS_OFF, r6
+;.else
+	lda r3L
+	rol
+	tay
 	lda r4L
-	addv VIC_X_POS_OFF
-	sta r6L
-	lda r4H
+	clc
+	adc spriteXPosOff
+	;sta r6L
+	sta mob0xpos,Y
+	lda 	r4H
+;.endif
+
+	ldy	msbxpos
+	ldx	#1
+
+	jsr	@2__
+	sta msbxpos
+	lda #2
+	ldy	$d05f
+	jsr	@2_
+	sta $d05f
+
+	END_IO
+;	PopB	r5H
+	rts
+@2__:
 	adc #0
 	sta r6H
-	lda r6L
-	sta mob0xpos,Y
-	ldx r3L
-	lda BitMaskPow2,x
-	eor #$FF
-	and msbxpos
-	tay
-	lda #1
-	and r6H
-	beq @1
+	txa
+@2_:
+	ldx	r3L
+	and	r6H
+	beq	@2_clear
 	tya
 	ora BitMaskPow2,x
-	tay
-@1:	sty msbxpos
-	END_IO
+	rts
+
+@2_clear:
+	tya
+	eor #$ff
+	ora BitMaskPow2,x
+	eor #$ff
 	rts
 
 ;---------------------------------------------------------------

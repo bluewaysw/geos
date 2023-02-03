@@ -1,0 +1,59 @@
+# This is a comment. It extends to the end of the line
+        GLOBAL {
+            OUTPUTNAME      "r2.asm";
+            INPUTNAME       "configure128.cvt.record.2";
+            STARTADDR       $9000;
+            PAGELENGTH      0;                  # No paging
+            CPU             "6502";
+            COMMENTS		4;
+            
+        };
+        
+#ASMINC	{		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/const.inc"; IGNOREUNKNOWN TRUE;};
+#ASMINC {		FILE "/cc65/libsrc/geos/inc/diskdrv.inc";};
+#ASMINC {		FILE "inc/geossym.inc";};
+ASMINC {		FILE "inc/labels.inc";};
+ASMINC {        FILE "r6.labels"; };
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/inputdrv.inc";};
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/printdrv.inc";};
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/dio.inc";};
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/geosmac.ca65.inc";};
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/geossym.inc";};
+#ASMINC {		FILE "/cc65/libsrc/geos/inc/jumptab.inc";};
+
+# One segment for the whole stuff
+SEGMENT { START $9000;  END   $ffff; NAME "record6"; };
+#SEGMENT { START $9A02;  END   $9BEE; NAME "drv1581_drvcode"; };
+#SEGMENT { START $9BEf;  END   $ffff; NAME "record4"; };
+##RANGE { START $927F; END   $928F; TYPE TEXTTABLE; };
+#RANGE { START $92AB; END   $92BB; TYPE TEXTTABLE; };
+RANGE { START $9000; END   $902f; TYPE ADDRTABLE; };
+#RANGE { START $946B; END $9472;TYPE BYTETABLE; };
+#RANGE { START $963D; END $963F; TYPE BYTETABLE; };
+#RANGE { START $9640; END $9641; TYPE WORDTABLE; };
+#RANGE { START $9A02; END $9A10; TYPE BYTETABLE; };
+#RANGE { START $9A11; END $9A20; TYPE BYTETABLE; };
+#RANGE { START $979A; END   $979C; TYPE TEXTTABLE; };
+RANGE { START $944C; END   $9453; TYPE BYTETABLE; };
+#RANGE { START $9823; END   $982D; TYPE BYTETABLE; };
+#RANGE { START $9760; END   $9767; TYPE BYTETABLE; };
+RANGE { START $9282; END   $9292; TYPE TEXTTABLE; };
+RANGE { START $967F; END   $9729; TYPE TEXTTABLE; };
+#RANGE { START $96F1; END $96F2; TYPE WORDTABLE; };
+#RANGE { START $9A00; END $9A01; TYPE WORDTABLE; };
+#RANGE { START $982E; END   $984D; TYPE BYTETABLE; };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

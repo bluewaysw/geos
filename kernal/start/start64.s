@@ -9,6 +9,7 @@
 .include "config.inc"
 .include "kernal.inc"
 .include "inputdrv.inc"
+.include "diskdrv.inc"
 .include "c64.inc"
 
 ; main.s
@@ -43,6 +44,18 @@
 .import LoadDeskTop
 .endif
 
+.ifdef mega65
+.import InitScanLineTab
+.import MapUnderlay
+.import UnmapUnderlay
+.import _MapLow
+.import ClrScr
+.import SetNewMode
+.endif
+
+.ifdef debugger
+.global _DebugStart
+.endif
 
 .segment "start"
 
@@ -80,7 +93,23 @@ ASSERT_NOT_BELOW_IO
 	LoadW NMI_VECTOR, _NMIHandler
 	LoadW IRQ_VECTOR, _IRQHandler
 
+	; move underlayr from $0A000 to $1A000
+	lda	#>underlaylist
+	ldy	#<underlaylist
+
+	sta	$d701
+	lda	#0
+	sta	$d702
+	sta	$d704	;	enhanced bank
+	sty	$d705
+
+	lda	#0
+	sta	countHighMap
+	lda	#$80
+	sta	lastHighMap
+
 	; draw background pattern
+.ifndef mega65
 	LoadW r0, SCREEN_BASE
 	ldx #$7D
 @2:	ldy #$3F
@@ -99,6 +128,7 @@ ASSERT_NOT_BELOW_IO
 	inc r0H
 @4:	dex
 	bne @2
+.endif
 
 	; set clock in CIA1
 	lda cia1base+15
@@ -111,9 +141,12 @@ ASSERT_NOT_BELOW_IO
 	sta cia1base+9 ; seconds: 0
 	sta cia1base+8 ; 10ths: 0
 
+.ifndef mega65
 	lda #RAM_64K
 	sta CPU_DATA
+.endif
 ASSERT_NOT_BELOW_IO
+
 
 	jsr i_FillRam
 	.word $0500
@@ -126,9 +159,100 @@ ASSERT_NOT_BELOW_IO
 	sta year,y
 	dey
 	bpl @6
-
 	;
 	jsr FirstInit
+
+	LDA #0
+	STA $D05D
+
+	; start with bank $6000-$8000 swapped out so we prevent debugger from beeing destroyed
+	;ldx #$00
+	;lda #$80
+	ldx #$00
+	lda #$00
+	jsr _MapLow
+
+.ifdef debugger
+	; move debugger from $06000 to $16000
+	lda	#>debuggerlist
+	ldy	#<debuggerlist
+
+	sta	$d701
+	lda	#0
+	sta	$d702
+	sta 	$d704	;	enhanced bank
+	sty	$d705
+
+	jsr FirstInit
+.endif
+.if 0
+	LDA #$12
+	STA $D640
+	NOP
+	tax
+	ldy #>$0400 		; write dirent to DirEntry
+
+	lda #$14
+	STA $D640
+	NOP
+.endif
+.if 0
+	; run a raster line cycle counter
+	sei	; interrupts off
+
+	; 1 mhz
+	lda     $d031
+        and 	#%10111111
+        sta     $D031
+
+	lda	#0
+	ldx	#0
+@aaa:
+	sta	$4000, x
+	sta	$4100, x
+	sta	$4200, x
+	sta	$4300, x
+	inx
+	bne     @aaa
+
+
+@eee:
+	ldx	rasreg
+	bne	@eee
+@eee1:
+	ldx	rasreg
+	beq	@eee1
+
+	lda	$D011
+	bmi 	@eee
+
+@ccc2:
+	ldx	rasreg
+	beq	@bbb
+
+@ccc:
+	; inc
+	inc	$4000, x
+	bne	@ccc1
+	inc	$4100, x
+	bne	@ccc1
+	inc	$4200, x
+	bne	@ccc1
+	inc	$4300, x
+@ccc1:
+	; wait for next line
+	cpx	rasreg
+	beq	@ccc
+
+	ldx	rasreg
+	jmp	@ccc2
+
+@bbb:
+	cli
+
+
+.endif
+
 	jsr MouseInit
 	lda #currentInterleave
 	sta interleave
@@ -137,24 +261,171 @@ ASSERT_NOT_BELOW_IO
 	sta NUMDRV
 	ldy $BA
 	sty curDrive
+
 	lda #DRV_TYPE ; see config.inc
-	sta curType
-	sta _driveType,y
+
+.ifdef mega65
+	; determ proper drive type,
+	; from MEGA65 BASIC 10.0 coming there are following options:
+	; 1.)
+	; preconditions:
+	; curDrive is one of the BASIC mapped drives, directing us to
+	; F011-0 or F011-1, we don't support booting from other drives and
+	; could/should hard reset here? In general we assume that GEOS
+	; holds an disk driver that is in some way compatible to the boot drive.
+
+	lda	#C65_VIC_INIT1
+	sta	$d02f
+	lda 	#C65_VIC_INIT2
+	sta	$d02f
+
+	; get MEGA65 DOS drive 0 device number
+	; 10113/10114 clear device numbers of the f011 drive, we will
+	; manage those independent of dos
+	lda	#$10
+	sta 	r0L
+	lda 	#$01
+	sta 	r0H
+	lda 	#$01
+	sta 	r1L
+	lda	#$00
+	sta 	r1H
+
+	jsr	loadZDriveOffset
+	;LDZ	#3
+	EOM
+	lda 	(r0), Z
+	cmp	curDrive
+	beq	@detectDrive0
+
+	; get MEGA65 DOS drive 1 device number
+	;LDZ	#4
+	inz
+	EOM
+	lda 	($02), Z
+	cmp	curDrive
+	beq	@detectDrive1
+
+	; unclear how this has been booted
+	; still could try to setup drive 0 as real or sd mount
+
+@detectDrive0:
+	; is virtual enabled?
+	ldx	#DRV_F011_V
+	lda	$D68A
+	bit	#4
+	bne	@detected
+
+	; check if real drive
+	ldx	#DRV_F011_0	; real internal floppy
+	lda	$D6A1
+	bit	#1
+	bne	@detected
+
+	ldx	#DRV_SD_81
+	; setup d81 offset
+	LoadB	r2L, 0 		; remember the drive number
+	bra	@detected
+
+@detectDrive1:
+	; potentially now drive 1 may be virtual,
+	; but because monitor-load does not support this
+	; at the moment, we assume this will not be the case
+	; check if real drive
+	ldx	#DRV_F011_0	; real internal floppy
+	lda	$D6A1
+	bit	#4
+	bne	@detected
+	ldx	#DRV_SD_81
+	; setup d81 offset
+	LoadB	r2L, 1 		; remember the drive number
+	bra	@detected
+
+@detected:
+	; redirect DOS device numbers of the internal drives
+	; so GEOS only looks at real serial drives using the DOS
+	;LDZ	#3
+	jsr	loadZDriveOffset
+	lda	#28
+	EOM
+	sta 	(r0), Z
+	inz
+	lda	#29
+	EOM
+	sta 	(r0), Z
+	txa
+.endif
+	sta	curType
+	sta	_driveType,y
+
+	cmp	#DRV_SD_81
+	bne	@detectDone
+	
+	; get the current tasks mounted image file names via HYPPO
+	; load the process descriptor to $4F00 just before the boot code
+	LDY	#$4F
+	
+	LDA 	#$48	; HYPPO_DOS_GET_PROC_DESC
+	STA 	$D640
+	NOP
+	bcc	@10	; branch if error/unsupported
+	lda	r2L
+	bne	@31	; branch if current drive is not device 0
+	LoadW	r0, $4F00+21
+	ldy	$4F00+19
+	bra	@30
+@31:
+	LoadW	r0, $4F00+21+32
+	ldy	$4F00+20
+@30:
+	lda	#0
+	sta	(r0), y
+	bra	@20
+	
+@10:	; unsupported by HYPPO use default
+	LoadW	r0, imageFileName
+@20:
+	jsr	SetImageFile
+
+@detectDone:
+	; on MEGA65 we check if we are able to transform
+	; from F011 mode to direct access SD mount
+	; this is possible if the drive is not a real drive and not virtual
+	;lda #8  ; DRV_F011_V, see config.inc
+	;sta curType
+	;sta _driveType,y
+
 
 ; This is the original code the cbmfiles version
 ; has at $5000.
 OrigResetHandle:
 	sei
 	cld
+
+.ifdef mega65
+	lda #3|64
+	sta graphMode
+	LoadW	r5, 720
+	jsr MapUnderlay
+	jsr InitScanLineTab
+.endif
 	ldx #$ff
 	jsr _DoFirstInitIO
+.ifdef mega65
+ 	jsr UnmapUnderlay
+.endif
 	jsr InitGEOEnv
+	jsr SetNewMode
+	jsr ClrScr
 .ifdef usePlus60K
 	jsr DetectPlus60K
 .endif
 .if .defined(useRamCart64) || .defined(useRamCart128)
 	jsr DetectRamCart
 .endif
+_DebugStart:
+	;brk
+
 	jsr GetDirHead
 	MoveB bootSec, r1H
 	MoveB bootTr, r1L
@@ -196,13 +467,96 @@ OrigResetHandle:
 	cpx #30
 	bne @7
 	LoadW r9, dirEntryBuf
-	LoadW EnterDeskTop+1, _ResetHandle
+	LoadW EnterDeskTop+1, OrigResetHandle
 	LoadB r0L, 0
 	jsr LdApplic
+
+loadZDriveOffset:
+
+	; ok, different ROM version have different locations of the
+	; device numbers map for the internal/F011 drives
+	; for 910110 ROM it is 010112/010113
+	; for 9110XY ROM it is 010113/010114
+
+	; as a simple solution for now we detect the ROM and use
+	; ROM < 10 to be 010112/010113, otherwise 010113/010114
+	; default is 2, so for old ROM or unrecognized situations
+
+	PushW	r0
+	PushW	r1
+
+	lda	#$16
+	sta 	r0L
+	lda 	#$00
+	sta 	r0H
+	lda 	#$02
+	sta 	r1L
+	lda	#$00
+	sta 	r1H
+
+	ldz	#0
+	EOM
+	lda	(r0), z
+	cmp	'V'
+	bne	@1
+	inz
+	EOM
+	lda	(r0), z
+	cmp	#'9'
+	bne	@1
+
+	inz
+	inz
+	EOM
+	lda	(r0), z
+	cmp	#'1'
+	bne	@1
+	PopW	r1
+	PopW	r0
+	ldz	#3
+	rts
+@1:
+	PopW	r1
+	PopW	r0
+	ldz	#3
+	rts
+
+underlaylist:
+	; enchanced dma mode header
+	.byte	$0a
+	.byte	$80, $00
+	.byte	$81, $00
+	.byte 	0
+	.byte	0	; swap
+	.word	$2000	; $6000-$8000
+	.word	$A000
+	.byte	0				; bank 0
+	.word	$A000
+	.byte	1				; bank 1
+	.word	0				; unsued mod
+
+.ifdef debugger
+debuggerlist:
+	; enchanced dma mode header
+	.byte	$0a
+	.byte	$80, $00
+	.byte	$81, $00
+	.byte 	0
+	.byte	0	; swap
+	.word	$2000	; $6000-$8000
+	.word	$6000
+	.byte	0				; bank 0
+	.word	$6000
+	.byte	1				; bank 1
+	.word	0				; unsued mod
+.endif
+
+imageFileName:
+	.byte	"GEOSX.D81", NULL
 bootTr:
-	.byte DIR_TRACK
+	.byte DIR_1581_TRACK
 bootSec:
-	.byte 1
+	.byte 3
 bootTr2:
 	.byte 0
 bootSec2:

@@ -103,6 +103,8 @@ config_inc = 1
 ;
 ;.setcpu "4510"
 
+  debugger = 1
+
 	; make use of all reusable Wheels optimizations and fixes
 	wheels_size = 1
 	wheels_size_and_speed = 1
@@ -141,6 +143,13 @@ config_inc = 1
 	; additionally, there are ".ifdef mega65" checks
 	; throughout the code
 	.setcpu "4510"
+
+	topdesk128 = 1
+	topdesk13 = 1
+
+	config128 = 1
+
+	scalable_coords = 1
 .endif
 
 .ifdef custom
@@ -156,7 +165,7 @@ config_inc = 1
 	removeToBASIC = 1
 
 	; for 2MHz-on-border on C128 in 64 mode
-	use2MHz = 1
+	;use2MHz = 1
 
 	; only VLIR and SEQ supported
 	;onlyVLIR = 1
@@ -219,8 +228,10 @@ DRV_TYPE = 1 ; DRV_1541
 DRV_TYPE = 2; DRV_1571
 .elseif .defined(drv1581)
 DRV_TYPE = 3; DRV_1581
-.elseif .defined(drvf011)
+.elseif .defined(drv1581_21hd)
 DRV_TYPE = 3; DRV_1581
+.elseif .defined(drvf011)
+DRV_TYPE = 4; DRV_F011
 .else
 .error "Unknown drive type!"
 .endif

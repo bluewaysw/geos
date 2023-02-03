@@ -15,6 +15,7 @@
 .ifdef bsw128
 .import _TempHideMouse
 .endif
+.import _EndScanLine
 
 .global _BitOtherClip
 .global _BitmapClip
@@ -86,7 +87,7 @@ BitmClp1:
 	lda r11L
 	jsr BitmHelpClp
 	lda r2L
-.ifdef bsw128
+.if .defined(bsw128) ||.defined(mega65)
 	bpl @X
 	asl a
 @X:	bbsf 7, graphMode, @Y
@@ -113,7 +114,7 @@ BitmClp1:
 .ifdef bsw128
 	PopB rcr
 .endif
-	rts
+	jmp _EndScanLine
 
 BitmHelpClp:
 	cmp #0

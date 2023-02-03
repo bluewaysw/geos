@@ -22,6 +22,9 @@
 .ifdef bsw128
 .import BSWFont80
 .endif
+.ifdef mega65
+.import BSWFont80
+.endif
 
 .ifdef bsw128
 ; XXX back bank, yet var lives on front bank!
@@ -37,15 +40,21 @@ PrvCharWidth = $880D
 .segment "conio3b"
 
 _UseSystemFont:
-.ifdef bsw128
-	bbsf 7, graphMode, @X
+.if .defined(bsw128) || .defined(mega65)
+	lda graphMode
+	bmi @X
+	cmp #$41
+	beq @X
 	LoadW r0, BSWFont
 	bra _LoadCharSet
 @X:	LoadW r0, BSWFont80
 .else
 	LoadW r0, BSWFont
 .endif
+
 _LoadCharSet:
+	ldx	CPU_DATA
+	LoadB	CPU_DATA, RAM_64K
 	ldy #0
 @1:	lda (r0),y
 	sta baselineOffset,y
@@ -63,6 +72,7 @@ _LoadCharSet:
 	sta SerialHiCompare
 @2:
 .endif
+	stx	CPU_DATA
 	rts
 
 _GetCharWidth:
@@ -84,14 +94,22 @@ GetChWdth1:
 	tay
 	iny
 	iny
+.ifdef mega65
+	PushB	CPU_DATA
+	LoadB	CPU_DATA, RAM_64K
+.endif
 	lda (curIndexTable),y
 	dey
 	dey
 	sec
 	sbc (curIndexTable),y
+.ifdef mega65
+	tay
+	PopB	CPU_DATA
+	tya
+.endif
 	rts
 .ifdef bsw128 ; branch taken/not taken optimization
 @2:	lda PrvCharWidth
 	rts
 .endif
-

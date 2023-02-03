@@ -34,7 +34,11 @@ _DoFirstInitIO:
 	LoadB config, CIOIN
 .else
 ASSERT_NOT_BELOW_IO
+.ifdef mega65
+	LoadB CPU_DATA, IO_IN
+.else
 	LoadB CPU_DATA, KRNL_IO_IN
+.endif
 .ifdef wheels
 	sta scpu_turbo
 .endif
@@ -89,17 +93,129 @@ ASSERT_NOT_BELOW_IO
 	jsr SetColorMode
 .endif
 .ifdef mega65
+.if 1
 	; Enable C65GS IO
 	; 47, 53 = enable VIC IV
 	; a5, 96 = enable VIC III
-	
-	lda #$a5
+
+	lda #C65_VIC_INIT1
 	sta $d02f
-	lda #$96
+	lda #C65_VIC_INIT2
 	sta $d02f
 
-	lda	#$40	; 3.5Mhz
+	; enable 800x600 mode
+	; 1. Set horizontal border width
+.if 0
+	LDA #39
+	STA $D05C
+	LDA #$00
+	STA $D05D
+	LDA #1
+	sta $D076
+
+	lda #$c9
+	sta grcntrl2
+
+	; Set bitmap mode (makes horizontal borders take effect)
+	LDA   #$3B
+	STA   $D011
+
+	; Set 640H, 400V
+	LDA   $D031
+	ORA   #$C8
+	STA   $D031
+
+	lda	#$04	; 3.5Mhz, H640, no bitplanes
+	sta	$d030
+
+	; Set to 100 characters per row
+	LDA   #90
+	STA   $D058
+	STA   $D05E
+
+	 ; Disable/Enable 16-colour sprite mode for each sprite?
+	 LDA	  #$00
+	 STA	  $D06B
+
+	; Bit 10 of sprite X position for positions >511
+	 LDA	#$00
+	 STA	$D05F
+
+	 LDA #<$4000
+	 STA $D068
+	 LDA #>$4000
+	 STA $D069
+	 LDA #1
+	 STA $D06A
+
+	 LDA #<$2000
+	 STA $D060
+	 LDA #>$2000
+	 STA $D061
+	 LDA #<1
+	 STA $D062
+	 LDA #>1
+	 STA $D063
+
+	LDA	#$8F
+	 STA $d06D
+
+	lda #<74
+	sta $d048
+	lda #>74
+	sta $d049
+	lda #<554
+	sta $D04A
+	lda #>554
+	sta $d04b
+
+	lda #<74
+	sta $d04e
+	lda #>74
+	sta $d04f
+.endif
+.else
+	lda #C65_VIC_INIT1
+	sta $d02f
+	lda #C65_VIC_INIT2
+	sta $d02f
+
+    ; enable bitplanes
+
+
+	lda	#$D0	; 3.5Mhz, H640, bitplanes
+	;lda	#$90	; 3.5Mhz, H640, bitplanes
+	bbsf    7, graphMode, @11
+	lda #$50
+	;lda #$10
+@11:
 	sta	$d031
+
+	lda	#$04	; 3.5Mhz, H640, bitplanes
+	sta	$d030
+
+    ; enable bitplace 1 (from 0-7)
+    lda #2
+    sta $d032
+
+    ;   bitplane data @$10000
+;    lda #0
+;    sta $d034
+
+    ;   bitplane data @$14000
+    lda #$04
+    sta $d034
+
+    lda #$33
+    sta $d102
+    sta $d202
+    sta $d302
+    lda #$bb
+    sta $d100
+    sta $d200
+    sta $d300
+.endif
+
 .endif
 
 .if .defined(wheels) || .defined(removeToBASIC)
@@ -114,8 +230,9 @@ ASSERT_NOT_BELOW_IO
 	jsr Init_KRNLVec
 .endif
 .ifndef bsw128
+.ifndef mega65
 	LoadB CPU_DATA, RAM_64K
+.endif
 .endif
 ASSERT_NOT_BELOW_IO
 	jmp ResetMseRegion
-

@@ -5,6 +5,7 @@
 ; These are not part of the API and can be changed.
 
 .include "config.inc"
+.include "inc/const.inc"
 
 .global menuOptNumber
 .global menuTop
@@ -72,6 +73,14 @@
 .global verifyFlag
 .global TempCurDrive
 .global scr_mobx
+
+.global screenCardsX
+.global scrFullCardsX
+.global screenMaxX
+.global screenMaxY
+.global spriteXPosOff
+.global spriteYPosOff
+.global screenNextLine
 
 .segment "vars"
 
@@ -147,7 +156,7 @@ DBGFNameTable:	.word 0
 DBGFTableIndex:	.byte 0
 DBGFileSelected: .byte 0
 A885D:		.byte 0
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 L8871:		.byte 0
 .endif
 A885E:		.byte 0
@@ -169,3 +178,12 @@ KbdDBncTab:     .res 8, 0
 		.res 3, 0
 KbdDMltTab:     .res 20, 0
 .endif
+
+screenCardsX:	.word 40
+scrFullCardsX:	.word 40
+screenMaxX:	.word 319
+screenNextLine: .word 312
+screenMaxY:     .word 199
+spriteXPosOff:	.word 25
+spriteYPosOff:	.word 50
+

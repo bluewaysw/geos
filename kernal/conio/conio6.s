@@ -11,7 +11,11 @@
 .include "c64.inc"
 
 .import _PutChar
-.import _GetRealSize
+.ifdef mega65
+.import _PutChar2
+.endif
+
+.import GetRealSize
 
 .import NormalizeX
 
@@ -53,7 +57,7 @@ CalcDecimal:
 	ldx r3L
 	sta Z45,x
 	ldx currentMode
-	jsr _GetRealSize
+	jsr GetRealSize
 	tya
 	add r3H
 	sta r3H
@@ -87,6 +91,12 @@ DecTabH:
 ;Destroyed: a, x, y, r0, r2 - r10, r12, r13
 ;---------------------------------------------------------------
 _PutDecimal:
+.ifdef mega65
+	tay
+	PushB	CPU_DATA
+	LoadB	CPU_DATA, RAM_64K
+	tya
+.endif
 	jsr CalcDecimal
 .ifdef wheels_size_and_speed ; duplicate load
 	lda r2L
@@ -96,7 +106,7 @@ _PutDecimal:
 	lda r2L
 .endif
 	and #$3f
-.ifndef bsw128
+.if (!.defined(bsw128)) & (!.defined(mega65))
 	sub r3H
 .endif
 	add r11L
@@ -104,7 +114,7 @@ _PutDecimal:
 	bcc @X
 	inc r11H
 @X:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	ldx #r11
 	jsr NormalizeX
 	SubB r3H, r11L
@@ -118,7 +128,14 @@ _PutDecimal:
 	dex
 	bne @2
 @3:	pla
+.ifdef mega65
+	jsr _PutChar2
+.else
 	jsr _PutChar
+.endif
 	dec r0L
 	bne @3
+.ifdef mega65
+	PopB	CPU_DATA
+.endif
 	rts

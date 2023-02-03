@@ -80,7 +80,12 @@ _IRQHandler:
 	inx
 	cpx #32
 	bne @2
+.ifdef mega65
+	PushB	CPU_DATA
+	LoadB	CPU_DATA, IO_IN
+.else
 	START_IO
+.endif
 	lda dblClickCount
 	beq @3
 	dec dblClickCount
@@ -121,7 +126,11 @@ _IRQHandler:
 	jsr CallRoutine
 @X:	lda #1
 	sta grirq
+.ifdef mega65
+	PopB	CPU_DATA
+.else
 	END_IO
+.endif
 .ifdef use2MHz
 	LoadW $fffe, IRQ2Handler
 	LoadB rasreg, $fc
@@ -151,8 +160,12 @@ _IRQHandler:
 	pla
 	tax
 	lda tempIRQAcc
-_NMIHandler:
 	rti
+_NMIHandler:
+	cld
+	sta tempIRQAcc
+	pla
+	jmp (BRKVector)
 .endif
 
 .ifdef use2MHz

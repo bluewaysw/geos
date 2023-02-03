@@ -48,10 +48,14 @@ PrvCharWidth = $880D
 .import GetScanLine
 .import GetRealSize
 .endif
+.import _GetScanLine_HR
+.import _EndScanLine
 
 .global Font_9
 .global FontPutChar
 .global _GetRealSize
+
+.import screenNextLine
 
 .segment "fonts2"
 
@@ -68,7 +72,9 @@ PrvCharWidth = $880D
 ;            a   baseline offset
 ; Destroyed: nothing
 ;---------------------------------------------------------------
+
 .ifndef wheels ; moved
+.ifndef mega65
 _GetRealSize:
 	subv 32
 _GetRealSize2:
@@ -114,6 +120,7 @@ _GetRealSize2:
 @2:	lda baselineOffset
 	rts
 .endif ; bsw128
+.endif
 .endif
 
 Font_1:
@@ -212,12 +219,29 @@ Font_1:
 .endif
 	sta r5H
 	SubB r5H, r1H
+	bcs @11
+	lda	r11H
+	sub	#16
+	sta	r11H
+@11:
 	stx r10H
 	tya
 	pha
-	lda r11H
-	bmi @3
-	CmpW rightMargin, r11
+	lda #%00001000
+	bit r11H
+	bne @3
+	;bmi @3
+	ldx r10H
+        lda r11H
+	and #$0F
+	sta r10H
+	lda rightMargin + 1
+	and #$0F
+	cmp r10H
+	stx r10H
+	bne @3b
+	CmpB rightMargin, r11L
+@3b:
 	bcc Font_16
 @3:	lda currentMode
 	and #SET_ITALIC
@@ -274,15 +298,41 @@ Font_tabH:
 	.hibytes Font_tab
 
 Font_2:
-	ldx r1H
+	lda r1H
+	pha
+	lda r11H
+	lsr
+	lsr
+	lsr
+	lsr
+	ldx #5
+@11:
+	asl r1H
+	rol
+	dex
+	bne @11
+	tay
+	pla
+	sta r1H
+	and #$07
+	ora #$f8
+	tax
+
+	;ldx r1H
 .ifdef bsw128
-	jsr _GetScanLine
+	jsr _GetScanLine_HR
 .else
-	jsr GetScanLine
+	jsr _GetScanLine
 .endif
+	lda leftMargin+1
+	tay
+	and #%00001111
+	sta leftMargin+1
+	lda FontTVar2+1
+	and #%00001111
+	tax
 	lda FontTVar2
-	ldx FontTVar2+1
-	bmi @2
+	;bmi @2
 	cpx leftMargin+1
 	bne @1
 	cmp leftMargin
@@ -292,12 +342,31 @@ Font_2:
 @3:	pha
 	and #%11111000
 	sta r4L
+	sty leftMargin+1
 .ifdef bsw128
 	bbsf 7, graphMode, @LE319
 .endif
+.ifdef mega65
+	ldy #$00
+	sty r1L
+	clc
+	adc r5L
+	sta r5L
+	sta r6L
+	bcc @4
+	inx
+@4:
 	cpx #0
-	bne @4
-	cmp #$c0
+	beq @5
+	dex
+	inc r5H
+	inc r6H
+	bra @4
+@5:
+.else
+	cpx #0
+	bne @4      ; jump if above 255
+	cmp #$c0    ; below
 	bcc @6
 @4:	subv $80
 	pha
@@ -308,6 +377,7 @@ Font_2:
 	inc r6H
 @5:	pla
 @6:	sta r1L
+.endif
 .ifdef bsw128
 	bra @LE333
 @LE319:	ldy #$00
@@ -327,8 +397,9 @@ Font_2:
 	inc r6H
 .endif
 @LE333:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	lda FontTVar2+1
+	and #%00001111
 	lsr a
 	sta r7L
 	lda FontTVar2
@@ -347,7 +418,9 @@ Font_2:
 	ror a
 	lsr a
 .else
-	MoveB FontTVar2+1, r3L
+	lda FontTVar2+1
+	and #%00001111
+	sta r3L
 	lsr r3L
 	lda FontTVar2
 	ror
@@ -379,12 +452,20 @@ Font_2:
 	sta r9L
 	ldy r11L
 	dey
-	ldx rightMargin+1
-	lda rightMargin
-	cpx r11H
+
+	lda rightMargin+1
+	and #$0F
+	sta r4H
+
+	lda r11H
+	and #$0F
+	cmp r4H
 	bne @8
-	cmp r11L
-@8:	bcs @9
+	lda r11L
+	cmp rightMargin
+@8:	bcc @9
+	;beq @9
+	lda rightMargin
 	tay
 @9:	tya
 	and #%00000111
@@ -424,7 +505,7 @@ Font_2:
 	add r12L
 	tax
 	lda Font_tab2,x
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	adc #<base
 .else
 	addv <base
@@ -437,7 +518,7 @@ Font_2:
 	ldy #<FontSH5
 @E:	sta r12H
 	sty r12L
-.ifndef bsw128
+.if !(.defined(bsw128) || .defined(mega65))
 clc_rts:
 	clc
 .endif
@@ -564,7 +645,7 @@ Font_3:
 @5:	CmpW rightMargin, FontTVar2
 	bcc @6
 	CmpW leftMargin, r11
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	bcc clc_rts
 .else
 	rts
@@ -572,7 +653,7 @@ Font_3:
 @6:
 	sec
 	rts
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 clc_rts:
 	clc
         rts
@@ -883,10 +964,17 @@ FontPutChar:
 	nop
 .endif
 	tay
+.ifdef mega65
+	PushB	CPU_DATA
+	LoadB	CPU_DATA, RAM_64K
+.endif
 	PushB r1H
+	PushB r11H
 	tya
 	jsr Font_1 ; put pointer in r13
-	bcs @9 ; return
+	bcc @9_ ; return
+	jmp @9
+@9_:
 .ifdef bsw128
 	jsr _TempHideMouse
 	bbrf 7, graphMode, @1
@@ -906,30 +994,102 @@ FontPutChar:
 @4:	jsr Font_6
 @5:	plp
 	bcs @7
+	PushB r10L
+	lda leftMargin+1
+	and #%11110000
+	sta r10L
+	lda r11H
+	and #%11110000
+	cmp r10L
+	bne @7_
 	lda r1H
 	cmp windowTop
-	bcc @7
+@7_:
+	bcc @7__
+	lda rightMargin+1
+	and #%11110000
+	sta r10L
+	lda r11H
+	and #%11110000
+	cmp r10L
+	bne @6_
+	lda r1H
 	cmp windowBottom
+@6_:
 	bcc @6
-	bne @7
-@6:	jsr Font_4
-@7:	inc r5L
+	bne @7__
+@6:	PopB r10L
+	jsr Font_4
+	bra @7
+@7__:	PopB r10L
+
+@7:
+	inc r5L         ; same byte next line
 	inc r6L
 	lda r5L
-	and #%00000111
-	bne @8
+.ifdef mega65
+	bne @89
 	inc r5H
 	inc r6H
-	AddVB $38, r5L
+	bra @88
+@89:
+.endif
+	and #%00000111
+	bne @8
+.ifdef mega65
+@88:
+@99:
+	clc
+	lda screenNextLine+1
+	adc r5H
+	sta r5H
+	clc
+	lda screenNextLine+1
+	adc r6H
+	sta r6H
+
+	clc
+	lda screenNextLine
+	adc r5L
+	sta r5L
+@98:
 	sta r6L
 	bcc @8
 	inc r5H
 	inc r6H
+
+.else
+	inc r5H         ; end of block, we need to add a line
+	inc r6H
+	AddVB $38, r5L  ; 64-8
+	sta r6L
+
+	bcc @8
+	inc r5H
+	inc r6H
+.endif
+
 @8:	inc r1H
+	bne @8b
+	lda r11H
+	add #16
+	sta r11H
+@8b:
 	dec r10H
-	bne @1
-@9:	PopB r1H
-	rts
+	beq @9
+	jmp @1
+@9:	lda  r11H
+	and	#$0F
+	sta	r11H
+	pla
+	and	#$F0
+	ora	r11H
+	sta	r11H
+	PopB r1H
+.ifdef mega65
+	PopB	CPU_DATA
+.endif
+	jmp _EndScanLine
 
 .ifdef bsw128
 ; FontPutChar for 80 column mode

@@ -86,7 +86,7 @@ FontGt4_2:
 	beq FontGt2_1
 .endif
 
-.ifndef bsw128
+.if !(.defined(bsw128))
 
 .ifndef wheels
 FontTVar1:

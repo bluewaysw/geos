@@ -24,8 +24,14 @@
 .import menuLimitTabH
 .import menuOptNumber
 .import _InvertRectangle
+.ifdef mega65
+.import __io_InvertRectangle
+.endif
 .import _HorizontalLine
 .import _VerticalLine
+.ifdef mega65
+.import __io_VerticalLine
+.endif
 
 .import Ddec
 .import Rectangle
@@ -133,7 +139,11 @@ LEFAE:	rts
 	lda menuLimitTabH,x
 	sta r4H
 	lda #menuVSeparator
+.ifdef mega65
+	jsr __io_VerticalLine
+.else
 	jsr _VerticalLine
+.endif
 	dec r2L
 	bne @1
 .endif
@@ -358,7 +368,11 @@ Menu_8:
 MenuDoInvert:
 	PushB dispBufferOn
 	LoadB dispBufferOn, ST_WR_FORE
+.ifdef mega65
+	jsr __io_InvertRectangle
+.else
 	jsr _InvertRectangle
+.endif
 	PopB dispBufferOn
 	rts
 .endif

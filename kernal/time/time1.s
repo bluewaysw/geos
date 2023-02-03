@@ -65,7 +65,8 @@ _DoUpdateTime:
 	beq @5
 	jmp (alarmTmtVector)
 @5:	bbrf 6, alarmSetFlag, @6
-	jsr DoClockAlarm
+	; TODO
+	;jsr DoClockAlarm
 @6:	cli
 	rts
 
@@ -142,6 +143,8 @@ ConvertBCD:
 @2:	rts
 
 DoClockAlarm:
+; TODO, bring back to life in the underlay
+.if 0
 	lda alarmWarnFlag
 	bne @3
 .ifdef bsw128
@@ -167,5 +170,6 @@ DoClockAlarm:
 	lda #$1e
 	sta alarmWarnFlag
 	dec alarmSetFlag
-@3:	rts
-
+@3:
+	rts
+	.endif

@@ -14,6 +14,10 @@
 .import DoDlgBox
 .import Ddec
 .import EnterDeskTop
+.import UnmapUnderlay
+.import DebugMain
+.import _MapLow
+.import tempIRQAcc
 
 ; syscall
 .global _Panic
@@ -80,7 +84,7 @@ SwapMemory:
 
 SwapRAMArgs:
 	.word DISK_BASE ; CBM addr
-	.word $c000     ; REU addr
+	.word dum$c000     ; REU addr
 	.word 0         ; count
 	.byte 0         ; REU bank
 
@@ -91,7 +95,7 @@ StackPtr:
 
 	.byte 0, 0, 0 ; PADDING
 
-.else
+.else ; gateway
 ;---------------------------------------------------------------
 ; Panic                                                   $C2C2
 ;
@@ -99,6 +103,48 @@ StackPtr:
 ; Return:    does not return
 ;---------------------------------------------------------------
 _Panic:
+.ifdef debugger
+
+  pha   ; flags
+  lda tempIRQAcc
+  pha
+  txa
+  pha
+  tya
+  pha
+  tza
+  pha
+
+  lda lowMap
+  pha
+  lda lowMapBnk
+  pha
+
+  lda #$80
+  ldx #0
+  jsr _MapLow
+
+  ; unmap to $6000
+  jsr DebugMain
+
+  pla
+  tax
+  pla
+  jsr _MapLow 
+
+  pla
+  taz
+  pla
+  tay
+  pla
+  tax
+  pla
+
+  rti
+
+.else ; debugger
+	inc $d020
+	bra _Panic
 .ifdef wheels
 	sec
 	pla
@@ -106,7 +152,16 @@ _Panic:
 	tay
 	pla
 	sbc #0
-.else
+.else ; wheels
+.ifdef mega65
+	;LoadB CPU_DATA, IO_IN
+@13:
+	;lda countHighMap
+	;beq @12
+	;jsr UnmapUnderlay
+	;bra @13
+@12:
+.endif ; mega65
 .ifdef bsw128
 	pla
 	pla
@@ -116,37 +171,37 @@ _Panic:
 	pla
 	pla
 	pla
-.endif
-	PopW r0
+.endif ; bsw128
+	;PopW r0
 .ifdef bsw128
 	ldx #r0
 	jsr Ddec
 	ldx #r0
 	jsr Ddec
-.else
+.else ; bsw128
 	SubVW 2, r0
-.endif
-	lda r0H
-.endif
-	ldx #0
+.endif ; bsw128
+	;lda r0H
+.endif ; mega65
+	;ldx #0
 	jsr @1
 .ifdef wheels
 	tya
-.else
+.else ; wheels
 	lda r0L
-.endif
+.endif ; wheels
 	jsr @1
 	LoadW r0, _PanicDB_DT
 	jsr DoDlgBox
 .ifdef wheels
 	jmp EnterDeskTop
-.endif
-@1:	pha
-	lsr
-	lsr
-	lsr
-	lsr
-	jsr @2
+.endif ; wheels
+@1:	;pha
+	;lsr
+	;lsr
+	;lsr
+	;lsr
+	;jsr @2
 	inx
 	pla
 	and #%00001111
@@ -160,7 +215,6 @@ _Panic:
 @3:	addv '0'+7
 @4:	sta _PanicAddr,x
 	rts
-
 .segment "panic2"
 
 _PanicDB_DT:
@@ -169,15 +223,15 @@ _PanicDB_DT:
 	.word _PanicDB_Str
 .ifdef wheels
 	.byte DBSYSOPV
-.endif
+.endif ; wheels
 	.byte NULL
 
 .segment "panic3"
 
 _PanicDB_Str:
-	.byte BOLDON
+	;.byte BOLDON
 .ifdef wheels_size
-	.byte "Error near "
+	;.byte ""
 .else
 	.byte "System error near "
 .endif
@@ -187,3 +241,5 @@ _PanicDB_Str:
 _PanicAddr:
 	.byte "xxxx"
 	.byte NULL
+
+.endif ; debugger

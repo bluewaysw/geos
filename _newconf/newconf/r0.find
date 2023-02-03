@@ -1,0 +1,10 @@
+#!/bin/sh
+
+for a in L043E L0616 L0672 L0739 L073E L0911 L0E19 L0FA0 L0FB3 
+do
+	grep $a r0.labels
+done
+#grep L043E r0.labels
+#grep L0616 r0.labels
+#grep L0E19 r0.labels
+

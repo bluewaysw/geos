@@ -4,6 +4,9 @@
 
 ;.INCLUDE "c65.inc"
 
+.include "const.inc"
+.include "geossym.inc"
+
 .SETCPU "4510"
 
 .SEGMENT "LOADADDR"
@@ -32,6 +35,7 @@ next:	.WORD	0
 
 .CODE
 .PROC main
+
 	SEI
 	CLD
 	LDA	#0
@@ -44,29 +48,147 @@ next:	.WORD	0
 	TYS	; just to be sure: stack at $100
 	SEE	; just to be sure: 8 bit stack
 	EOM
+
+.if 0
+	; 10113/10114 clear device numbers of the f011 drive, we will
+	; manage those independent of dos
+	lda	#$10
+	sta 	$02
+	lda 	#$01
+	sta 	$03
+	lda 	#$01
+	sta 	$04
+	lda	#$00
+	sta 	$05
+
+	lda	#$18
+	LDZ	#3
+	EOM
+	sta 	($02), Z
+	lda 	#$19
+	INZ
+	EOM
+	sta 	($02), Z
+.endif
 	; Just to be sure, enable newVic mode, to access eg VIC-3 register $30
 	; We don't need Mega65 fast mode here at any price, let's do that
 	; later maybe, in c65/start.s
-	LDA	#$A5
-	STA	$D02F
-	LDA	#$96
-	STA	$D02F
 	; CPU port stuff
 	LDA	#$2F
 	STA	0
 	LDA	#$37
 	STA	1
+
+	LDA	#C65_VIC_INIT1
+	STA	$D02F
+	LDA	#C65_VIC_INIT2
+	STA	$D02F
+
+	LDA	#C65_VIC_INIT1
+	STA	$D02F
+	LDA	#C65_VIC_INIT2
+	STA	$D02F
+@aaa:
+;	inc $d020
+;	jmp @aaa
+
 	; Various VIC register stuffs
 	STZ	$D030	; turn ROM mappings / etc OFF
+	STZ $D031
 	STZ	$D019	; disable VIC interrupts
 	STZ	$D01A
+
+	;lda	#$80	; NTSC
+	lda	#$00	; PAL
+	sta	$d06f
+
+	; disable HDMI audio
+	lda	#0
+	sta	$d61a
+
+
+; not working with xemu
+; disable badline emulation
+	LDA	#$04
+	sta	$D710
+	lda	$D05D
+	and	#%10111111
+	;ora	#%01000000
+	sta	$D05D
+
+	LDA   	$D054	;40 mhz
+	ORA   	#$40
+	STA   	$D054
+	lda   	#$40
+	sta	$d031
+
+  ; force 1351 emulation
+	;lda	#5
+	;sta	$D61B
+
+	 ; Set screen ram that has 100x60 cells x 2 bytes per cell = 12,000 bytes of colour
+	 ; information for bitmap mode.
+	 ; First byte is foreground colour (8-bit) and second byte is background colour (also 8-bit),
+	 ; so each 8x8 cell can still have only 2 colours, but they can be chosen from the whole
+	 ; palette.
+	 LDA #<$2000
+	 STA $D060
+	 LDA #>$2000
+	 STA $D061
+	 LDA #<1
+	 STA $D062
+	 LDA #>1
+	 STA $D063
+	 ; Set bitmap data to somewhere that has 100x60 x 8 = 48,000 bytes of RAM.
+	 ; (We are using 2nd bank of 64KB for this)
+	 ; NOTE: This can't actually be set freely (yet), but will be on 16KB boundaries.
+	 LDA #<$4000
+	 STA $D068
+	 LDA #>$4000
+	 STA $D069
+	 LDA #1
+	 STA $D06A
+
+	 ; Setup foreground/background colours
+.if 1
+	 LDA #<$e000
+	 STA $FB
+	 LDA #>$e000
+	 STA $FC
+	 LDA #<4
+	 STA $FD
+	 LDA #>4
+	 STA $FE
+
+	 LDX #100
+	 LDZ #$00
+	 LDA #(DKGREY << 4)+LTGREY
+colloop:
+
+	 NOP
+	 STA ($FB),Z
+	 INZ
+	 DEX
+	 BNE cc1
+	 LDX #100
+cc1:
+	 CPZ #$00
+	 bne colloop
+	 inc $fc
+	 ldy $fc
+	 cpy #$40
+	 bne colloop
+.endif
 	LDA	#$30	; full RAM for uncrunching
 	STA	1
 	.IMPORT	uncruncher
 	JSR	uncruncher
-	STZ	53280
-	STZ	53281
+	;STZ	53280
+	;STZ	53281
+
 	JMP	$5000
+
+;	========================
 .ENDPROC
 
 

@@ -33,7 +33,14 @@ _EnterDT_DB:
 .global JmpR0Ind
 .import IncR0
 IncR0JmpInd:
+.ifdef mega65
+	inc r0L
+	bne @1
+	inc r0H
+@1:
+.else
 	jsr IncR0
+.endif
 JmpR0Ind:
 	jmp (r0)
 .endif

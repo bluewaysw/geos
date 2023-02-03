@@ -17,7 +17,9 @@
 .segment "load1c"
 
 DeskTopName:
-.ifdef bsw128
+.ifdef mega65
+	.byte "65 DESKTOP", 0
+.elseif .defined(bsw128)
 	.byte "128 DESKTOP", 0
 .elseif .defined(gateway)
 	.byte "GATEWAY", 0

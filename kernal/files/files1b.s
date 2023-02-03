@@ -99,7 +99,11 @@ DoWriteFile:
 .ifdef bsw128
 	LoadB config, CIOIN
 .else
+.ifdef mega65
+	LoadB CPU_DATA, IO_IN
+.else
 	LoadB CPU_DATA, KRNL_IO_IN
+.endif
 .endif
 .ifdef wheels
 	jsr WriteBlock

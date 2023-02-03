@@ -1,0 +1,36 @@
+# This is a comment. It extends to the end of the line
+        GLOBAL {
+            OUTPUTNAME      "r1.asm";
+            INPUTNAME       "configure.cvt.record.1";
+            STARTADDR       $13b1;
+            PAGELENGTH      0;                  # No paging
+            CPU             "6502";
+            COMMENTS		4;
+            
+        };
+        
+#ASMINC	{		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/const.inc";};
+ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/diskdrv.inc";};
+ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/geossym2.inc";};
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/inputdrv.inc";};
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/printdrv.inc";};
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/dio.inc";};
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/geosmac.ca65.inc";};
+ASMINC {		FILE "geossym.inc";};
+ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/jumptab.inc";};
+
+# One segment for the whole stuff
+SEGMENT { START $13b1;  END   $FFFF; NAME "record1"; };
+RANGE { START $1552; END   $158F; TYPE TEXTTABLE; };
+RANGE { START $1662; END   $167b; TYPE TEXTTABLE; };
+RANGE { START $179F; END   $17b2; TYPE TEXTTABLE; };
+RANGE { START $17d8; END   $17e3; TYPE TEXTTABLE; };
+RANGE { START $18a5; END   $18b5; TYPE TEXTTABLE; };
+RANGE { START $190F ; END   $198F; TYPE TEXTTABLE; };
+RANGE { START $19E4 ; END   $1A36; TYPE TEXTTABLE; };
+
+RANGE { START $1A4B ; END   $1A73; TYPE TEXTTABLE; };
+RANGE { START $1BC0 ; END   $1C37; TYPE TEXTTABLE; };
+RANGE { START $1D61 ; END   $1D9B; TYPE TEXTTABLE; };
+RANGE { START $1F42 ; END   $1FA1; TYPE TEXTTABLE; };
+

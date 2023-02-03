@@ -1,0 +1,11 @@
+HEADER AUTO_EXEC "CONFIGURE" "128 Config" "V2.1" {
+    author    "BSW/Jim Collette"
+    info      "Allows varying disk configurations:  1541, 1571, 1581 & RAM disks supported."
+    date      23 12 91 22 54
+    structure VLIR
+}
+
+MEMORY {
+    overlaysize 0x1000
+    overlaynums 0,1,2,3,4,5,6
+}

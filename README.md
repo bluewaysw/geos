@@ -1,8 +1,41 @@
 # GEOS Source Code (enhanced to support MEGA65 capabilities)
 
-by Berkeley Softworks, reverse engineered by *Maciej Witkowiak*, *Michael Steil*.
+by Berkeley Softworks, reverse engineered by *Maciej Witkowiak*, *Michael Steil*, [MEGA65](https://www.mega65.org/) version by *Falk Rehwagen*.
 
-[MEGA65](https://www.mega65.org/) version initiated and maintained by *Falk Rehwagen*. (Source code release is in preparation and will become available here)
+
+## MEGA65 GEOS Development
+
+### Goals
+
+* **Baseline**
+	* Target a GEOS 128 compatible version of GEOS
+	* Keep compatibility of GEOS 64 and GEOS 128 applications as high as possible
+	* Native support of MEGA65 hardware capabilities
+		* video modes, high resolutions
+		* all drives (SD, real floppy, serial connection)
+		* chip RAM and attic RAM capacity
+	* Built-in Debugger 
+	* Support application specific serial number, so running application installed on another GEOS disk becomes more easy
+
+
+* **Stretch**
+	* Full color support for selected screen modes
+	* Symbolic debugger, GeoDebugger compatible
+
+
+* **Moonshot**
+	* Ad-hoc compatibility for Wheels or MegaPatch3 APIs
+	* Double resolution rendering
+	* **M65N** application support
+
+
+### Status
+The status of the MEGA65 version of GEOS as present on the master branch is considered early **BETA** and still under development. Please use with care!
+
+Learn more details about the GEOS MEGA65 implementation (soon) in the [Technical Documentation](MEGA65.md) section.
+
+We are on https://bluewaysw.slack.com/ for more efficient collaboration. Please register at https://blog.bluewaysw.de for MyGEOS and use the Slack section and receive access to our developer community. Welcome!
+
 
 ## Description
 
@@ -173,6 +206,16 @@ The GEOS KERNAL has a quite complicated memory layout:
 * $C100-$C2E5: KERNAL Jump Table
 * $C2E6-$FFFF: KERNAL
 
+For C65/MEGA65 there is a different/specific layout:
+
+* $9000-$9FFF: KERNAL ("lokernal")
+* $A000-$BFFF: KERNEL Underlay (graphics area mapped out as needed)
+* $C000-$C01A: KERNAL Header
+* $C01B-$C0FF: KERNAL
+* $C100-$C2E5: KERNAL Jump Table
+* $C2E6-$FFFF: KERNAL
+* $D000-$DFFF: I/O area on by default (hidden for calling methods)
+
 The header and the jump table must be at $C000 and $C100, respectively. Together with the graphics bitmap at $A000, this partitions the KERNAL into four parts: lokernal, below header, between header and jump table, and above jump table.
 
 The linker config file positions the segments from the source files into these parts. If the code of any segment changes, the header and the jump table will remain at their positions. If a part overruns, the linker will report and error, and you can consult the `kernal.map` output file to find out where to best put the extra code.
@@ -248,7 +291,12 @@ The following command line will build the `bsw` and `wheels` variants of GEOS an
 
 For the underlying work on GEOS, please respect its license.
 
+We open-sourced and included the original TopDesk with permission by Jürgen Heinisch from Geos-User-Club. 
+
+Configure application source is based on reverse-engineering work from an site that is not online anymore, referrenced [here](https://www.lyonlabs.org/commodore/onrequest/geos/index.html). 
+
 The intellectual property added by the reverse-engineering and the subsequent improvements is in the public domain, but the authors request to be credited.
+
 
 ## Authors
 
@@ -257,3 +305,5 @@ GEOS was initially developed by Berkeley Softworks in 1985-1988.
 The original reverse-engineering was done by [Maciej  'YTM/Elysium' Witkowiak](mailto:ytm@elysium.pl) in 1999-2002, targeted the ACME assembler and was released as [GEOS 2000](https://github.com/ytmytm/c64-GEOS2000), which included several code optimizations and code layout differences.
 
 In 2015/2016, [Michael Steil](mailto:mist64@mac.com) ported the sources to cc65, reconstructed the original code layout, did some more reverse-engineering and cleanups, and modularized the code aggressively.
+
+Based on the fabulous work above, in 2017-2023 *Falk Rehwagen* adapted the implementation to support the [MEGA65](https://www.mega65.org/) platform.

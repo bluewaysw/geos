@@ -65,38 +65,12 @@
 
 ; load.s
 .import _GetFile
-.import _LdApplic
-.import _LdDeskAcc
 .import _LdFile
-.import _RstrAppl
 
 ; filesys.s
-.import _AppendRecord
-.import _CloseRecordFile
-.import _DeleteFile
-.import _DeleteRecord
-.import _FastDelFile
-.import _FindFTypes
-.import _FindFile
-.import _FollowChain
-.import _FreeFile
-.import _GetFHdrInfo
 .import _GetPtrCurDkNm
-.import _InsertRecord
-.import _NextRecord
-.import _OpenRecordFile
-.import _PointRecord
-.import _PreviousRecord
-.import _ReadByte
 .import _ReadFile
-.import _ReadRecord
-.import _RenameFile
-.import _SaveFile
-.import _SetDevice
-.import _SetGDirEntry
-.import _UpdateRecordFile
 .import _WriteFile
-.import _WriteRecord
 
 ; memory.s
 .import _CmpFString
@@ -154,8 +128,6 @@
 
 ; ...
 .import __IsMseInRegion
-.import __CRC
-.import __GetRandom
 .import __DSdiv
 .import __Ddiv
 .import __DMult
@@ -168,7 +140,7 @@
 .import _ImprintRectangle
 .import _BitmapUp
 .import _TestPoint
-.import _GetScanLine
+.import _GetScanLineExt
 .import _DrawPoint
 .import _DrawLine
 .import _RecoverRectangle
@@ -186,7 +158,6 @@
 .import _InitTextPrompt
 .import _GetString
 .import _UseSystemFont
-.import _BldGDirEntry
 .import _GetRealSize
 .import _ColorRectangle
 .import _ColorCard
@@ -200,8 +171,72 @@
 .import _SetMsePic
 .import _TempHideMouse
 .import _NormalizeX
+.ifdef mega65
+.import _NormalizeY
+.import _map_FollowChain
+.import _map_FindFTypes
+.import _map_FindFile
+.import _map_SetDevice
+.import _map_GetFHdrInfo
+.import _map_LdDeskAcc
+.import _map_RstrAppl
+.import _map_LdApplic
+.import _map_SaveFile
+.import _map_SetGDirEntry
+.import _map_BldGDirEntry
+.import _map_DeleteFile
+.import _map_FreeFile
+.import _map_FastDelFile
+.import _map_RenameFile
+.import _map_OpenRecordFile
+.import _map_CloseRecordFile
+.import _map_UpdateRecordFile
+.import _map_NextRecord
+.import _map_PreviousRecord
+.import _map_PointRecord
+.import _map_DeleteRecord
+.import _map_InsertRecord
+.import _map_AppendRecord
+.import _map_ReadRecord
+.import _map_WriteRecord
+.import _map_ReadByte
+.import _map__CRC
+.import _map_SetNewMode
+.import _map_GetRealSize
+.import _map_IsMseInRegion
+.import _map_SetMsePic
+.else
+.import _InsertRecord
+.import _NextRecord
+.import _OpenRecordFile
+.import _PointRecord
+.import _PreviousRecord
+.import _ReadByte
+.import _AppendRecord
+.import _CloseRecordFile
+.import _DeleteFile
+.import _DeleteRecord
+.import _FastDelFile
+.import _FindFTypes
+.import _FindFile
+.import _FollowChain
+.import _FreeFile
+.import _GetFHdrInfo
+.import _LdApplic
+.import _LdDeskAcc
+.import _SetDevice
+.import _ReadRecord
+.import _RenameFile
+.import _SaveFile
+.import _SetGDirEntry
+.import _UpdateRecordFile
+.import _WriteRecord
+.import _RstrAppl
+.import _BldGDirEntry
+.import __CRC
+.endif
 
-
+.import _GetRandom
 .global InterruptMain
 .global InitProcesses
 .global RestartProcess
@@ -295,8 +330,8 @@
 .global CRC
 .global LdFile
 .global EnterTurbo
-.global LdDeskAcc
 .global ReadBlock
+.global LdDeskAcc
 .global LdApplic
 .global WriteBlock
 .global VerWriteBlock
@@ -364,12 +399,17 @@
 .global SwapRAM
 .global VerifyRAM
 .global DoRAMOp
+.global SetNewMode
+
+.if .defined(bsw128) || .defined(mega65)
+.global NormalizeX
+.global NormalizeY
+.endif
 
 .ifdef bsw128
 .global TempHideMouse
 .global SetMsePic
 .global SetNewMode
-.global NormalizeX
 .global MoveBData
 .global SwapBData
 .global VerifyBData
@@ -379,6 +419,23 @@
 .global SetColorMode
 .global ColorCard
 .global ColorRectangle
+.endif
+
+.ifdef mega65
+.import __io_HorizontalLine
+.import __io_InvertLine
+.import __io_RecoverLine
+.import __io_VerticalLine
+.import __io_Rectangle
+.import __io_InvertRectangle
+.import __io_RecoverRectangle
+.import __io_ImprintRectangle
+.import __io_FrameRectangle
+.import __io_GraphicsString
+.import __io_SetPattern
+.import __io_DrawLine
+.import __io_DrawPoint
+.import __io_TestPoint
 .endif
 
 .ifdef wheels
@@ -417,33 +474,69 @@ FreezeProcess:
 UnfreezeProcess:
 	jmp _UnfreezeProcess
 HorizontalLine:
+.ifdef mega65
+	jmp __io_HorizontalLine
+.else
 	jmp _HorizontalLine
+.endif
 InvertLine:
+.ifdef mega65
+	jmp __io_InvertLine
+.else
 	jmp _InvertLine
+.endif
 RecoverLine:
+.ifdef mega65
+	jmp __io_RecoverLine
+.else
 	jmp _RecoverLine
+.endif
 VerticalLine:
+.ifdef mega65
+	jmp __io_VerticalLine
+.else
 	jmp _VerticalLine
+.endif
 Rectangle:
+.ifdef mega65
+	jmp __io_Rectangle
+.else
 	jmp _Rectangle
+.endif
 FrameRectangle:
+.ifdef mega65
+	jmp __io_FrameRectangle
+.else
 	jmp _FrameRectangle
+.endif
 InvertRectangle:
+.ifdef mega65
+	jmp __io_InvertRectangle
+.else
 	jmp _InvertRectangle
+.endif
 RecoverRectangle:
+.ifdef mega65
+	jmp __io_RecoverRectangle
+.else
 	jmp _RecoverRectangle
+.endif
 DrawLine:
-	jmp _DrawLine
+	jmp __io_DrawLine
 DrawPoint:
-	jmp _DrawPoint
+	jmp __io_DrawPoint
 GraphicsString:
+.ifdef mega65
+	jmp __io_GraphicsString
+.else
 	jmp _GraphicsString
+.endif
 SetPattern:
 	jmp _SetPattern
 GetScanLine:
-	jmp _GetScanLine
+	jmp _GetScanLineExt
 TestPoint:
-	jmp _TestPoint
+	jmp __io_TestPoint
 BitmapUp:
 	jmp _BitmapUp
 PutChar:
@@ -491,7 +584,7 @@ InitRam:
 PutDecimal:
 	jmp _PutDecimal
 GetRandom:
-	jmp __GetRandom
+	jmp _GetRandom
 MouseUp:
 	jmp _MouseUp
 MouseOff:
@@ -519,7 +612,11 @@ i_BitmapUp:
 i_PutString:
 	jmp _i_PutString
 GetRealSize:
+.ifdef mega65
+	jmp _map_GetRealSize
+.else
 	jmp _GetRealSize
+.endif
 i_FillRam:
 	jmp _i_FillRam
 i_MoveData:
@@ -563,11 +660,23 @@ PutBlock:
 SetGEOSDisk:
 	jmp (_SetGEOSDisk)
 SaveFile:
+.ifdef mega65
+	jmp _map_SaveFile
+.else
 	jmp _SaveFile
+.endif
 SetGDirEntry:
+.ifdef mega65
+	jmp _map_SetGDirEntry
+.else
 	jmp _SetGDirEntry
+.endif
 BldGDirEntry:
+.ifdef mega65
+	jmp _map_BldGDirEntry
+.else
 	jmp _BldGDirEntry
+.endif
 GetFreeDirBlk:
 	jmp (_GetFreeDirBlk)
 WriteFile:
@@ -579,31 +688,59 @@ ReadFile:
 SmallPutChar:
 	jmp _SmallPutChar
 FollowChain:
+.ifdef mega65
+	jmp _map_FollowChain
+.else
 	jmp _FollowChain
+.endif
 GetFile:
 	jmp _GetFile
 FindFile:
+.ifdef mega65
+	jmp _map_FindFile
+.else
 	jmp _FindFile
+.endif
 CRC:
+.ifdef mega65
+	jmp _map__CRC
+.else
 	jmp __CRC
+.endif
 LdFile:
 	jmp _LdFile
 EnterTurbo:
 	jmp (_EnterTurbo)
 LdDeskAcc:
+.ifdef mega65
+	jmp _map_LdDeskAcc
+.else
 	jmp _LdDeskAcc
+.endif
 ReadBlock:
 	jmp (_ReadBlock)
 LdApplic:
+.ifdef mega65
+	jmp _map_LdApplic
+.else
 	jmp _LdApplic
+.endif
 WriteBlock:
 	jmp (_WriteBlock)
 VerWriteBlock:
 	jmp (_VerWriteBlock)
 FreeFile:
+.ifdef mega65
+	jmp _map_FreeFile
+.else
 	jmp _FreeFile
+.endif
 GetFHdrInfo:
+.ifdef mega65
+	jmp _map_GetFHdrInfo
+.else
 	jmp _GetFHdrInfo
+.endif
 EnterDeskTop:
 	jmp _EnterDeskTop
 StartAppl:
@@ -613,15 +750,31 @@ ExitTurbo:
 PurgeTurbo:
 	jmp (_PurgeTurbo)
 DeleteFile:
+.ifdef mega65
+	jmp _map_DeleteFile
+.else
 	jmp _DeleteFile
+.endif
 FindFTypes:
+.ifdef mega65
+	jmp _map_FindFTypes
+.else
 	jmp _FindFTypes
+.endif
 RstrAppl:
+.ifdef mega65
+	jmp _map_RstrAppl
+.else
 	jmp _RstrAppl
+.endif
 ToBASIC:
 	jmp _ToBASIC
 FastDelFile:
+.ifdef mega65
+	jmp _map_FastDelFile
+.else
 	jmp _FastDelFile
+.endif
 GetDirHead:
 	jmp (_GetDirHead)
 PutDirHead:
@@ -629,13 +782,21 @@ PutDirHead:
 NxtBlkAlloc:
 	jmp (_NxtBlkAlloc)
 ImprintRectangle:
+.ifdef mega65
+	jmp __io_ImprintRectangle
+.else
 	jmp _ImprintRectangle
+.endif
 i_ImprintRectangle:
 	jmp _i_ImprintRectangle
 DoDlgBox:
 	jmp _DoDlgBox
 RenameFile:
+.ifdef mega65
+	jmp _map_RenameFile
+.else
 	jmp _RenameFile
+.endif
 InitForIO:
 	jmp (_InitForIO)
 DoneWithIO:
@@ -653,29 +814,73 @@ CmpFString:
 FirstInit:
 	jmp _FirstInit
 OpenRecordFile:
+.ifdef mega65
+	jmp _map_OpenRecordFile
+.else
 	jmp _OpenRecordFile
+.endif
 CloseRecordFile:
+.ifdef mega65
+	jmp _map_CloseRecordFile
+.else
 	jmp _CloseRecordFile
+.endif
 NextRecord:
+.ifdef mega65
+	jmp _map_NextRecord
+.else
 	jmp _NextRecord
+.endif
 PreviousRecord:
+.ifdef mega65
+	jmp _map_PreviousRecord
+.else
 	jmp _PreviousRecord
+.endif
 PointRecord:
+.ifdef mega65
+	jmp _map_PointRecord
+.else
 	jmp _PointRecord
+.endif
 DeleteRecord:
+.ifdef mega65
+	jmp _map_DeleteRecord
+.else
 	jmp _DeleteRecord
+.endif
 InsertRecord:
+.ifdef mega65
+	jmp _map_InsertRecord
+.else
 	jmp _InsertRecord
+.endif
 AppendRecord:
+.ifdef mega65
+	jmp _map_AppendRecord
+.else
 	jmp _AppendRecord
+.endif
 ReadRecord:
+.ifdef mega65
+	jmp _map_ReadRecord
+.else
 	jmp _ReadRecord
+.endif
 WriteRecord:
+.ifdef mega65
+	jmp _map_WriteRecord
+.else
 	jmp _WriteRecord
+.endif
 SetNextFree:
 	jmp (_SetNextFree)
 UpdateRecordFile:
+.ifdef mega65
+	jmp _map_UpdateRecordFile
+.else
 	jmp _UpdateRecordFile
+.endif
 GetPtrCurDkNm:
 	jmp _GetPtrCurDkNm
 PromptOn:
@@ -693,11 +898,19 @@ BitmapClip:
 FindBAMBit:
 	jmp (_FindBAMBit)
 SetDevice:
+.ifdef mega65
+	jmp _map_SetDevice
+.else
 	jmp _SetDevice
+.endif
 IsMseInRegion:
-	jmp __IsMseInRegion
+	jmp _map_IsMseInRegion
 ReadByte:
+.ifdef mega65
+	jmp _map_ReadByte
+.else
 	jmp _ReadByte
+.endif
 FreeBlock:
 	jmp (_FreeBlock)
 ChangeDiskDevice:
@@ -782,6 +995,51 @@ ColorCard:
 ColorRectangle:
 	jmp _ColorRectangle
 
+.elseif .defined(mega65)
+
+.macro UNIMPLEMENTED
+	brk
+	nop
+	nop
+.endmacro
+
+.macro UNIMPLEMENTED_NO_ACTION
+	rts
+	nop
+	nop
+.endmacro
+
+; C128 syscalls
+TempHideMouse:
+	UNIMPLEMENTED_NO_ACTION
+SetMsePic:
+	jmp _map_SetMsePic
+SetNewMode:
+.import _SetNewMode
+	jmp _map_SetNewMode
+NormalizeX:
+	jmp _NormalizeX
+MoveBData:
+	jmp _MoveBData
+SwapBData:
+	UNIMPLEMENTED
+VerifyBData:
+	UNIMPLEMENTED
+DoBOp:
+	UNIMPLEMENTED
+AccessCache:
+	UNIMPLEMENTED
+HideOnlyMouse:
+	UNIMPLEMENTED_NO_ACTION
+SetColorMode:
+	UNIMPLEMENTED
+ColorCard:
+	UNIMPLEMENTED
+ColorRectangle:
+	UNIMPLEMENTED
+NormalizeY:		 ;$C2FE
+	jmp _NormalizeY
+
 .elseif .defined(wheels)
 
 .macro UNIMPLEMENTED
@@ -830,7 +1088,11 @@ DEFOptimize: ; $C304
 DoOptimize: ; $C307
 	jmp _DoOptimize
 NFindFTypes: ; $C30A
+.ifdef mega65
+	jmp _map_FindFTypes
+.else
 	jmp _FindFTypes
+.endif
 ReadXYPot: ; $C30D
 	jmp _ReadXYPot
 MainIRQ: ; $C310

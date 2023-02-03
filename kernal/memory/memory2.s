@@ -77,13 +77,12 @@ _i_MoveData:
 	sta r2H
 	jsr _MoveData
 .ifdef wheels_size
-.import DoInlineReturn7
-	jmp DoInlineReturn7
-.else
+.global DoInlineReturn7
+DoInlineReturn7:
+.endif
 	php
 	lda #7
 	jmp DoInlineReturn
-.endif
 
 GetMDataDatas:
 .ifdef wheels_size
@@ -135,7 +134,8 @@ _MoveData:
 	PushB r3L
 .ifdef REUPresent
 	lda sysRAMFlg
-	bpl @1
+	bra @1
+	;bpl @1
 .ifdef bsw128
 	lda r2H
 	cmp #>$3800
@@ -266,10 +266,9 @@ _CmpFString:
 	beqx @1
 	dex
 	bne @1
-.ifdef wheels
+.ifdef wheels_size
 	txa
 .else
 	lda #0
 .endif
 @3:	rts
-

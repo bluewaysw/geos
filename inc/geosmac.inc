@@ -29,6 +29,11 @@
 	LoadB dest+0, <(value)
 .endmacro
 
+.macro LoadW___ dest, value
+	LoadB dest+0, <(value)
+	LoadB dest+1, >(value)
+.endmacro
+
 .macro MoveB source, dest
 	lda source
 	sta dest
@@ -110,6 +115,16 @@
 	.endif
 .endmacro
 
+.macro AddVW__ value, dest
+	lda #<(value)
+	clc
+	adc dest
+	sta dest
+	lda #>(value)
+	adc dest + 1
+	sta dest + 1
+.endmacro
+
 .macro sub source
 	sec
 	sbc source
@@ -138,6 +153,16 @@
 	sta dest+1
 .endmacro
 
+.macro SubVW_ value, dest
+	lda dest+0
+	sec
+	sbc #<(value)
+	sta dest+0
+	lda dest+1
+	sbc #>(value)
+	sta dest+1
+.endmacro
+
 .macro CmpB source, dest
 	lda source
 	cmp dest
@@ -155,7 +180,7 @@
 	CmpB source+0, dest+0
 @j:
 .endmacro
-	
+
 .macro CmpWI source, immed
 	.local @j
 	CmpBI source+1, >(immed)
@@ -190,6 +215,11 @@
 	bvc addr
 .endmacro
 .endif
+
+.macro bra_ addr
+	clv
+	bvc addr
+.endmacro
 
 .macro smb bitN, dest
 	pha
@@ -318,6 +348,15 @@
 	@j:
 .endmacro
 
+.macro DecW addr
+	.local @j
+	dec addr
+	lda addr
+	cmp #$ff
+	bne @j
+	dec addr+1
+	@j:
+.endmacro
 
 .macro ASSERT_NOT_BELOW_IO
 	.assert * < $D000 || * >= $E000, error, "This code can't run below the C64 I/O area."
@@ -342,6 +381,26 @@
 .endmacro
 .macro END_IO_128
 	PopB config
+.endmacro
+.else
+.ifdef mega65
+.macro START_IO
+ASSERT_NOT_BELOW_IO
+	LoadB CPU_DATA, IO_IN
+.endmacro
+.macro END_IO
+.endmacro
+.macro START_IO_X
+.endmacro
+.macro END_IO_X
+.endmacro
+.macro START_IO_Y
+.endmacro
+.macro END_IO_Y
+.endmacro
+.macro START_IO_128
+.endmacro
+.macro END_IO_128
 .endmacro
 .else
 .macro START_IO
@@ -375,4 +434,37 @@ ASSERT_NOT_BELOW_IO
 .endmacro
 .macro END_IO_128
 .endmacro
+.endif
+.endif
+
+.macro bge addr
+	bcs	addr
+.endmacro
+
+.macro bgt	addr
+    .local @done
+	beq	@done
+	bcs	addr
+@done:
+.endmacro
+
+.macro blt addr
+	bcc	addr
+.endmacro
+
+.macro ble	addr
+	beq	addr
+	bcc	addr
+.endmacro
+
+.ifdef scalable_coords
+
+.macro ByteCY xc, yc
+	.byte	(<yc)&$FF
+.endmacro
+
+.macro WordCX xc, yc
+	.word	xc + ((yc & $0F00) << 4)
+.endmacro
+
 .endif

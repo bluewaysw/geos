@@ -1,0 +1,14 @@
+HEADER AUTO_EXEC "65 CONFIGURE" "65 Config" "V6.0" {
+    author    "BSW/Jim Collette"
+    info      "Allows varying disk configurations:  1541, 1571, 1581 & RAM disks supported."
+    date      21 11 21 22 54
+    mode        any
+    structure VLIR
+    mode      80only
+    icon      "configure/ConfigIcon.bf"
+}
+
+MEMORY {
+    overlaysize 0x107F
+    overlaynums 0,1,2,3,4,5,6,7
+}

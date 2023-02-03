@@ -1,0 +1,25 @@
+# This is a comment. It extends to the end of the line
+        GLOBAL {
+            OUTPUTNAME      "r2.asm";
+            INPUTNAME       "configure.cvt.record.2";
+            STARTADDR       $3c80;
+            PAGELENGTH      0;                  # No paging
+            CPU             "6502";
+            COMMENTS		4;
+            
+        };
+        
+#ASMINC	{		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/const.inc";};
+ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/diskdrv.inc";};
+ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/geossym2.inc";};
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/inputdrv.inc";};
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/printdrv.inc";};
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/dio.inc";};
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/geosmac.ca65.inc";};
+#ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/geossym.inc";};
+ASMINC {		FILE "/home/petter/build/cc65-2.13.2/libsrc/geos/inc/jumptab.inc";};
+
+# One segment for the whole stuff
+SEGMENT { START $13b1;  END   $FFFF; NAME "record1"; };
+RANGE { START $3ede; END   $3eee; TYPE TEXTTABLE; };
+

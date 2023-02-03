@@ -29,6 +29,9 @@
 .global Dialog_2
 .global _RstrFrmDialogue
 
+.import MapUnderlay
+.import UnmapUnderlay
+
 .segment "dlgbox1c"
 
 DlgBoxPrep:
@@ -42,19 +45,26 @@ Dialog_2:
 	clc
 DlgBoxPrep2:
 	START_IO
+	php
+	jsr MapUnderlay
+	plp
 	LoadW r4, dlgBoxRamBuf
 	bcc @1
 	jsr DialogSave
 	LoadB mobenble, 1
 	bne @2
 @1:	jsr DialogRestore
-@2:	END_IO
+@2:
+	jsr UnmapUnderlay
+	END_IO
 	rts
 .else
 	START_IO_128
 	START_IO
 	LoadW r4, dlgBoxRamBuf
+	jsr MapUnderlay
 	jsr DialogSave
+	jsr UnmapUnderlay
 	LoadB mobenble, 1
 	END_IO_128
 	END_IO
@@ -64,6 +74,7 @@ DlgBoxPrep2:
 .endif
 
 DrawDlgBox:
+
 	LoadB dispBufferOn, ST_WR_FORE | ST_WRGS_FORE
 	ldy #0
 	lda (DBoxDesc),y
@@ -80,6 +91,8 @@ DrwDlgSpd0:
 	lda (DBoxDesc),y
 	bpl DrwDlgSpd1
 	LoadW DBoxDesc, DBDefinedPos-1
+	bbrf 6, graphMode, DrwDlgSpd1
+	LoadW DBoxDesc, DBDefinedPosScalable-1
 DrwDlgSpd1:
 	ldy #1
 	lda (DBoxDesc),y
@@ -121,18 +134,36 @@ DrwDlgSpd1:
 	jsr SetPattern
 	sec
 	jsr CalcDialogCoords
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
+	bbsf 6, graphMode, @2
+	; this is set inside CaldDialogCoords for advanced modules
+	; override here
 	lda r3H
 	and #$80
 	sta L8871
+@2:
 .endif
 	jsr Rectangle
 .endif
-@1:	lda #0
+@1:
+
+	lda #0
 	jsr SetPattern
 	clc
 	jsr CalcDialogCoords
+	bbrf 6, graphMode, @11
+	lda rightMargin+1
+	and #%11110000
+	sta rightMargin
+	lda r4H
+	and #%00001111
+	ora rightMargin
+	sta rightMargin+1
+	MoveB r4L, rightMargin
+	bra @12
+@11:
 	MoveW r4, rightMargin
+@12:
 	jsr Rectangle
 .ifndef wheels_size_and_speed ; redundant
 	clc
@@ -171,9 +202,23 @@ CalcDialogCoords:
 	PushW DBoxDesc
 	ldy #0
 	lda (DBoxDesc),y
-	bpl @2
+	bpl @2c
 	LoadW DBoxDesc, DBDefinedPos-1
-@2:	ldx #0
+	ldy	graphMode
+	bbrf 6, graphMode, @2
+	LoadW DBoxDesc, DBDefinedPosScalable-1
+@2c:
+	ldy	graphMode
+	bmi	@2d
+	cpy	#$41
+	bne	@2b
+@2d:
+	ldy	#$80
+	bra	@2
+@2b:
+	ldy	#0
+@2:	sty	L8871
+	ldx #0
 	ldy #1
 @3:	lda (DBoxDesc),y
 	clc
@@ -190,7 +235,7 @@ CalcDialogCoords:
 	iny
 	inx
 	lda (DBoxDesc),y
-	bcc @5
+	;bcc @5
 	adc #0
 @5:	sta r2L,x
 	iny
@@ -201,7 +246,7 @@ CalcDialogCoords:
 	rts
 
 DBDefinedPos:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 MSB = DOUBLE_W
 .else
 MSB = 0
@@ -210,6 +255,12 @@ MSB = 0
 	.byte DEF_DB_BOT
 	.word MSB | DEF_DB_LEFT
 	.word MSB | DEF_DB_RIGHT
+
+DBDefinedPosScalable:
+	ByteCY	%101100000000 | ((-96) & $FF), %101100000000 | ((-48) & $FF)
+	ByteCY	%101100000000 | ((95) & $FF), %101100000000 | ((47) & $FF)
+	WordCX 	%101100000000 | ((-96) & $FF), %101100000000 | ((-48) & $FF)
+	WordCX	%101100000000 | ((95) & $FF), %101100000000 | ((47) & $FF)
 
 _RstrFrmDialogue:
 	jsr Dialog_2
@@ -225,9 +276,10 @@ Dialog_2:
 	START_IO_128
 	START_IO
 	LoadW r4, dlgBoxRamBuf
+	jsr MapUnderlay
 	jsr DialogRestore
+	jsr UnmapUnderlay
 	END_IO_128
 	END_IO
 	rts
 .endif
-

@@ -64,6 +64,8 @@ sysFlgCopy:
 c128Flag:
 .ifdef bsw128
 	.byte $80
+.elseif .defined(mega65)
+	.byte $80
 .else
 	.byte 0
 .endif

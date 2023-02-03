@@ -88,7 +88,10 @@ _DoDlgBox:
 @7:	lda defIconTab
 	beq @8
 	LoadW r0, defIconTab
+	PushB CPU_DATA
+	LoadB CPU_DATA, RAM_64K
 	jsr DoIcons
+	PopB CPU_DATA
 @8:	PopW dlgBoxCallerPC
 	tsx
 	stx dlgBoxCallerSP

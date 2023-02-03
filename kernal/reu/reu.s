@@ -19,6 +19,201 @@
 
 .segment "reu"
 
+.ifdef mega65
+
+REU_BASE_BANK = $00
+.if 0
+
+_DoRAMOp:
+	cpy	#%10010000
+	beq	_StashRAM
+_FetchRAM:
+	ldy	#0
+@1:
+	lda	r2, y
+	pha
+	iny
+	cpy	#12
+	bne	@1
+
+	MoveW	r0, r6
+	LoadW	r7, $0000
+
+	MoveW	r1, r4
+	LoadW	r5, $0005
+
+	bra	_ExecRamOp
+
+_StashRAM:
+	ldy	#0
+@1:
+	lda	r2, y
+	pha
+	iny
+	cpy	#12
+	bne	@1
+
+	MoveW	r0, r4
+	lda	#0
+	sta	r5L
+	sta	r5H
+	sta	r7H
+	;LoadW	r5, $0000
+
+	MoveW	r1, r6
+	;LoadW	r7, $0080
+	LoadB	r7L, $05
+
+
+_ExecRamOp:
+@2:
+	LDZ	#0
+	EOM
+	lda 	(r4), Z
+	EOM
+	sta 	(r6), Z
+
+	IncW	r4
+	IncW	r6
+	dec	r2L
+	lda	r2L
+	cmp	#$ff
+	bne	@10
+	dec	r2H
+@10:	ora	r2H
+	bne	@2
+	
+	ldy	#12
+@1:
+	pla
+	sta	r2-1, y
+	dey
+	bne	@1
+
+_VerifyRAM:
+_SwapRAM:
+@3:	
+	ldx	#0
+	rts
+
+.else
+_StashRAM:
+	lda	#0
+	sta	opFromBankLow
+	sta	opFromBankHigh+1
+
+
+	;LDA #$A5      ; C65: VIC-III enable sequence
+	;STA $D02F
+	;LDA #$96
+	;STA $D02F     ; C65: VIC-III enabled
+
+	jsr	_GetBankParams
+	sty	opToBankLow
+	sta	opToBankHigh+1
+
+	lda	r0L
+	sta	opFromAddr
+	lda	r0H
+	;ldx	r1L
+	ldy	r1H
+
+
+_RamOp:
+	sta	opFromAddr+1
+	stx	opToAddr
+	sty	opToAddr+1
+	MoveW r2, opLength
+
+	START_IO_X
+
+	lda	#>opddmalist
+	ldy	#<opddmalist
+
+	sta	$d701
+	;lda	#0
+	sty	$d705
+
+	END_IO_X
+
+	rts
+
+; input: A=0
+_GetBankParams:
+	sta	$d702
+	sta 	$d704	;	enhanced bank
+	;ldy	#5
+	;lda	#0
+	;bne	@1
+
+	lda	r3L
+
+	tax
+	and	#$0F
+	;lda	#5	; force to bank 5 of main RAM
+	tay
+	txa
+	lsr
+	lsr
+	lsr
+	lsr
+
+	ora	#$80
+	;lda	#0	; force to bank 5 of main RAM
+@1:
+	ldx	r1L
+	rts
+
+
+_DoRAMOp:
+	cpy	#%10010000
+	beq	_StashRAM
+_FetchRAM:
+	lda	#0
+	sta	opToBankLow
+	sta	opToBankHigh+1
+
+	jsr	_GetBankParams
+	sty	opFromBankLow
+	sta	opFromBankHigh+1
+
+	;lda	r1L
+	stx	opFromAddr
+	lda	r1H
+	ldx	r0L
+	ldy	r0H
+
+	bra	_RamOp
+
+
+_VerifyRAM:
+_SwapRAM:
+@3:	rts
+
+opddmalist:
+	; enchanced dma mode header
+	.byte	$0a
+opFromBankHigh:
+	.byte	$80, $00
+opToBankHigh:
+	.byte	$81, $00
+	.byte 	0
+	.byte	0	; swap
+opLength:
+	.word	DISK_DRV_LGH
+opFromAddr:
+	.word	DISK_BASE
+opFromBankLow:
+	.byte	0				; bank 0
+opToAddr:
+	.word	DISK_SWAPBASE+DISK_DRV_LGH
+opToBankLow:
+	.byte	5				; bank 1
+	.word	0				; unsued mod
+.endif
+
+.else
+
 .ifdef REUPresent
 _VerifyRAM:
 	ldy #$93
@@ -102,4 +297,4 @@ _DoRAMOp:
 .endif
 @3:	rts
 .endif ; REUPresent
-
+.endif
