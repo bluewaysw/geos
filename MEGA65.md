@@ -1,3 +1,7 @@
+... under construction ...
+
+
+
 The memory mapping of the GEOS implementation for MEGA65 is as following:
 
 bank 0:
