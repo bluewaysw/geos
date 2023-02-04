@@ -739,7 +739,7 @@ __InitForIO:					;95c6
 	;STA $D640		; Do hypervisor trap
 	;NOP			; Wasted instruction slot required following hyper trap instruction
 .endif
-	lda $d68b
+	lda $d68b		;write enable f011 drive one
 	ora #$20
 	sta $d68b
 
@@ -853,7 +853,7 @@ _EnsureImageMounted:
 	sta	$D6A1
 
 	; but force internal drive to be mapped
-	; -- @IO:GS $D689.4 - F011 swap drive 0 / 1 
+	; -- @IO:GS $D689.5 - F011 swap drive 0 / 1 
 	lda	$D689
 	ora	#%00100000
 	and	#%01111111
@@ -872,7 +872,7 @@ _EnsureImageMounted:
 	sta	$D6A1
 
 	; but force internal drive to be mapped
-	; -- @IO:GS $D689.4 - F011 swap drive 0 / 1 
+	; -- @IO:GS $D689.5 - F011 swap drive 0 / 1 
 	lda	$D689
 	and	#%01011111
 	sta	$D689
@@ -1019,16 +1019,21 @@ _EnsureImageMounted:
 
 	jsr	HyperRestore
 
+	; the hypervisor in new bitstreams changes the buffer, so change it back as we need it
+    lda $d689			; force to use floppy buffer
+    and #$7f
+    sta $d689
+
 	lda	#1
 	sta	mountDrive
 	LoadB	imageMounted, STATE_SUCCESS
 @1b:
 
-	lda 	control_store
-	and 	#$FE
+	lda	control_store
+	and	#$FE
 	ora	mountDrive
-	sta 	$D080
-	sta 	control_store
+	sta	$D080
+	sta	control_store
 @1:
 	clc
 	rts
