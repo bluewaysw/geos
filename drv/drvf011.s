@@ -812,168 +812,245 @@ __DoneWithIO:
 	RTS
 
 _EnsureImageMounted:
-	lda	imageMounted
-	beq	@1d
-@1e:
-	cmp	#STATE_SUCCESS
-	bne	@err
-	clc
-	rts
-@err:
-	ldx 	#NO_SYNC
-	sec
-	rts
-@1d:
-	; after update
-	; virtual is assumed to be drive 0
-	; sd or (internal) floppy is used on drive 1
+	; after bitstream updates #192 #193
+	; virtual (one drive expected) is using first one found (or none)
+	; floppy (internal or external) is used on and if there is an appropriate drive config
+	; sd mount is used on and if there is an appropriate drive config
 
 	; init state
 	; set or reset floppy bit for drive 1 if needed
+	LoadB	imageMounted, STATE_FAILED
 	ldy	curType
+	LoadB	mountDrive, $FF
+	LoadB	mountCount, 0
+
+	; ======================================================================
+	; match drive 0
+
+	; is drive 0 virtual? (D68A.2)
+	lda	$D68A
+	and	#%00000100
+	beq	@5000
+
+	; are we looking for virtual drive
 	cpy	#DRV_F011_V
-	bne	@2
+	bne	@6000
 
-	; basically this type means drive 0 is virtual
-	lda	$D689
-	;ora	#%00010000
-	and	#%01111111
-	sta	$D689
+	; matched virtual drive
+	jmp	@9002
 
-
-	lda	#0
-	sta	mountDrive
-	LoadB	imageMounted, STATE_SUCCESS
-	jmp 	@1b
-@2:
+@5000:
+	; drive 0 not virual, check floppy
 	lda	$D6A1
-	cpy	#DRV_F011_0
-	bne	@2a
-	ora	#4	; set drive 1 real floppy
-	sta	$D6A1
+	and	#%00000001
+	beq	@5001			; drive 0 is no floppy
 
-	; but force internal drive to be mapped
-	; -- @IO:GS $D689.5 - F011 swap drive 0 / 1 
-	lda	$D689
-	ora	#%00100000
-	and	#%01111111
-	sta	$D689
-
-	lda	#1
-	sta	mountDrive
-	LoadB	imageMounted, STATE_SUCCESS
-	bra 	@1c
-
-@2a:
-	lda	$D6A1
-	cpy	#DRV_F011_1
-	bne	@3
-	ora	#4	; set drive 1 real floppy
-	sta	$D6A1
-
-	; but force internal drive to be mapped
-	; -- @IO:GS $D689.5 - F011 swap drive 0 / 1 
-	lda	$D689
-	and	#%01011111
-	sta	$D689
-
-	lda	#1
-	sta	mountDrive
-	LoadB	imageMounted, STATE_SUCCESS
-	bra 	@1c
-
-@3:	
-	; mount sd if needed
+	; drive 0 is floppy, check of internal or external
 	cpy	#DRV_SD_81
-	bne	@1e
-	
-	; basically this type means drive 0 is virtual
+	beq	@5020
+	LoadB	mountDrive, 0
+@5020:
 	lda	$D689
-	;ora	#%00010000
-	and	#%01111111
-	sta	$D689
+	and	#%00100000
+	bne	@5002			; drive 0 is swapped, so it is external
 
-	lda	currentImageCluster
-	and	currentImageCluster+1
-	and	currentImageCluster+2
-	and	currentImageCluster+3
-	cmp	#$FF
-	bne	@4a
-	jmp	@4
-@4a:
-	; check drive 0, for non virtual real mount
+	; drive 0 is internal floppy
+	cpy	#DRV_F011_0
+	bne	@6000
+
+	lda	#0
+	jmp	@9000
+
+@5002:
+	; drive 0 is external floppy
+	cpy	#DRV_F011_1
+	bne	@6000
+
+	bra	@9002
+
+@5001:
+	; drive 0 is sd mount
+	inc 	mountCount
+	cpy	#DRV_SD_81
+	bne	@6000
+
+	lda	$D68B
+	and	#$01
+	beq	@6000
+
+	LoadB	mountDrive, 0
+
+	; check if expected mount
+	; check if something already has been mounted
+	;lda	currentImageCluster
+	;and	currentImageCluster+1
+	;and	currentImageCluster+2
+	;and	currentImageCluster+3
+	;cmp	#$FF
+	;bne	@6000
+
+	ldy	#3
+@5007:
+	lda	$D68C,y
+	cmp	currentImageCluster,y
+	bne	@6001
+	dey
+	bpl	@5007
+
+@9002:
+	lda	#0
+	bra	@9000
+
+@6001:	
+	ldy	curType
+
+	; ======================================================================
+	; match drive 1
+@6000:
+	; is drive 1 virtual? (D68A.2)
 	lda	$D68A
-	and	#4
-	bne	@5
+	and	#%00001100
+	beq	@6002
+
+	; are we looking for virtual drive
+	cpy	#DRV_F011_V
+	bne	@7000
+
+	; matched virtual drive
+	lda	#1
+	bra	@9000
+
+@6002:
+	; drive 1 not virual, check floppy
 	lda	$D6A1
-	and	#1
-	bne	@5	; floppy active, can't be mounted	
+	and	#%00000100
+	beq	@6011			; drive 1 is no floppy
+
+	; drive 1 is floppy, check of internal or external
+	cpy	#DRV_SD_81
+	beq	@6020
+	LoadB	mountDrive, 1
+@6020:
+
+	lda	$D689
+	and	#%00100000
+	bne	@6003			; drive 1 is swapped, so it is internal
+
+	; drive 1 is external floppy
+	cpy	#DRV_F011_1
+	bne	@7000
+
+	lda	#1
+	bra	@9000
+
+@6003:
+	; drive 1 is internal floppy
+	cpy	#DRV_F011_0
+	bne	@7000
+
+	lda	#1
+	bra	@9000
+
+@6011:
+	; drive 1 is sd mount
+	inc 	mountCount
+	cpy	#DRV_SD_81
+	bne	@7000
 	
 	lda	$D68B
-	and	#1
-	beq	@5
-	
-	lda	currentImageCluster
-	cmp	$D68C
-	bne	@5
-	lda	currentImageCluster+1
-	cmp	$D68C+1
-	bne	@5
-	lda	currentImageCluster+2
-	cmp	$D68C+2
-	bne	@5
-	lda	currentImageCluster+3
-	cmp	$D68C+3
-	bne	@5
-	
-	; is mounted already
-	lda	#0
+	and	#$02
+	beq	@7000
+
+	LoadB	mountDrive, 1
+
+	; check if expected mount
+	; check if something already has been mounted
+	;lda	currentImageCluster
+	;and	currentImageCluster+1
+	;and	currentImageCluster+2
+	;and	currentImageCluster+3
+	;cmp	#$FF
+	;bne	@7000
+
+	ldy	#3
+@6007:
+	lda	$D690,y
+	cmp	currentImageCluster,y
+	bne	@6091
+	dey
+	bpl	@6007
+
+	lda	#1
+@9000:
 	sta	mountDrive
 	LoadB	imageMounted, STATE_SUCCESS
-@1c:
 	jmp 	@1b
-	
-@5:
-	; check drive 1
-	lda	$D68A
-	and	#8	; we assume that this does not happen
-	bne	@4
-	lda	$D6A1
-	and	#4
-	bne	@4	; floppy active, can't be mounted	
-	
-	lda	$D68B
-	and	#8
-	beq	@4
-	
-	lda	currentImageCluster
-	cmp	$D690
-	bne	@4
-	lda	currentImageCluster+1
-	cmp	$D690+1
-	bne	@4
-	lda	currentImageCluster+2
-	cmp	$D690+2
-	bne	@4
-	lda	currentImageCluster+3
-	cmp	$D690+3
-	bne	@4
 
-	; is mounted already
+@6091:	
+	ldy	curType
+@7000:
+
+	; no exact match
+	; was there a candidate drive for reconfiguration/mount?
+	lda	mountDrive
+	cmp	#$FF
+	bne	@7001
+
+	; if floppy and mount count == 0, force drive 1 to be floppy
+	lda	$D689
+	cpy	#DRV_F011_0
+	bne	@7010
+
+	; drive 1 -> floppy, swapped
+	ora	#%00100000
+
+	bra	@7011
+@7010:	
+	cpy	#DRV_F011_1
+	bne	@7004
+
+	; drive 1 -> floppy, unswapped
+	and	#%11101111
+@7011:
+	sta	$D689
+
+	; GS $D6A1.2 F011:DRV2EN Use real floppy drive instead of SD card for 2nd floppy drive
+	lda	$D6A1						; force drive 1 to be floppy
+	ora	#%00000100
+	sta	$D6A1
+
 	lda	#1
 	sta	mountDrive
 	LoadB	imageMounted, STATE_SUCCESS
 	jmp 	@1b
 
-@4:
-	lda	currentImageName
-	bne	@4b
+
+	; failed to init a proper drive
+@7004:
 	LoadB	imageMounted, STATE_FAILED
 	ldx 	#NO_SYNC
 	sec
 	rts
-	
-@4b:
+
+@7001:
+	cpy	#DRV_SD_81
+	beq	@7002
+
+	; so it is floppy, let swap and done
+	; GS $D689.5 - F011 swap drive 0 / 1
+	lda	$D689
+	eor	#%00100000
+	sta	$D689
+
+	lda	mountDrive
+	bra	@9000
+
+@7002:
+	; we have to mount anyhow
+	lda	currentImageName
+	beq	@7004
+
+	; mount image
 	jsr	HyperSave
 
 	; do mount now, drive 1
@@ -993,14 +1070,18 @@ _EnsureImageMounted:
 	STA	$D640		; Do hypervisor trap
 	NOP			; Wasted instruction slot required following hyper trap instruction
 
-
 	;; XXX Check for error (carry would be clear)
 	lda	#$46     	; dos_d81attach1
+	ldy	mountDrive
+	cpy	#1
+	beq	@8000
+	lda	#$40		; dos_d81attach0
+@8000:
 	STA	$D640		; Do hypervisor trap
 	NOP			; Wasted instruction slot required following hyper trap instruction
+
 	bcs	@ok
 @HOHO:
-	inc	$D020
 	bra	@HOHO
 @ok:
 	lda	$d68b
@@ -1008,24 +1089,31 @@ _EnsureImageMounted:
 	sta	$d68b
 
 	; remember cluster
-	lda	$D690
-	sta	currentImageCluster
-	lda	$D690+1
-	sta	currentImageCluster+1
-	lda	$D690+2
-	sta	currentImageCluster+2
-	lda	$D690+3
-	sta	currentImageCluster+3
-
+	ldy	#0
+	lda	mountDrive
+	cmp	#0
+	beq	@8003
+@8001:
+	lda	$D690,y
+	sta	currentImageCluster,y
+	iny	
+	cpy	#4
+	bne	@8001
+	bra	@8002
+@8003:
+	lda	$D68C,y
+	sta	currentImageCluster,y
+	iny	
+	cpy	#4
+	bne	@8003
+@8002:
 	jsr	HyperRestore
 
 	; the hypervisor in new bitstreams changes the buffer, so change it back as we need it
-    lda $d689			; force to use floppy buffer
-    and #$7f
-    sta $d689
+	lda	$d689			; force to use floppy buffer
+	and	#$7f
+	sta	$d689
 
-	lda	#1
-	sta	mountDrive
 	LoadB	imageMounted, STATE_SUCCESS
 @1b:
 
@@ -1747,6 +1835,8 @@ currentImageName:
 	.endrep
 mountDrive:
 	.byte	0
+mountCount:
+	.byte	0
 HyperBuffer:
 	.repeat 256
 		.byte 0
@@ -1774,6 +1864,4 @@ E9C64:
 borderFlag:		
 	.byte 0				;9c65
 
-cname:  
-	.byte "#"
-cname_end:
+.assert * <= $9C80, error, "Driver code and data need to end before $9C80"
