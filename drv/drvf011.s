@@ -858,8 +858,7 @@ _EnsureImageMounted:
 	cpy	#DRV_F011_0
 	bne	@6000
 
-	lda	#0
-	jmp	@9000
+	bra	@9002
 
 @5002:
 	; drive 0 is external floppy
@@ -874,20 +873,17 @@ _EnsureImageMounted:
 	cpy	#DRV_SD_81
 	bne	@6000
 
-	lda	$D68B
+	lda	$D68B			; branch if unmounted
 	and	#$01
 	beq	@6000
+
 
 	LoadB	mountDrive, 0
 
 	; check if expected mount
 	; check if something already has been mounted
-	;lda	currentImageCluster
-	;and	currentImageCluster+1
-	;and	currentImageCluster+2
-	;and	currentImageCluster+3
-	;cmp	#$FF
-	;bne	@6000
+	lda 	remountNeeded
+	bmi	@7000
 
 	ldy	#3
 @5007:
@@ -917,8 +913,7 @@ _EnsureImageMounted:
 	bne	@7000
 
 	; matched virtual drive
-	lda	#1
-	bra	@9000
+	bra	@9010
 
 @6002:
 	; drive 1 not virual, check floppy
@@ -940,16 +935,14 @@ _EnsureImageMounted:
 	cpy	#DRV_F011_1
 	bne	@7000
 
-	lda	#1
-	bra	@9000
+	bra	@9010
 
 @6003:
 	; drive 1 is internal floppy
 	cpy	#DRV_F011_0
 	bne	@7000
 
-	lda	#1
-	bra	@9000
+	bra	@9010
 
 @6011:
 	; drive 1 is sd mount
@@ -965,12 +958,8 @@ _EnsureImageMounted:
 
 	; check if expected mount
 	; check if something already has been mounted
-	;lda	currentImageCluster
-	;and	currentImageCluster+1
-	;and	currentImageCluster+2
-	;and	currentImageCluster+3
-	;cmp	#$FF
-	;bne	@7000
+	lda 	remountNeeded
+	bmi	@7000
 
 	ldy	#3
 @6007:
@@ -979,17 +968,15 @@ _EnsureImageMounted:
 	bne	@6091
 	dey
 	bpl	@6007
-
+@9010:
 	lda	#1
 @9000:
 	sta	mountDrive
-	LoadB	imageMounted, STATE_SUCCESS
 	jmp 	@1b
 
 @6091:	
 	ldy	curType
 @7000:
-
 	; no exact match
 	; was there a candidate drive for reconfiguration/mount?
 	lda	mountDrive
@@ -1021,7 +1008,6 @@ _EnsureImageMounted:
 
 	lda	#1
 	sta	mountDrive
-	LoadB	imageMounted, STATE_SUCCESS
 	jmp 	@1b
 
 
@@ -1082,6 +1068,7 @@ _EnsureImageMounted:
 
 	bcs	@ok
 @HOHO:
+	inc	$d020
 	bra	@HOHO
 @ok:
 	lda	$d68b
@@ -1090,32 +1077,29 @@ _EnsureImageMounted:
 
 	; remember cluster
 	ldy	#0
+	sty	remountNeeded
+	ldx	#0
 	lda	mountDrive
 	cmp	#0
 	beq	@8003
-@8001:
-	lda	$D690,y
-	sta	currentImageCluster,y
-	iny	
-	cpy	#4
-	bne	@8001
-	bra	@8002
+	ldx	#4
 @8003:
-	lda	$D68C,y
+	lda	$D68C,x
 	sta	currentImageCluster,y
+	inx
 	iny	
 	cpy	#4
 	bne	@8003
 @8002:
 	jsr	HyperRestore
 
+@1b:
 	; the hypervisor in new bitstreams changes the buffer, so change it back as we need it
 	lda	$d689			; force to use floppy buffer
 	and	#$7f
 	sta	$d689
 
 	LoadB	imageMounted, STATE_SUCCESS
-@1b:
 
 	lda	control_store
 	and	#$FE
@@ -1781,6 +1765,7 @@ _SetImageFile:
 	jsr	CopyString
 	LoadW	currentImageCluster, $FFFF
 	LoadW	currentImageCluster+2, $FFFF
+	sta	remountNeeded
 	LoadB	imageMounted, 0
 	jmp	_SaveDriver
 	
@@ -1789,6 +1774,7 @@ _SetImageCluster:
 	MoveW	r1, currentImageCluster+2
 	LoadB	imageMounted, 0
 	lda	#0
+	sta	remountNeeded
 	sta	currentImageName
 	jmp	_SaveDriver
 	
@@ -1837,6 +1823,8 @@ mountDrive:
 	.byte	0
 mountCount:
 	.byte	0
+remountNeeded:
+	.byte	$FF
 HyperBuffer:
 	.repeat 256
 		.byte 0
