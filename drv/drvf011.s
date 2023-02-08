@@ -740,7 +740,7 @@ __InitForIO:					;95c6
 	;NOP			; Wasted instruction slot required following hyper trap instruction
 .endif
 	lda $d68b		;write enable f011 drive one
-	ora #$20
+	ora #$24
 	sta $d68b
 
 	jsr	HyperRestore
@@ -1072,7 +1072,7 @@ _EnsureImageMounted:
 	bra	@HOHO
 @ok:
 	lda	$d68b
-	ora	#$20
+	ora	#$24
 	sta	$d68b
 
 	; remember cluster
@@ -1136,15 +1136,8 @@ _ReadBlockCont1:
 	jsr _WaitReady
 	LDA #$40
 	STA $D081
-.if 1	
-	ldy #$28
-	ldx #0
-@aa:
-	DEX
-	bne @aa
-	dey
-	bne @aa
-.endif
+	jsr __waitAbit
+
 .if USE_BLOCK_DMA
 	jsr _WaitReady
 .endif	
@@ -1160,13 +1153,7 @@ _ReadBlockCont1:
 @2:
 	sec
 	jmp	_ReadBlockEnd
-@1:
-	brk
 @1a:
-	lda	curDrive
-	cmp	#DRV_F011_0
-	bne	@2a
-@2a:
 
 .ifdef USE_BLOCK_DMA
 	MoveW r4, dmalist_to
@@ -1194,11 +1181,7 @@ _ReadBlockCont1:
 	lda	#>dmalist
 	ldy	#<dmalist
 
-	sta	$d701
-	lda	#0
-	sta	$d702
-	sta 	$d704	;	enhanced bank
-	sty	$d705
+	jsr	_DoDMA
 .else
 @6:
 	JSR _ReadByteSlow		; read our 256 byte sector in the buffer?
@@ -1267,7 +1250,6 @@ dmalist_to:
 	.byte	0				; bank 1
 	.word	0				; unsued mod
 .endif
-
 _ReadByteSlow:
 	jsr _ReadByte
 	rts
@@ -1286,7 +1268,7 @@ _ReadByte:
 _WriteByte:
 	STA $D087
 	RTS
-	
+
 _SetOperation:
 
 	JSR _WaitReady
@@ -1451,7 +1433,7 @@ _FindTrack:
 _ControlReg:
 	and #$FE
 	pha
-	jsr _CheckDC
+	;jsr _CheckDC
 .if 0
 	lda curType
 	cmp #DRV_F011_V
@@ -1478,9 +1460,9 @@ _ControlReg:
 	sta control_store 
 	bra _WaitReady
 	
-_CheckDC:
+;_CheckDC:
 	
-	rts
+;	rts
 	
 _SettleHead:
 	jsr _WaitReady
@@ -1536,17 +1518,17 @@ _DriveReady:
 	SEC
 	RTS
 	
+__waitAbit:
+	ldy #$28
+	ldx #0
+@aa:
+	DEX
+	bne @aa
+	dey
+	bne @aa
+	jmp _WaitReady
+
 __WriteBlock:					;9960
-	ldy	curType
-	cpy	#DRV_F011_1
-	beq	@112
-	cpy	#DRV_F011_0
-	bne	@111
-@112:
-	sec
-	ldx	#$26
-	rts	
-@111:
 	JSR CheckParams
 	BCC _WriteBlockEnd
 
@@ -1556,6 +1538,7 @@ __WriteBlock:					;9960
 	JSR _SetOperation		; set track, side, sector
 	BCS _WriteBlockEnd
 	
+	ldx #WR_PR_ON
 	JSR _DriveReady		; drive ready, not wrote protect
 	BCS _WriteBlockEnd
 	
@@ -1565,40 +1548,48 @@ __WriteBlock:					;9960
 
 	LDA #$46
 	JSR _ExecCommand		; execute read	
+
 	JSR _CheckResult		; test if read succeeded
 	BCS _WriteBlockEnd
-	
-	LDY #$00		; skip first 256 bytes if needed
-	LDA evenFlag
-	BEQ @1
-@2:
-	JSR _ReadByte	; read byte without checking if available
-	INY	
-	BNE @2	
+
+	lda $D080
+	LDY evenFlag
+	BEQ @111
+	ora #%00010000		;		second: set F011C's 'swap' flag
+	bra @112
+@111:	and #%11101111		;		first: clear F011C's 'swap' flag	[910417]
+@112:
+	sta $D080		;	   (but don't affect control_store!)
+	jsr _WaitReady
+
+	ldy #0
 @1:
 	LDA (r4),Y		; write our 256 byte buffer
 	JSR _WriteByte
 	INY
 	BNE @1
-@4:
-	LDA $D082		; read up rest of the buffer
-	AND #$20
-	BNE @3
-	JSR _ReadByte 	; read byte without checking if available
-	BRA @4
-@3:
+
+	lda $D080
+	and #%11101111		; Reset chip buffer pointers
+	sta $D080		; control
+	lda #$01
+	sta $D081
+
 	LDA #$80
 	JSR _ExecCommand 		; write sector
+	JSR _CheckResult  	; Test wether read or write succeed?
+
 
 	; read back written sector
 	; here we use this not for checking but to ensure the 
 	; the next read will be alined, strange
 	; TODO: double check why this fails on mega65 if reading
 	; the next blick straigt after write command
-	LDA #$40	; read command
-	JSR _ExecCommand	; execute FDC command
-	JSR _CheckResult  	; Test wether read or write succeed?
-	
+.if 1
+	;LDA #$40	; read command
+	;JSR _ExecCommand	; execute FDC command
+	;JSR _CheckResult  	; Test wether read or write succeed?
+.endif
 	LDX	#0
 	
 _WriteBlockEnd:
@@ -1610,6 +1601,15 @@ __VerWriteBlock: 				;998f
 	LDX #0
 	bbrf 6, curType, VWrBlock3
 	JMP DoCacheWrite
+
+_DoDMA:
+	sta	$d701
+	lda	#0
+	sta	$d702
+	sta 	$d704	;	enhanced bank
+	sty	$d705
+	; fallthrough
+
 VWrBlock3:
 	RTS				;9886
 
