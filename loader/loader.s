@@ -99,8 +99,8 @@ next:	.WORD	0
 	STZ	$D01A
 
 	;lda	#$80	; NTSC
-	lda	#$00	; PAL
-	sta	$d06f
+;	lda	#$00	; PAL
+;	sta	$d06f
 
 	; disable HDMI audio
 	lda	#0

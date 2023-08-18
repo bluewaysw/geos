@@ -51,6 +51,12 @@
 .import UnmapUnderlay
 .import MapUnderlay
 
+.global vmiTopBorder
+.global vmiBottomBorder
+.global vmiSpriteYPosOff
+.global vmiMaxY
+.global vmiFullCardsY
+
 .global SetRightMargin
 _SetNewMode:
         jsr SetNewMode0
@@ -348,16 +354,19 @@ vmiMaxX:
 	.word	319,		639,		639,		719
 vmiMaxY:
 	.word	199,		199,		399,		568
+	;NTSC .word	199,		199,		399,		478
 vmiCardsX:
 	.word	40,		80,		80,		90
 vmiFullCardsX:
 	.byte	40,		40,		80,		90
 vmiFullCardsY:
 	.byte	25,		25,		50,		71
+	;NTSC.byte	25,		25,		50,		59
 vmiSpriteXPosOff:
 	.byte	24,		79,		79,		38
 vmiSpriteYPosOff:
 	.byte	50,		50,		104,		17
+	;NTSC .byte	50,		50,		42,		1
 vmiD011:
 	.byte	%00111011,	$3B,		$3B,		$3b
 vmiD016:
@@ -388,8 +397,10 @@ vmiBitmapRAMBank:
 		;504
 vmiTopBorder:
 	.word	104,		104,		104,		17
+	;NTSC .word	42,		42,		42,		1
 vmiBottomBorder:
 	.word	504,		504,		504,		586
+	;NTSC .word	442,		442,		442,		480
 screenCols:
 	.word	Col320, 	Col640,		Col640,		Col720
 screenRows:
