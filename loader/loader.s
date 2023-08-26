@@ -98,13 +98,15 @@ next:	.WORD	0
 	STZ	$D019	; disable VIC interrupts
 	STZ	$D01A
 
-	lda	#$80	; NTSC
+	lda	$d06f
+;	lda	#$80	; NTSC
 ;	lda	#$00	; PAL
+	and	#$c0
 	sta	$d06f
 
 	; disable HDMI audio
-	lda	#0
-	sta	$d61a
+	;lda	#0
+	;sta	$d61a
 
 
 ; not working with xemu
