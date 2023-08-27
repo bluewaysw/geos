@@ -101,7 +101,7 @@ next:	.WORD	0
 	lda	$d06f
 ;	lda	#$80	; NTSC
 ;	lda	#$00	; PAL
-	and	#$c0
+	and	#$80
 	sta	$d06f
 
 	; disable HDMI audio
