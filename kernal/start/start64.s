@@ -57,6 +57,12 @@
 .global _DebugStart
 .endif
 
+.import vmiTopBorder
+.import vmiBottomBorder
+.import vmiSpriteYPosOff
+.import vmiMaxY
+.import vmiFullCardsY
+
 .segment "start"
 
 ; The original version of GEOS 2.0 has purgeable init code
@@ -92,6 +98,44 @@ ASSERT_NOT_BELOW_IO
 
 	LoadW NMI_VECTOR, _NMIHandler
 	LoadW IRQ_VECTOR, _IRQHandler
+
+	lda	$DC0E
+	ora	#$80
+	tax
+	lda	$DD0E
+	ora	#$80
+	tay
+
+	; adapt screen mode tables for NTSC
+	bbrf 	7, $D06F, @doneWithPAL
+
+	LoadW 	vmiTopBorder, 42
+	LoadW 	vmiTopBorder+2, 42
+	LoadW 	vmiTopBorder+4, 42
+	LoadW 	vmiTopBorder+6, 1
+
+	LoadW 	vmiBottomBorder, 442
+	LoadW 	vmiBottomBorder+2, 442
+	LoadW 	vmiBottomBorder+4, 442
+	LoadW 	vmiBottomBorder+6, 480
+
+	LoadB 	vmiSpriteYPosOff+2, 41
+	LoadB 	vmiSpriteYPosOff+3, 1
+
+	LoadW 	vmiMaxY+6, 478
+
+	LoadB 	vmiFullCardsY+3, 59
+
+	txa
+	and	#$7F
+	tax
+	tya
+	and	#$7F
+	tay
+
+@doneWithPAL:
+	stx	$DC0E
+	sty	$DD0E
 
 	; move underlayr from $0A000 to $1A000
 	lda	#>underlaylist
