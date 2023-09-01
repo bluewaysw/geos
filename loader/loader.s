@@ -88,26 +88,12 @@ next:	.WORD	0
 	STA	$D02F
 	LDA	#C65_VIC_INIT2
 	STA	$D02F
-@aaa:
-;	inc $d020
-;	jmp @aaa
 
 	; Various VIC register stuffs
 	STZ	$D030	; turn ROM mappings / etc OFF
-	STZ $D031
+	STZ	$D031
 	STZ	$D019	; disable VIC interrupts
 	STZ	$D01A
-
-	lda	$d06f
-;	lda	#$80	; NTSC
-;	lda	#$00	; PAL
-	and	#$80
-	sta	$d06f
-
-	; disable HDMI audio
-	;lda	#0
-	;sta	$d61a
-
 
 ; not working with xemu
 ; disable badline emulation
