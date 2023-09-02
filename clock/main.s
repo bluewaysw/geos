@@ -72,30 +72,9 @@ GetRTC:
 		LoadW	r0, $7110
 		LoadW	r1, $0FFD
 
-		lda	#30
-		sta	dblClickCount
-
-		; first we check if the clock return stable values (is powered by battery)
-@3:
-		ldx	dblClickCount
-		bne	@4	; no error exit, try again
-@2:
-		sec		; signal error
-		rts
-@4:
-		LDZ	#0
-		EOM
-		lda 	(r0), Z
-		EOM
-	 	cmp	(r0), Z
-		bne 	@3	; unstable retry
-		EOM
-	 	cmp	(r0), Z
-		bne 	@3	; unstable retry
-
 		jsr	GetLongUnbounced
 		sta	MySec
-
+		cli	; enable interrupts to operate dblClickCount
 		lda	#30
 		sta	dblClickCount
 @1:
@@ -161,6 +140,9 @@ GetRTC:
 		sta	MyJahr
 
 		clc
+		rts
+@2:
+		sec     ; signal error
 		rts
 
 SetRTC:
