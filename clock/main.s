@@ -74,7 +74,7 @@ GetRTC:
 
 		jsr	GetLongUnbounced
 		sta	MySec
-
+		cli	; enable interrupts to operate dblClickCount
 		lda	#30
 		sta	dblClickCount
 @1:
@@ -142,7 +142,7 @@ GetRTC:
 		clc
 		rts
 @2:
-		sec		; signal error
+		sec     ; signal error
 		rts
 
 SetRTC:
