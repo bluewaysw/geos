@@ -103,7 +103,7 @@ UM_1:
 @L0:
 	JSR	ButtonCheck
 
-	LDA	SID_ADConv1		   ;Get mouse X movement
+	LDA	$D620        		   ;Get mouse X movement
 	;LDY	flgMse1351
 	;BEQ	@full_x
 
@@ -167,7 +167,7 @@ UM_1:
 ; Calculate the Y movement vector
 
 @SkipX:
-	LDA	SID_ADConv2		   ;Get mouse Y movement
+	LDA	$D621		        ;Get mouse Y movement
 	;LDY	flgMse1351
 	;BEQ	@full_y
 
