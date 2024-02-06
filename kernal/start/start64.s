@@ -204,6 +204,10 @@ ASSERT_NOT_BELOW_IO
 	dey
 	bpl @6
 	;
+.ifdef mega65
+	lda #3|64
+	sta graphMode
+.endif
 	jsr FirstInit
 
 	LDA #0
