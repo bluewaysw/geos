@@ -1083,7 +1083,7 @@ FehlerAusgabe:	; Dialogbox-Anzeige f}r Diskettenfehlermeldungen
 @t2:	.byte	"function aborted due to",0
 @t3:	.byte	"disk error $"
 @nr:	.byte	"..",0
-@t4:	.byte	"auf Laufwerk "
+@t4:	.byte	"on drive "
 @dr:	.byte	".",0
 .endif
 @db2:	.byte	$81
