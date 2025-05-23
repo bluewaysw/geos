@@ -514,7 +514,7 @@ DeskFormat:	MoveB	curDrive,Name+2	; nur Zwischenspeicher
 .else
 @t1:	.byte	"Insert disk to be formatted",0
 @t2:	.byte	"in drive "
-@dr:	.byte	". einlegen ",0
+@dr:	.byte	".",0
 @t3:	.byte	"and enter name:",0
 .endif
 @icontab:	.word	@icon1,@icon2,@icon3,@icon4
