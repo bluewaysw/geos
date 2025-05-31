@@ -28,17 +28,46 @@ SizeRectangle:
 @10:	sta	r5L,y
 	dey
 	bpl	@10
+
+	ldx	r3H
+	ldy	r4H
+	txa
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r3H
+	tya
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r4H
+
 	lda	r2H
 	sec
 	sbc	r2L	; H|he ermitteln
-	sbc	#2	; -2
 	sta	r5L	; ->r5L
+	lda	r4H
+	sbc	r3H
+	sta	r5H
+
+	sty	r4H
+	stx	r3H
+
+	SubVW_	2, r5	; -2
+
 	ldx	#r0L
 	ldy	#r5L
 	jsr	NewDdiv	; Max / H|he
+	
 	ldy	#$ff
+	sty	r9H
 @20:	iny
-	CmpW	r6,r1
+	bne	@20a
+	inc	r9H
+@20a:
+	CmpW	r6,r1		; r1, value to set
 	bge	@40
 	AddW	r0,r6
 	AddW	r8,r7
@@ -52,20 +81,45 @@ SizeRectangle:
 @40:	tya
 	beq	@30
 	iny
+	bne	 @30
+	inc	r9H
 @30:	sty	r9L
+	SubW	r9, r5
+	MoveB	r2L, r9L
+	lda	r3H
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r9H
+	AddW	r5, r9
+
+	lda	r9L
+	sta	r2H
+	lda	r4H
+	and	#$0F
+	sta	r4H
+	lda	r9H
+	asl
+	asl
+	asl
+	asl
+	ora	r4H
+	sta	r4H
 ;	lda	r2H 
 ;	sec 
 ;	sbc	r9L 
 ;	sta	r2L 
 ;	lda	#1
-	lda	r2H
-	sec
-	sbc	r2L
-	sec
-	sbc	r9L
-	clc
-	adc	r2L
-	sta	r2H
+;;	lda	r2H
+;;	sec
+;;	sbc	r2L
+;;	sec
+;;	sbc	r9L
+;;	clc
+;;	adc	r2L
+	;sta	r2H
+
 	inc	r2L
 	IncW	r3
 	DecW	r4

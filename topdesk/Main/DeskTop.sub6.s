@@ -127,10 +127,6 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 	lda	r0H
 	adc	#>(18*16)
 	sta	a6H
-	lda	r2L
-	clc
-	adc	#2
-	sta	r1H
 	lda	a5L
 	clc
 	adc	#10
@@ -138,6 +134,15 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 	lda	a5H
 	adc	#0
 	sta	a3H
+	lda	r2L
+	clc
+	adc	#2
+	sta	r1H	
+	bcc	@05c
+	lda	a3H	; handle y overflow
+	add	#16
+	sta	a3H
+@05c:
 	lda	#0
 	jsr	SetPattern
 	jsr	NewRectangle
@@ -149,12 +154,18 @@ __DispFiles:	; Darstellung von FILE__ANZ Fileintr{gen im Textwindow
 	clc
 	adc	#10
 	sta	r1H
+
+	bcc	@05b
+	lda	a3H	; handle y overflow
+	add	#16
+	sta	a3H
+@05b:
 	pla
 	cmp	windowBottom
-	bcs	@22
+	;bcs	@22
 	lda	r1H
 	cmp	windowTop
-	bcc	@22
+	;bcc	@22
 	MoveW_	a3,r11
 	ldy	#00
 	lda	(r0),y
@@ -394,30 +405,27 @@ __GetFileRect:	; Ermittlung des Iconrechtecks eines Files einer DispFile-Darstel
 	; Ret:	r2-r4: Rechteck-Koordinaten
 	; Des:	x,y,r1,...
 	pha
-	sta	r2L	; Nummer mal 10
-	asl
-	asl
-	asl
-	clc
-	adc	r2L
-	adc	r2L
-	adc	windowTop	; plus obere Grenze
-	sta	r2L	; gleich obere Grenze
-	adc	#9	; plus 9
-	sta	r2H	; gleich untere Grenze
+	lda	a3H
+	and	#$F0
+	sta	r3H
+	sta	r4H
 	lda	a3L	; linke Grenze = leftMargin+8
 	clc
 	adc	#8
 	sta	r3L
 	lda	a3H
+	and	#$0F
 	adc	#0
+	ora	r3H
 	sta	r3H
 	lda	rightMargin	; rechte Grenze = rightMargin-3
 	sec
 	sbc	#3
 	sta	r4L
 	lda	rightMargin+1
+	and	#$0F
 	sbc	#0
+	ora	r4H
 	sta	r4H
 	ldy	#5
 @20:	lda	windowTop,y
@@ -425,6 +433,33 @@ __GetFileRect:	; Ermittlung des Iconrechtecks eines Files einer DispFile-Darstel
 	dey
 	bpl	@20
 	AddVW__	8,r6
+	pla
+	pha
+	sta	r2L	; Nummer mal 10
+	asl
+	asl
+	asl
+	clc
+	add	r2L
+	add	r2L
+	add	windowTop	; plus obere Grenze
+	sta	r2L	; gleich obere Grenze
+	bcc	@20a
+	lda	r3H
+	add	#16	
+	sta	r3H
+	lda	r4H
+	add	#16	
+	sta	r4H
+@20a:
+	lda	r2L
+	add	#9	; plus 9
+	sta	r2H	; gleich untere Grenze
+	bcc	@20b
+	lda	r4H
+	add	#16	
+	sta	r4H
+@20b:
 	jsr	CutRec
 	pla
 	rts

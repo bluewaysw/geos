@@ -358,34 +358,68 @@ sta	cutDebug
 @line:	MoveW_	a3,r4
 	MoveB	a2H,r11H
 	lda	NoClipFlag
-	bne	@l40
+	beq	@l40b
+	jmp	@l40
+@l40b:	
 	; ins ClipRect einpassen
-	lda	r11H
-	sta	r2L
-	sta	r2H
+
 	lda	r11L
-	cmp	r11H
-	bcc	@l10
-	sta	r2H
-	bcs	@l20
-@l10:	sta	r2L
-@l20:	lda	r3L
-	sec
-	sbc	r4L
+	sta	r2L
 	lda	r3H
-	sbc	r4H
-	bmi	@l30
-	ldx	r3L
-	MoveB	r4L,r3L
-	stx	r4L
-	ldx	r3H
-	MoveB	r4H,r3H
-	stx	r4H
-@l30:	MoveW_	r2,r11
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r2H
+	lda	r3H
+	and	#$0f
+	sta	r3H
+
+	lda	r11H
+	sta	r11L
+	lda	r4H
+	lsr
+	lsr
+	lsr
+	lsr
+	sta	r11H
+	lda	r4H
+	and	#$0f
+	sta	r4H
+
+	ldx	#r2
+	ldy	#r11
+	jsr	@order
+
+	ldx	#r3
+	ldy	#r4
+	jsr	@order
+
+	lda	r2H
+	asl
+	asl
+	asl
+	asl
+	ora	r3H
+	sta	r3H
+
+	lda	r11H
+	asl
+	asl
+	asl
+	asl
+	ora	r4H
+	sta	r4H
+
+	lda	r11L
+	sta	r2H
+	MoveW_	r2,r11
+
 	jsr	GetClipRec
 	jsr	CutRec
 	bcs	@weiter
 	MoveW_	r2,r11
+
 	lda	r11L
 	cmp	r11H
 	bne	@l40
@@ -409,6 +443,30 @@ sta	cutDebug
 	bcc	@30
 	inc	a1H
 @30:	jmp	@loop2
+
+@order:
+	lda	0,x
+	sec
+	sbc	0,y
+	lda	1,x
+	sbc	1,y
+	bmi	@orderEnd
+	; swap
+	lda	0, x
+	taz
+	lda	0, y
+	sta	0, x
+	tza
+	sta	0, y
+
+	lda	1, x
+	taz
+	lda	1, y
+	sta	1, x
+	tza
+	sta	1, y
+@orderEnd:	
+	rts
 
 .macro Punkt x0, y0, b6, b7, b5
 	.byte	y0
@@ -536,9 +594,9 @@ MaxTextWin:	; Ret: x unver{ndert
 	WordCX	0, 0
 	WordCX  SC_FROM_END|0, SC_FROM_END|0
 SetTextWin:	; Par: r2-r4 zu setzendes Textfenster
-	;jsr	GetClipRec
-	;jsr	CutRec
-	;bcs	@end
+	jsr	GetClipRec
+	jsr	CutRec
+	bcs	@end
 	ldy	#5
 @loop:	lda	windowTop,y
 	sta	OldClip,y
@@ -1313,10 +1371,7 @@ CheckUser:	ldx	activeWindow
 @20:	pla
 	pla
 	rts
-IsMseOnGad:	lda	r2L
-	clc
-	adc	#BREITEY
-	sta	r2H
+IsMseOnGad:	
 	lda	r3L
 	clc
 	adc	#BREITEX
@@ -1324,6 +1379,15 @@ IsMseOnGad:	lda	r2L
 	lda	r3H
 	adc	#00
 	sta	r4H
+	lda	r2L
+	clc
+	adc	#BREITEY
+	sta	r2H
+	bcc	@10
+	lda	r4H
+	add	#16
+	sta	r4H
+@10:
 	jmp	IsMseInRegion
 CheckClose:	jsr	GetWinRec
 	jsr	IsMseOnGad	; Close-Gadget angeklickt
@@ -1334,30 +1398,85 @@ CheckClose:	jsr	GetWinRec
 	lda	#WN_CLOSE
 	ldx	activeWindow
 	jmp	SendMessage2
-CheckMax:	jsr	GetWinRec
-	lda	r4L
-	sec
-	sbc	#BREITEX
-	sta	r3L
+
+	; x reg, x offset... if neg, then from the right window edge
+	; z reg, y offset... if net, then from the bottom window edge
+CheckXY:
+
+	jsr	GetWinRec	; x, a, destory, r2-r4 filled
+
+	; fill/move proper data to r2L/r3
+	tza
+	bpl 	@10		; leave r2L, r3H
+
+	MoveB	r2H, r2L
 	lda	r4H
-	sbc	#00
+	and	#$F0
 	sta	r3H
-	jsr	IsMseOnGad	; Maximal-Gadget angeklickt
+	lda	r3H
+	and	#$0F
+	ora	r3H
+	sta	r3H
+@10:
+	txa	
+	bpl	@15		; leave r3
+
+	MoveB	r4L, r3L
+	lda	r3H
+	and	#$F0
+	sta	r3H
+	lda	r4H
+	and	#$0f
+	ora	r3H
+	sta	r3H
+@15:
+	; add
+	txa
+	add	r3L
+	sta	r3L
+
+	txa
+	bmi	@11
+	lda	#0
+	bra	@12
+@11:	lda	#$ff
+@12:
+	adc	r3H
+	sta	r3H	
+
+	tza
+	add	r2L
+	sta	r2L
+	bcc	@13
+	tza
+	bmi	@14
+	lda	r3H
+	add	#16
+	sta	r3H
+	bra	@14
+@13:
+	tza
+	bpl	@14
+	lda	r3H
+	sub	#16
+	sta	r3H
+@14:
+	jmp	IsMseOnGad	; Maximal-Gadget angeklickt
+
+CheckMax:
+	ldx	#-BREITEX
+	ldz	#0
+	jsr	CheckXY
 	bne	@10	; >ja
 @05:	rts
 @10:	pla
 	pla
 	jsr	MaxWindow
 	jmp	Move1stWin
-CheckHide:	jsr	GetWinRec
-	lda	r4L
-	sec
-	sbc	#BREITEX*2
-	sta	r3L
-	lda	r4H
-	sbc	#00
-	sta	r3H
-@07:	jsr	IsMseOnGad	; Hide-Gadget angeklickt?
+CheckHide:
+	ldx	#-BREITEX*2
+	ldz	#0
+	jsr	CheckXY
 	bne	@10	; >ja
 @05:	rts
 @10:	pla
@@ -1365,19 +1484,10 @@ CheckHide:	jsr	GetWinRec
 	ldx	activeWindow
 	jmp	BackWindow
 
-CheckSize:	jsr	GetWinRec
-	lda	r2H
-	sec
-	sbc	#BREITEY
-	sta	r2L
-	lda	r4L
-	sec
-	sbc	#BREITEX
-	sta	r3L
-	lda	r4H
-	sbc	#00
-	sta	r3H
-	jsr	IsMseInRegion	; Size-Gadget angeklickt
+CheckSize:
+	ldx	#-BREITEX
+	ldz	#-BREITEY
+	jsr	CheckXY
 	bne	@10	; >ja
 @05:	rts
 @10:	pla
@@ -1385,79 +1495,40 @@ CheckSize:	jsr	GetWinRec
 	jsr	GetWinRec
 	LoadW___	r0,Move1stWin
 	jmp	DoRubber
-CheckScroll_LR:	jsr	GetWinRec
-	lda	r2H
-	sec
-	sbc	#BREITEY
-	sta	r2L
-	jsr	IsMseOnGad	; Scroll_L -Gadget angeklickt
+CheckScroll_LR:	
+	ldx	#0
+	ldz	#-BREITEY
+	jsr	CheckXY
 	bne	@10	; >ja
-	beq	@20
-@05:	rts
+	ldx	#-BREITEX*2
+	ldz	#-BREITEY
+	jsr	CheckXY
+	bne	@30	; >ja
+	rts
 @10:	lda	#WN_SCROLL_L
 	.byte	$2c
 @30:	lda	#WN_SCROLL_R
+	bra 	CheckScollCommon
+CheckScroll_UD:	
+	ldx	#-BREITEX
+	ldz	#-BREITEY*2
+	jsr	CheckXY
+	jsr	IsMseOnGad	; Scroll_D -Gadget angeklickt
+	bne	@30	; >ja
+	ldx	#-BREITEX
+	ldz	#BREITEY
+	jsr	CheckXY
+	jsr	IsMseOnGad	; Scroll_U -Gadget angeklickt
+	bne	@10	; >ja
+	rts
+@10:	lda	#WN_SCROLL_U
+	.byte	$2c
+@30:	lda	#WN_SCROLL_D
+CheckScollCommon:
 	tax
 	pla
 	pla
 	txa
-	ldx	activeWindow
-	jsr	SendMessage2
-	rts
-@20:	jsr	GetWinRec
-	lda	r2H
-	sec
-	sbc	#BREITEY
-	sta	r2L
-	lda	r4L
-	sec
-	sbc	#BREITEX*2
-	sta	r3L
-	lda	r4H
-	sbc	#00
-	sta	r3H
-	jsr	IsMseOnGad	; Scroll_R -Gadget angeklickt
-	bne	@30	; >ja
-	rts
-CheckScroll_UD:	jsr	GetWinRec
-	lda	r2L
-	clc
-	adc	#BREITEY
-	sta	r2L
-	lda	r4L
-	sec
-	sbc	#BREITEX
-	sta	r3L
-	lda	r4H
-	sbc	#00
-	sta	r3H
-	jsr	IsMseOnGad	; Scroll_U -Gadget angeklickt
-	bne	@10	; >ja
-	beq	@20
-@05:	rts
-@10:	pla
-	pla
-	lda	#WN_SCROLL_U
-	ldx	activeWindow
-	jmp	SendMessage2
-@20:	jsr	GetWinRec
-	lda	r2H
-	sec
-	sbc	#BREITEY*2
-	sta	r2L
-	lda	r4L
-	sec
-	sbc	#BREITEX
-	sta	r3L
-	lda	r4H
-	sbc	#00
-	sta	r3H
-	jsr	IsMseOnGad	; Scroll_D -Gadget angeklickt
-	bne	@30	; >ja
-	rts
-@30:	pla
-	pla
-	lda	#WN_SCROLL_D
 	ldx	activeWindow
 	jmp	SendMessage2
 CheckMove:	jsr	GetWinRec
@@ -2826,6 +2897,12 @@ Recover:	lda	c128Flag
 	jsr	NormalizeX
 	ldx	#r4
 	jsr	NormalizeX
+	ldx	#r3
+	ldy	#r2L
+	jsr	NormalizeY
+	ldx	#r4
+	ldy	#r2H
+	jsr	NormalizeY
 @10:	ldy	#8
 	tya
 	clc

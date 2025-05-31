@@ -3074,10 +3074,16 @@ DispSizeRectangle:	PushW	r0
 	lda	r3L
 	clc
 	adc	#5
+	tax
+	lda	r4H
+	and	#$F0
 	sta	r4L
 	lda	r3H
+	and	#$0F
 	adc	#00
+	ora	r4L
 	sta	r4H
+	stx	r4L
 	jsr	SizeRectangle
 	PopW	r0
 	rts
