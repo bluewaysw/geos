@@ -1052,7 +1052,6 @@ REUTextSuffix:
 MenuSaveConfig:
         jsr     DoPreviousMenu                  ; 1990 20 90 C1                  ..
         lda     V2104                           ; 1993 AD 04 21                 ..!
-        brk
 	jsr     InitDrive                           ; 1996 20 3E 07                  >.
         LoadW   r0, V20D9
         jsr     OpenRecordFile                  ; 19A1 20 74 C2                  t.
