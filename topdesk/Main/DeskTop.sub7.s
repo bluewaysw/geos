@@ -370,7 +370,7 @@ StartUp:
 	beq	@40
 	LoadB	r1L,0
 	LoadW___	r6,Name
-	jsr	NewGetFile
+	;jsr	NewGetFile
 @40:	LoadB	firstBoot,$ff
 	jsr	SetCopyMemLow
 	ldy	#0

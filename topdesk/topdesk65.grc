@@ -8,6 +8,6 @@ HEADER APPLICATION "65 DESKTOP" "TopDesk65" "V6.0" {
 }
 
 MEMORY {
-    overlaysize 0x9e7
+    overlaysize 0x971
     overlaynums 0 1 2 3 4 5 6 7 8 9 10
 }
