@@ -422,6 +422,9 @@ gslend:
 Ensure80ColMemLayout:
 	lda	_col80MemLayout
 	bne	@1
+	lda	dispBufferOn
+	and	#ST_WR_BACK
+	beq	@1
 	jsr	SwitchTo80ColMemLayout
 @1:
 	rts

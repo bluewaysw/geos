@@ -676,7 +676,7 @@ L06B2:  lda     #$01                            ; 06B2 A9 01                    
 	; if ram drive, config drive c
         lda     ramExpSize                      ; 06D9 AD C3 88                 ...
         beq     L06E7                           ; 06DC F0 09                    ..
-        
+
 	lda     L0408                           ; 06DE AD 08 04                 ...
         ldx     V2108                           ; 06E1 AE 08 21                 ..!
         jsr     L06EB                           ; 06E4 20 EB 06                  ..
@@ -729,12 +729,24 @@ L0704:
 ; init ram backed drive
 ; if detected 1571 but save 1541, force to 1541
 L0711:  and     #$0F                            ; 0711 29 0F                    ).
+	cmp	#DRV_F011_0
+	beq	useSaved
+	cmp	#DRV_F011_1
+	beq	useSaved
+	cmp	#DRV_SD_81
+	beq	useSaved
+	cmp	#DRV_SD_71
+	beq	useSaved
+	cmp	#DRV_F011_V
+	beq	useSaved
+
         cmp     #$01                            ; 0713 C9 01                    ..
         bne     L0721                           ; 0715 D0 0A                    ..
         lda     r2L                             ; 0717 A5 06                    ..
         cmp     #$02                            ; 0719 C9 02                    ..
         bne     L0721                           ; 071B D0 04                    ..
         lda     #$01                            ; 071D A9 01                    ..
+useSaved: 
         sta     r2L                             ; 071F 85 06                    ..
 L0721:  lda     r2H                             ; 0721 A5 07                    ..
         and     #$40                            ; 0723 29 40                    )@
@@ -828,8 +840,12 @@ L0786:  cmp     #$03                            ; 0786 C9 03                    
 	bne 	@3
 	jmp	InitSD71
 @3:	cmp	#DRV_F011_0
-	bne	@4
+	bne	@3a
 	jmp	InitF011
+@3a:	cmp	#DRV_F011_1
+	bne	@4
+	brk
+	jmp	InitF011_1
 @4:	cmp	#DRV_F011_V
 	bne	L078D
 	jmp	InitVirtual

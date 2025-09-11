@@ -92,10 +92,7 @@ DecTabH:
 ;---------------------------------------------------------------
 _PutDecimal:
 .ifdef mega65
-	tay
-	PushB	CPU_DATA
-	LoadB	CPU_DATA, RAM_64K
-	tya
+	START_IO_Y
 .endif
 	jsr CalcDecimal
 .ifdef wheels_size_and_speed ; duplicate load
@@ -135,7 +132,4 @@ _PutDecimal:
 .endif
 	dec r0L
 	bne @3
-.ifdef mega65
-	PopB	CPU_DATA
-.endif
 	rts

@@ -391,10 +391,16 @@ ASSERT_NOT_BELOW_IO
 .macro END_IO
 .endmacro
 .macro START_IO_X
+ASSERT_NOT_BELOW_IO
+	ldx #IO_IN
+	stx CPU_DATA 
 .endmacro
 .macro END_IO_X
 .endmacro
 .macro START_IO_Y
+ASSERT_NOT_BELOW_IO
+	ldy #IO_IN
+	sty CPU_DATA 
 .endmacro
 .macro END_IO_Y
 .endmacro

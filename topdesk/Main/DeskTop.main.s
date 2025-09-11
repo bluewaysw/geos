@@ -146,6 +146,13 @@ __ClearMultiFile:
 .global SearchDeskTop
 .global __STARTUP_RUN__
 
+.global StashDataStart
+.global StashChecksum
+.global SavedGraphMode
+.global SetMyNewMode
+.global StartupGraphMode
+.global UpdateStartupOption
+
 .ifdef topdesk128
 .global TypTab
 .global SchmalFlag
@@ -155,19 +162,19 @@ __ClearMultiFile:
 __STARTUP_RUN__:
 Start:
 .ifdef topdesk128
-    jsr SetMyNewMode
+	jsr	SetMyNewMode
 .endif
 .ifdef topdesk13
 	lda	RamTopFlag
 .ifdef topdesk128
-	beq @05
-	lda oldGraphMode
-	cmp graphMode
-	beq @10
-	jsr SwitchWin
-	jmp @10
+	beq	@05
+	lda	oldGraphMode
+	cmp	graphMode
+	beq	@10
+	jsr	SwitchWin
+	jmp	@10
 @05:
-    jsr StartWin
+	jsr	StartWin
 .endif
 	ldy	#4
 @tloop:	lda	@t,y
@@ -179,7 +186,7 @@ Start:
 .endif
 @10:
 .ifdef topdesk128
-    MoveB   graphMode, oldGraphMode
+    	MoveB   graphMode, oldGraphMode
 .endif
 	lda	mouseData
 	ora	#$80
@@ -198,7 +205,7 @@ Start:
 	iny
 	bne	@loop
 @02:	
-    jmp	StartUp
+    	jmp	StartUp
 
 .ifdef topdesk13
  @t:	.byte	"SURE",$0d
@@ -342,7 +349,10 @@ PrintX	= 3
 PrintY	= 21
 
 Start2:
-    lda	RamTopFlag
+
+	bra	@10
+.ifndef mega65
+	lda	RamTopFlag
 	bne	@10
 	lda	ramExpSize
 	beq	@09
@@ -362,9 +372,13 @@ Start2:
 	MoveW_	$8400+19,r1
 	LoadW___	r4,$8000
 	jmp	PutBlock
-@07:	jmp	MakeRamTop
-@08:	rts
+@07:	
+.ifndef mega65
+	jmp	MakeRamTop
+.endif
 @09:	jmp	GetDiskDrivers
+.endif
+@08:	rts
 @10:	jmp	ReLoadAll2
 ;	jmp	GetWindowStat
 ;	jmp	OpenNext
@@ -401,6 +415,19 @@ JmpSub:	pha
 @10:	pla
 	rts
 StartUp:
+	jsr	SearchDeskTop
+	bcs	@08
+
+	lda	#' '
+	ldx	$8091
+	beq	@05
+	lda	#'*'
+@05:	sta	AutoSwapFlag
+
+	lda	$8090
+	sta	StartupGraphMode
+@08:
+	jsr	LoadRest
 	;brk
 	nop
 	lda	#7
@@ -563,6 +590,7 @@ DCopy:	JmpMod2	8,0
 NeuerOrdner:	JmpMod2	9,0
 CopyDir:	JmpMod	9,1
 ;DeleteDir:	JmpMod	9,2
+.ifndef mega65
 MakeRamTop:	jsr	GotoFirstMenu
 	LoadB	MyCurRec,0
 	ldx	#10
@@ -572,10 +600,17 @@ MakeRamTop:	jsr	GotoFirstMenu
 	beq	@10
 	rts
 @10:	jmp	ReLoadAll
+.else
+LoadRest:
+	JmpMod	10,1
+.endif
 
-StashMain:	lda	RamTopFlag
+StashMain:
+.ifndef mega65
+	lda	RamTopFlag
 	bne	@geht
 	rts
+.endif
 @geht:	LoadB	MyCurRec,0
 	ldy	#r15H-r0L
 @loop:	lda	r0L,y
@@ -586,6 +621,7 @@ StashMain:	lda	RamTopFlag
 .ifdef topdesk128
 
 oldGraphMode:    .byte   0
+StartupGraphMode:	.byte	0	; 0 means "use default"
 
 .macro wb argx, argy
     .word   argx
@@ -1331,7 +1367,9 @@ Speziell_Menue:	lda	#PLAINTEXT
 	.byte	$84
 	mpt	@t1,MENU_ACTION,NeuerOrdner
 	mpt	@t2,MENU_ACTION,GetTime
-;	mpt	@t3,MENU_ACTION,MakeRamTop
+.ifndef mega65
+	mpt	@t3,MENU_ACTION,MakeRamTop
+.endif
 	mpt	@t4,MENU_ACTION,Reset
 	mpt	AutoSwapFlag,MENU_ACTION,AutoSwap
 ;	mpt	@t5,MENU_ACTION,GoToBasic
@@ -1389,12 +1427,14 @@ AutoSwap:	jsr	GotoFirstMenu
 	beq	@10
 	ldx	#$20
 @10:	stx	AutoSwapFlag
+
+PersistOption:
 	lda	RamTopFlag
 	bne	@15
 	jsr	SearchDeskTop
 	bcc	@20
 @15:	rts
-@20:	MoveB	RamTopFlag,$8090	; immer 0, aber egal
+@20:	MoveB	StartupGraphMode,$8090
 	MoveB	AutoSwapFlag,$8091
 	MoveW_	$8400+19,r1
 	LoadW___	r4,$8000
@@ -1627,8 +1667,8 @@ RedrawHead:
 	jmp	InitClock
 
 mode_Menue:
-	ldx #40
-	ldy #8
+	ldx #40-5
+	ldy #7
 @1:	lda modetab,x
         sta r1L
 	lda modetab+1,x
@@ -1659,9 +1699,9 @@ mode_Menue:
 
 	jsr	MySubMenuDA2
 modeoben:	.byte 13+13+1
-modeunten:	.byte 8*14+13+13+1+1		; wird berechnet!
+modeunten:	.byte 9*14+13+13+1+1		; wird berechnet!
 		.word 80,171
-		.byte 8 | VERTICAL
+		.byte 9 | VERTICAL
 modetab:
 		mpt	Mode40Text,MENU_ACTION,Mode_Call
 		mpt	Mode80Text,MENU_ACTION, Mode_Call
@@ -1671,6 +1711,7 @@ modetab:
 		mpt	ModeSRText,MENU_ACTION,Mode_Call
 		mpt	ModeSRSText,MENU_ACTION,Mode_Call
 		mpt	ModeHCText,MENU_ACTION,Mode_Call
+		mpt	StartupModeText,MENU_ACTION,Mode_SetStartup
 Mode40Text:	.byte "  40-cols",0
 Mode80Text:	.byte "  80-cols",0
 ModeNSText:	.byte " ", ITALICON, " nice scale",PLAINTEXT,0
@@ -1679,6 +1720,13 @@ ModeHRSText:	.byte " ", ITALICON, " high-res scaled",PLAINTEXT,0
 ModeSRText:	.byte "  super-res",PLAINTEXT,0
 ModeSRSText:	.byte " ", ITALICON, " super-res scaled",PLAINTEXT,0
 ModeHCText:	.byte " ", ITALICON, " high-color",PLAINTEXT,0
+StartupModeText:	.byte " ", ITALICON, " startup mode",PLAINTEXT,0
+
+Mode_SetStartup:
+	jsr	GotoFirstMenu
+	MoveB	graphMode, StartupGraphMode
+	jsr	UpdateStartupOption
+	jmp	PersistOption
 
 Mode_Call:
 	cmp	#2
@@ -1696,16 +1744,33 @@ Mode_Call:
 
         lda graphMode
         sta oldGraphMode
+	sta SavedGraphMode
         jsr SetNewMode
         jsr SetMyNewMode
         jsr SetColor
         jsr RedrawHead
         jsr DispMultiCount
         ;jsr SwitchWin
-        jmp RedrawAll
+        jsr RedrawAll
+	bra UpdateStartupOption
 @11:
 	jmp	GotoFirstMenu
-
+UpdateStartupOption:
+	lda	StartupGraphMode
+	cmp	graphMode
+	beq	@10
+	lda #' '
+	sta StartupModeText
+	lda #PLAINTEXT
+	sta StartupModeText+1
+	rts
+@10:
+	; set ' ' and ITALIC
+	lda #'*'
+	sta StartupModeText
+	lda #ITALICON
+	sta StartupModeText+1
+	rts
 
 geos_Menue:
 	jsr	DA_Init
@@ -1894,7 +1959,9 @@ KeyTab:	ShortCutKey	'm'
 	ShortCutKey	1
 	ShortCutKey	3
 	ShortCutKey	5
+.ifndef mega65
 	ShortCutKey	14
+.endif
 	ShortCutKey	'w'
 	ShortCutKey	'x'
 	ShortCutKey	'c'
@@ -1913,7 +1980,10 @@ KeyServiceTab:	.word	DeskRename,DeskDelete,Reset,DispFileInfo
 	.word	DeskDosNew,DateiOeffnen,DeskDuplicate,DCopy
 	.word	PrintService,NeuerOrdner
 	.word	OpenD8,OpenD9,OpenD10,OpenD11,KS8,KS9,KS10,KS11
-	.word	SelectAll,SelectPage,CloseAll,MakeRamTop
+	.word	SelectAll,SelectPage,CloseAll
+.ifndef mega65
+	.word	MakeRamTop
+.endif
 	.word	Ordnen,GetTime
 	.word	ScrollUp,ScrollDown,ScrollLeft,ScrollRight
 	.word	CloseService2,BackWindow
@@ -2271,59 +2341,6 @@ MyDCFilesSub:	ldx	messageBuffer+1
 
 .endif
 
-WindowTab:
-.ifdef topdesk128
-Window1:
-.endif
-	.byte	15	; y oben
-	.byte	15+90	; y unten
-	.word	2	; x links
-.ifdef topdesk128
-WR1:
-.endif
-	.word	2+270	; x rechts
-	.byte	$ff	; alle Gadgets
-	.word	WinName1
-	.word	Handler
-.ifdef topdesk128
-Window2:
-.endif
-	.byte	107	; y oben
-	.byte	107+90	; y unten
-	.word	2	; x links
-.ifdef topdesk128
-WR2:
-.endif
-	.word	2+270	; x rechts
-	.byte	$ff	; alle Gadgets
-	.word	WinName2
-	.word	Handler
-.ifdef topdesk128
-Window3:
-.endif
-	.byte	24	; y oben
-	.byte	24+90	; y unten
-	.word	30	; x links
-.ifdef topdesk128
-WR3:
-.endif
-	.word	30+270	; x rechts
-	.byte	$ff	; alle Gadgets
-	.word	WinName3
-	.word	Handler
-.ifdef topdesk128
-Window4:
-.endif
-	.byte	44	; y oben
-	.byte	44+90	; y unten
-	.word	50	; x links
-.ifdef topdesk128
-WR4:
-.endif
-	.word	50+265	; x rechts
-	.byte	$ff	; alle Gadgets
-	.word	WinName4
-	.word	Handler
 .ifdef topdesk128
 
 StartWin:
@@ -2345,35 +2362,6 @@ StartWin:
 FILE_ANZ	= 16	; nicht {ndern !
 MOVE_OFFS	= 60
 
-WinTabAdr:	.word	FileTab1,FileTab2,FileTab3,FileTab4
-winDrives:	.byte	0,0,0,0
-windowOffs:	.byte	0,0,0,0
-xOffsL:	.byte	0,0,0,0
-xOffsH:	.byte	0,0,0,0
-fileNum:	.byte	0,0,0,0
-fileAnz:	.byte	0,0,0,0
-aktl_Sub:	.byte	0,0,0,0
-subTab:	.byte	0,0,0,0,0,0,0,0
-freeAnz:	.byte	0,0,0,0,0,0,0,0
-maxAnz:	.byte	0,0,0,0,0,0,0,0
-winMode:	.byte	0,0,0,0
-NameTab:	.word	WinName1,WinName2,WinName3,WinName4
-WinName1:	.byte	"x:"
-	.repeat	78
-	.byte 0	; Pfadname: "D:Disk/Sub1/Sub2/Sub3"
-	.endrep
-WinName2:	.byte	"x:"	; beim "/" bit 7 gesetzt!
-	.repeat	78
-	.byte 0	; Pfadname: "D:Disk/Sub1/Sub2/Sub3"
-	.endrep
-WinName3:	.byte	"x:"
-	.repeat	78
-	.byte 0	; Pfadname: "D:Disk/Sub1/Sub2/Sub3"
-	.endrep
-WinName4:	.byte	"x:"
-	.repeat	78
-	.byte 0	; Pfadname: "D:Disk/Sub1/Sub2/Sub3"
-	.endrep
 SubDirListTabL:	.byte	<SubDir1List,<SubDir2List,<SubDir3List,<SubDir4List
 SubDirListTabH:	.byte	>SubDir1List,>SubDir2List,>SubDir3List,>SubDir4List
 
@@ -3275,6 +3263,8 @@ File_Selected:	; Auswertung einer File-Selection
 	rts
 
 OpenFile:
+	jsr	StashMain
+
 	PushB	graphMode
 	jsr	ClearMultiFile2
 	jsr	MaxTextWin
