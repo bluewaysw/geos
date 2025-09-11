@@ -125,8 +125,6 @@ _RamOp:
 	sty	opToAddr+1
 	MoveW r2, opLength
 
-	START_IO_X
-
 	lda	#>opddmalist
 	ldy	#<opddmalist
 
@@ -140,6 +138,9 @@ _RamOp:
 
 ; input: A=0
 _GetBankParams:
+	ldx	#IO_IN
+	stx	$01
+
 	sta	$d702
 	sta 	$d704	;	enhanced bank
 	;ldy	#5

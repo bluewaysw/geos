@@ -119,8 +119,13 @@
 .global MainAdr
 .global MyName
 .global SearchDeskTop
+.global StashDataStart
 
-
+.global StashChecksum
+.global SavedGraphMode
+.global SetMyNewMode
+.global StartupGraphMode
+.global UpdateStartupOption
 
 SubDir2List	= SubDir1List + 64
 SubDir3List	= SubDir2List + 64
@@ -130,10 +135,17 @@ Name	= MultiFileTab + 145
 DiskName	= Name + 19
 Name2	= DiskName + 19
 
+ModStart:
+
+StashDataEnd	= ModStart
+StashDataSize	= StashDataEnd - StashDataStart
+
 	jmp	MakeRamTop
 	jmp	LoadRest
 	jmp	StashMain
-MakeRamTop:	lda	RamTopFlag
+MakeRamTop:
+.ifndef mega65	
+	lda	RamTopFlag
 	beq	@geht
 	ldy	#6
 @dl:	lda	@dd,y
@@ -274,7 +286,33 @@ SearchRAMDisk:	ldy	#8	; SearchRAMDisk + 2 = :loop !!
 @habeins:	tya
 	jsr	NewSetDevice
 	jmp	OpenDisk
-StashMain:	LoadB	r2H,$78
+.else	
+	rts
+.endif
+
+StashMain:
+.ifdef mega65
+	LoadW	StashChecksum, 0
+	LoadW	r0, StashDataStart
+	LoadW	r1, StashDataSize
+	jsr	CRC
+	MoveW	r2, StashChecksum
+
+	LoadW	r0, StashDataStart
+	LoadW	r1, 0
+	LoadW	r2, StashDataSize
+	LoadB	r3L, 0
+	jsr	StashRAM
+
+	ldy	#r15-2
+@loop:	lda	RegBuf,y
+	sta	r0L,y
+	dey
+	bpl	@loop
+	ldx	#0
+	rts
+.else	
+	LoadB	r2H,$78
 	lda	c128Flag
 	bpl	@64
 	LoadB	r2H,$38
@@ -292,6 +330,7 @@ StashMain:	LoadB	r2H,$78
 	MoveW_	TopMainAnf,r1
 	MoveW_	TopMainLen,r2
 	jsr	StashRAM
+
 	PushB	curDrive
 	jsr	SearchRAMDisk
 	txa
@@ -393,6 +432,9 @@ StashMain:	LoadB	r2H,$78
 	ldx	@x
 	rts
 @x:	.byte	0
+.endif
+
+.ifndef mega65
 TopInfo:	.word	MyName
 	.byte	3,21
 	;j
@@ -400,8 +442,58 @@ TopInfo:	.word	MyName
 	.byte	$83,6,1
 	.word	0,0,0
 	.byte	"TopDeskTemp V1.0",0
+.endif
 
-LoadRest:	LoadW___	r6,MyName
+LoadRest:
+.ifdef mega65
+	MoveB	graphMode, SavedGraphMode	; current mode is default
+
+	; store the loaded version, (as swap not works right now)
+	LoadW	r0, StashDataStart
+	LoadW	r1, StashDataSize
+	LoadW	r2, StashDataSize
+	LoadB	r3L, 0
+	jsr	StashRAM
+
+	LoadW	r0, StashDataStart
+	LoadW	r1, 0
+	LoadW	r2, StashDataSize
+	LoadB	r3L, 0
+	jsr	FetchRAM
+
+	MoveW	StashChecksum, r4
+	LoadW	StashChecksum, 0
+	LoadW	r0, StashDataStart
+	LoadW	r1, StashDataSize
+	jsr	CRC
+	
+	CmpW	r2, r4
+	beq	@10
+
+	; restore initial version
+	LoadW	r0, StashDataStart
+	LoadW	r1, StashDataSize
+	LoadW	r2, StashDataSize
+	LoadB	r3L, 0
+	jsr	FetchRAM
+
+	; we get here are intial start of TopDesk, apply persistet mode
+	lda	StartupGraphMode
+	beq	@05
+	sta	SavedGraphMode
+	sta	graphMode
+        jsr	SetNewMode
+        jsr	SetMyNewMode
+	bra	@99
+@10:
+	MoveB	SavedGraphMode, graphMode
+@99:
+        jsr	SetNewMode
+        jsr	SetMyNewMode
+@05:
+	jmp	UpdateStartupOption
+.else	
+	LoadW___	r6,MyName
 	jsr	FindFile
 	txa
 	beq	@10
@@ -417,7 +509,9 @@ LoadRest:	LoadW___	r6,MyName
 	LoadW___	r2,-1
 	jsr	ReadRecord
 	jmp	Start
+.endif
 
+.ifndef mega65
 NewEDT128:
 @05:	ldx	#6
 @loop2:	lda	TopData,x
@@ -454,5 +548,6 @@ TopMainLen:	.word	0
 	.byte	0
 NewEDT128End:
 NewEDT128Len	= NewEDT128End-NewEDT128
+.endif
 
 DataSpace:

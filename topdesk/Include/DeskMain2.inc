@@ -1414,6 +1414,113 @@ MoveShortCuts:
     rts
 .endif
 
+StashDataStart:
+
+StashChecksum:
+	.word	0
+
+SavedGraphMode:
+	.byte	0
+	
+WindowTab:
+.ifdef topdesk128
+Window1:
+.endif
+	.byte	15	; y oben
+	.byte	15+90	; y unten
+	.word	2	; x links
+.ifdef topdesk128
+WR1:
+.endif
+	.word	2+270	; x rechts
+	.byte	$ff	; alle Gadgets
+	.word	WinName1
+	.word	Handler
+.ifdef topdesk128
+Window2:
+.endif
+	.byte	107	; y oben
+	.byte	107+90	; y unten
+	.word	2	; x links
+.ifdef topdesk128
+WR2:
+.endif
+	.word	2+270	; x rechts
+	.byte	$ff	; alle Gadgets
+	.word	WinName2
+	.word	Handler
+.ifdef topdesk128
+Window3:
+.endif
+	.byte	24	; y oben
+	.byte	24+90	; y unten
+	.word	30	; x links
+.ifdef topdesk128
+WR3:
+.endif
+	.word	30+270	; x rechts
+	.byte	$ff	; alle Gadgets
+	.word	WinName3
+	.word	Handler
+.ifdef topdesk128
+Window4:
+.endif
+	.byte	44	; y oben
+	.byte	44+90	; y unten
+	.word	50	; x links
+.ifdef topdesk128
+WR4:
+.endif
+	.word	50+265	; x rechts
+	.byte	$ff	; alle Gadgets
+	.word	WinName4
+	.word	Handler
+
+
+WinTabAdr:	.word	FileTab1,FileTab2,FileTab3,FileTab4
+winDrives:	.byte	0,0,0,0
+windowOffs:	.byte	0,0,0,0
+xOffsL:	.byte	0,0,0,0
+xOffsH:	.byte	0,0,0,0
+fileNum:	.byte	0,0,0,0
+fileAnz:	.byte	0,0,0,0
+aktl_Sub:	.byte	0,0,0,0
+subTab:	.byte	0,0,0,0,0,0,0,0
+freeAnz:	.byte	0,0,0,0,0,0,0,0
+maxAnz:	.byte	0,0,0,0,0,0,0,0
+winMode:	.byte	0,0,0,0
+NameTab:	.word	WinName1,WinName2,WinName3,WinName4
+WinName1:	.byte	"x:"
+	.repeat	78
+	.byte 0	; Pfadname: "D:Disk/Sub1/Sub2/Sub3"
+	.endrep
+WinName2:	.byte	"x:"	; beim "/" bit 7 gesetzt!
+	.repeat	78
+	.byte 0	; Pfadname: "D:Disk/Sub1/Sub2/Sub3"
+	.endrep
+WinName3:	.byte	"x:"
+	.repeat	78
+	.byte 0	; Pfadname: "D:Disk/Sub1/Sub2/Sub3"
+	.endrep
+WinName4:	.byte	"x:"
+	.repeat	78
+	.byte 0	; Pfadname: "D:Disk/Sub1/Sub2/Sub3"
+	.endrep
+
+; Systemvariablen
+activeWindow:	.byte	0,2,3,1
+messageBuffer:
+	.repeat	10
+	.byte 0
+	.endrep
+backPattern:	.byte 2
+curWinData:	.word	0
+windowsOpen: 	.byte 0, 0, 0, 0
+newAppMain:	.word	0
+iconTab:	.word	0
+NameIndex:	.byte 0, 0, 0, 0
+
+
 SubDir1List:	; SubDirxLists m}ssen aufeinander folgen!
 SubDir2List	= SubDir1List + 64
 SubDir3List	= SubDir2List + 64
@@ -1431,6 +1538,9 @@ FileTab2	= FileTab1+16*18+16*64
 FileTab3	= FileTab2+16*18+16*64
 FileTab4	= FileTab3+16*18+16*64
 ModStart	= FileTab4+16*18+16*64
+
+StashDataEnd	= ModStart
+
 DASpace	= ModStart	; s 137
 DARecSpace	= DASpace+137
 

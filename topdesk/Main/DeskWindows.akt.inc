@@ -147,19 +147,6 @@ TestDisk:	txa
 @t30:	clc
 	rts
 
-; Systemvariablen
-activeWindow:	.byte	0,2,3,1
-messageBuffer:
-	.repeat	10
-	.byte 0
-	.endrep
-backPattern:	.byte 2
-curWinData:	.word	0
-windowsOpen: 	.byte 0, 0, 0, 0
-newAppMain:	.word	0
-iconTab:	.word	0
-NameIndex:	.byte 0, 0, 0, 0
-
 .ifdef topdesk128
 RightMax:   .word   639
 GraphIndex: .byte   1

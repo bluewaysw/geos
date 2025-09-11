@@ -164,7 +164,7 @@ cc1:
 	 bne colloop
 	 inc $fc
 	 ldy $fc
-	 cpy #$40
+	 cpy #$00
 	 bne colloop
 .endif
 	LDA	#$30	; full RAM for uncrunching

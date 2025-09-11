@@ -16,6 +16,8 @@
 .include "c64.inc"
 
 
+.export currentImageName
+
 ; this module is always built with the mega65 variant, so 4510 cpu supported enabled
 
 .segment "drvf011"
@@ -997,13 +999,14 @@ _EnsureImageMounted:
 	bne	@7004
 
 	; drive 1 -> floppy, unswapped
-	and	#%11101111
+	and	#%11011111
 @7011:
 	sta	$D689
 
 	; GS $D6A1.2 F011:DRV2EN Use real floppy drive instead of SD card for 2nd floppy drive
 	lda	$D6A1						; force drive 1 to be floppy
 	ora	#%00000100
+	and	#%11110111					; no silent for sd?
 	sta	$D6A1
 
 	lda	#1
@@ -1336,7 +1339,7 @@ _InitControl:
 	jsr _ControlReg
 	tya
 	bne @4
-	
+
 	jsr _MotorDelay
 @4:
 	lda #$01	; reset_bp

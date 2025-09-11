@@ -100,7 +100,7 @@ traceMode:
 u_cl:
   .word 0
 u_cl_h:
-  .byte 0
+  .word 0
 
 breakList:
   .word 0, 0, _DebugStart, 0, 0, 0, 0, 0, 0, 0
@@ -136,6 +136,8 @@ DebugMain:
   sta u_cl+1
   lda #0
   sta u_cl_h
+  lda #0
+  sta u_cl_h+1
 
   PushB CPU_DATA
   LoadB CPU_DATA, IO_IN
@@ -657,7 +659,7 @@ traceNow:
 
 	ldy	stackPointer
 	lda 	$105+STACK_OFFSET, y
-	and	#$10
+	and	#1
 	bne	@3c	; it is positiv, branch off
 	lda	#$B0
 	bne	@3b
@@ -895,10 +897,10 @@ ProcessPrompt:
   jsr EvalAddrExpr
   bcs @6c
   MoveW r1, u_cl
-  MoveB r2L, u_cl_h
+  MoveW r2, u_cl_h
 @6c:
   MoveW u_cl, r0
-  MoveB u_cl_h, r2L
+  MoveW u_cl_h, r2
 
   ldx #0
 @6b:
@@ -912,7 +914,7 @@ ProcessPrompt:
   bne @6b
 
   MoveW r0, u_cl
-  MoveB r2L, u_cl_h
+  MoveW r2, u_cl_h
 
   clc
   rts
@@ -978,13 +980,15 @@ ProcessDump:
 	jsr EvalAddrExpr
 	bcs @6c
 	MoveW r1, u_cl
-	MoveB r2L, u_cl_h
+	MoveW r2, u_cl_h
 @6c:
 	MoveW u_cl, r0
 
 	lda	#'$'
 	jsr	PutChar
-	MoveB u_cl_h, r2L
+	MoveW u_cl_h, r2
+	lda	r2H
+	jsr	PrintByteHex
 	lda	r2L
 	jsr	PrintByteHex
 	lda	r0H
@@ -993,7 +997,7 @@ ProcessDump:
 	jsr	PrintByteHex
 	lda	#' '
 	jsr	PutChar
-	MoveB u_cl_h, r2L
+	MoveW u_cl_h, r2
 
 	ldx #0
 @6b:
@@ -1015,7 +1019,7 @@ ProcessDump:
 	jsr	PutChar
 
 	MoveW r0, u_cl
-	MoveB r2L, u_cl_h
+	MoveW r2, u_cl_h
 	clc
 	rts
 
@@ -1371,7 +1375,7 @@ EvalAddrExpr:
 
 EvalHexWord:
   LoadW r1, 0
-  LoadB r2L, 0
+  LoadW r2, 0
 @2:
   lda (r0), y
   beq @5
@@ -1389,15 +1393,19 @@ EvalHexWord:
   asl r1L
   rol r1H
   rol r2L
+  rol r2H
   asl r1L
   rol r1H
   rol r2L
+  rol r2H
   asl r1L
   rol r1H
   rol r2L
+  rol r2H
   asl r1L
   rol r1H
   rol r2L
+  rol r2H
   txa
   ora r1L
   sta r1L
@@ -1892,11 +1900,11 @@ DebugOpcode_PrintBREL:
 	rts
 
 GetByte:
-	LoadB r2L, 0
+	LoadW r2, 0
 
 GetByteLong:
 	PushW r0
-	PushB r2L
+	PushW r2
 	clc
 	tya
 	adc r0L
@@ -1907,7 +1915,11 @@ GetByteLong:
 	lda r2L
 	adc #0
 	sta r2L
+	lda r2H
+	adc #0
+	sta r2H
 
+	ora r2L
 	beq @zeroBank
 
 	PushW	r0
@@ -1922,7 +1934,7 @@ GetByteLong:
 	sta	r0H
 	lda	r2L
 	sta	r1L
-	lda	#0
+	lda	r2H
 	sta	r1H
 
 	LDZ	#0
@@ -2068,7 +2080,7 @@ GetByteLong:
 	lda (r0), Y
 @3:
 	tay
-	PopB r2L
+	PopW r2
 	PopW r0
 	tya
 	rts
