@@ -8,6 +8,8 @@
 
 .export __STARTUP_RUN__
 
+.export fileRequestBuf
+
 .import eth_init
 .import weeip_init
 .import dhcp_configured
@@ -30,10 +32,41 @@
 .import socket_release
 
 .import dns_buf
+.import dns_timeout
+
+.export oldAppMain
 
 .segment "STARTUP"
 
+
+INIT_STATE_FRESH	=	0
+INIT_STATE_MOUSE	=	1
+INIT_STATE_DOWNLOAD	=	2
+
+
+initState:
+	.byte	INIT_STATE_FRESH
+
+guid:
+	.repeat	16
+		.byte	0
+	.endrep
+setid:
+	.repeat	16
+		.byte	0
+	.endrep
+
+
+savedFirstBlock:
+	.word	0
+
 LINE_BUF_SIZE	=	256
+
+DL_STATE_IDLE	=	0
+DL_STATE_INIT	=	1
+DL_STATE_DHCP	=	2
+DL_STATE_DNS	=	3
+DL_STATE_HTTP	=	4
 
 HTTP_STATE_IDLE		=	0
 HTTP_STATE_REQUEST	=	1
@@ -41,32 +74,534 @@ HTTP_STATE_HEADER	=	2
 HTTP_STATE_BODY		=	3
 HTTP_STATE_ERROR	=	4
 HTTP_STATE_REDIRECT	=	5
+HTTP_STATE_COMPLETE	=	6
+HTTP_STATE_CONNECT	=	7
 
 __STARTUP_RUN__:
-.if 0
-	;jsr	CountMissingFiles		; -> r0
 
-	;brk
-	;lda	#$43
+	LoadB	dispBufferOn, ST_WR_FORE
+	LoadW	RecoverVector, MyRecover
 
+	lda	firstBoot
+	cmp	#$FF
+	bne	@bootTime
+	jmp	NormalStart
+
+@bootTime:
+	LoadW	r0, $5000
+	LoadW	r1, 0
+	LoadW	r2, $3000
+	LoadB	r3L, 0
+	jsr	StashRAM
+
+.if 1
+
+	MoveW	$8400+1, savedFirstBlock
+	CmpBI	initState, INIT_STATE_FRESH
+	beq	@fresh
+	sei
+	jsr	InstallFirstInput
+	cli
+	jmp	@initDownload
+
+@fresh:
+	LoadW	r0, WelcomeDialog
+	jsr	DoDlgBox
+
+	LoadW	r1, joystickFN
+	CmpBI	r0L, OK
+	beq	@mouse
+	LoadW	r1, mouseFN
+@mouse:
+	jsr	MakeFirstInput
+
+	; generate UUID
+	; determin Set ID
+	LoadB	initState, INIT_STATE_MOUSE
+	jsr	SaveState
+
+@initDownload:
+	jsr	CountMissingFiles		; -> r0
+	LoadW	r1, (bootstrapTableEnd - bootstrapTable) / 5
+	MoveW	r0, total_count
+
+	lda	r0L
+	ora	r0H
+	bne	@filesMissing
+	jmp	@noMissingFiles
+@filesMissing:
+	MoveB	r0L, missing_count
+	MoveB	r1L, distro_count
 	LoadW	r0, CheckDialog
 	jsr	DoDlgBox
 
+	CmpBI	r0L, YES
+	beq	@checkLicense
+	jmp	@noDownload
+
+@checkLicense:
+	LoadW	r0, CheckLicenseDialog
+	jsr	DoDlgBox
+
+	CmpBI	r0L, YES
+	beq	@runDownload
+	jmp	@cancelled
+
+@runDownload:
+	LoadW	intTopVector, MyInt
+
+	cli
+	MoveW	appMain, oldAppMain
+	LoadW	appMain, runDownload
+	LoadW	r0, DownloadDialog
+	jsr	DoDlgBox
+	MoveW	oldAppMain, appMain
+
+
+	jsr	cancelDownload		; call in any case, just in case
+
 	lda	r0L
 	cmp	#OK
-	bne	@10
+	beq	@showSuccess
+@cancelled:
+	LoadW	a0, CancelledResultString
+	jmp	@showResult
 
-	;jsr	eth_init
+@showSuccess:
+	LoadW	a0, SuccessResultString
+@showResult:
+	; count for missing files again
+	jsr	CountMissingFiles		; -> r0
+	LoadW	r1, (bootstrapTableEnd - bootstrapTable) / 5
+	MoveW	r0, total_count
 
-	jsr	prepare_network
-.endif
-	LoadW	r0, WelcomeDialog
+	MoveW	r0, a1
+	MoveW	r1, a2
+
+	LoadW	r0, ResultDialog
 	jsr	DoDlgBox
+
+@noDownload:
+@noMissingFiles:
+	LoadB	initState, INIT_STATE_DOWNLOAD
+	jsr	SaveState
+
+	sec
+	LoadW	intTopVector, InterruptMain
+	cli
+.endif
+
+@finishDialog:
 @10:
+	LoadW	r0, $5000
+	LoadW	r1, 0
+	LoadW	r2, $3000
+	LoadB	r3L, 0
+	jsr	FetchRAM
+
 	jmp	EnterDeskTop
 
+joystickFN:
+	.byte	"JOYSTICK", NULL
+mouseFN:
+	.byte	"MEGA 1351", NULL
+
+NormalStart:
+	LoadW	r0, Welcome2Dialog
+	jsr	DoDlgBox
+
+	jmp	EnterDeskTop
+
+
+SaveState:
+	MoveW	savedFirstBlock, r1
+	LoadW	r4,$8000
+	jsr	GetBlock
+
+	ldx	#0
+@loop:
+	lda	initState,x
+	sta	$8002,x
+	inx
+	cpx	#16+16+1
+	bne	@loop
+	jsr	PutBlock	
+	rts
+MyInt:
+	lda	requestTimeout
+	ora	requestTimeout+1
+	beq	@10
+	DecW	requestTimeout
+@10:
+	lda	downloadTimeout
+	ora	downloadTimeout+1
+	beq	@20
+	DecW	downloadTimeout
+@20:
+	lda	dns_timeout
+	ora	dns_timeout+1
+	beq	@30
+	DecW	dns_timeout
+@30:
+	jmp	InterruptMain
+
+MyRecover:
+	jmp	Rectangle
+
+DownloadingString:
+	.byte 	BOLDON, "Downloading file ", NULL
+OfString:
+	.byte 	" of ", NULL
+DownEndString:
+	.byte 	":", PLAINTEXT, NULL
+ErrorCountString:
+	.byte	"Failed files: ", NULL
+FileProgressString:
+	.byte	"  -  ", NULL
+KBytesString:
+	.byte	" KByte", NULL
+
+FirstRetryString:
+	.byte	" (2nd try)", NULL
+SecondRetryString:
+	.byte	" (3rd try)", NULL
+printProgress:
+	PushW	r0
+	PushW	r1
+	PushW	r2
+	PushW	r3
+PushW	r4
+PushW	r5
+PushW	r6
+PushW	r7
+PushW	r8
+PushW	r9
+PushW	r10
+PushW	r11
+PushW	r12
+PushW	r13
+PushW	r14
+PushW	r15
+
+	LoadW	r11, %1011101100000000 | ((-(117)) & $FF)
+	LoadB	r1H, (-40) & $FF
+	LoadW	r0, DownloadingString
+	jsr	PutString
+
+	MoveB	file_count, r0L
+	LoadB	r0H, 0
+
+	CmpW	r0, total_count
+	beq	@useTotal
+	IncW	r0
+@useTotal:
+	lda	#SET_SURPRESS|SET_LEFTJUST
+	jsr	PutDecimal
+
+	LoadW	r0, OfString
+	jsr	PutString
+
+	MoveW	total_count, r0
+	lda	#SET_SURPRESS|SET_LEFTJUST
+	jsr	PutDecimal
+
+	LoadW	r0, DownEndString
+	jsr	PutString
+	LoadW	r0, emptyString
+	jsr	PutString
+
+	LoadW	r11, %1011101100000000 | ((-(117)) & $FF)
+	LoadB	r1H, (-20) & $FF
+	MoveW	current_name, r0
+	jsr	PutString
+	
+	LoadW	r0, FileProgressString
+	jsr	PutString
+	MoveW	kbytes, r0
+	lda	#SET_SURPRESS|SET_LEFTJUST
+	jsr	PutDecimal
+	LoadW	r0, KBytesString
+	jsr	PutString
+
+	ldx	retry_count
+	beq	@noRetry
+	LoadW	r0, FirstRetryString
+	cpx	#1
+	beq	@showRetry
+	LoadW	r0, SecondRetryString
+@showRetry:
+	jsr	PutString
+
+@noRetry:
+	LoadW	r0, emptyString
+	jsr	PutString
+
+	LoadW	r11, %1011101100000000 | ((-(117)) & $FF)
+	LoadB	r1H, (20) & $FF
+	LoadW	r0, ErrorCountString
+	jsr	PutString
+	LoadB	r0H, 0
+	MoveB	error_count, r0L
+	lda	#SET_SURPRESS|SET_LEFTJUST
+	jsr	PutDecimal
+
+	LoadW	r0, emptyString
+	jsr	PutString
+PopW	r15
+PopW	r14
+PopW	r13
+PopW	r12
+PopW	r11
+PopW	r10
+PopW	r9
+PopW	r8
+PopW	r7
+PopW	r6
+PopW	r5
+PopW	r4
+	PopW	r3
+	PopW	r2
+	PopW	r1
+	PopW	r0
+	rts
+
+runDownload:
+	jsr	task_periodic
+	LoadB	dblClickCount, 1
+@21:
+	lda	dblClickCount
+	bne	@21
+
+	CmpBI	downloadState, DL_STATE_DHCP
+	bne	@100b
+
+	lda	dhcp_configured
+	bne	@11
+	jmp	@10
+@11:
+	; DHCP completed
+	lda	#$FF
+	LoadW	r0, hostName
+	LoadW	r1, hostIP
+
+	jsr	dns_hostname_to_ip
+	LoadB	retry_count, 0
+	LoadB	downloadState, DL_STATE_DNS
+	jmp	@10
+
+@100b:
+	CmpBI	downloadState, DL_STATE_DNS
+	bne	@100
+
+	jsr	dns_run
+	bcc	@dns_done	; still active, 
+	rts
+
+@dns_done:
+	jsr	dns_result
+
+	MoveW	r0, ip_address
+	MoveW	r1, ip_address + 2
+
+	LoadB	a2L, 0
+
+	LoadB	error_count, 0
+	LoadB	success_count, 0
+	LoadB	downloadState, DL_STATE_HTTP
+
+	; get next file
+
+	jsr	downloadGetRequest
+
+	php
+	sei
+	LoadW	downloadTimeout, 50*30
+	plp
+
+	jmp	@10
+@100:
+	CmpBI	downloadState, DL_STATE_INIT
+	bne	@101
+	dec	initCounter
+	beq 	@104
+	rts
+@104:
+	; start DHCP
+	;// Do DHCP auto-configuration
+	LoadB	downloadState, DL_STATE_DHCP
+	LoadB	dhcp_configured, 0
+	;printf("Configuring network via DHCP\n");
+
+	jsr	dhcp_autoconfig
+	jmp	@10
+@101:
+	CmpBI	downloadState, DL_STATE_HTTP
+	beq	@102b
+	rts
+@102b:
+	lda	requestComplete
+	bne 	@101b
+
+	; check timeout
+	lda	downloadTimeout
+	ora	downloadTimeout+1
+	bne	@101c
+
+	jsr	requestCancel
+
+	; retry the request
+	lda	retry_count
+	cmp	#3
+	bne	@101d
+
+	inc	error_count
+	jmp	@101b
+
+@101d:	
+	inc	retry_count
+	dec	a2L	; retry the last file
+
+	MoveW	ip_address, r0
+	MoveW	ip_address + 2, r1
+
+	jsr	downloadGetRequest
+	php
+	sei
+	LoadW	downloadTimeout, 50*30
+	plp
+	jmp	@10
+@101c:
+	jsr	runRequest
+	jmp	@10
+@101b:
+	inc	file_count
+	LoadB	retry_count, 0
+
+	MoveW	ip_address, r0
+	MoveW	ip_address + 2, r1
+
+	jsr	downloadGetRequest
+	php
+	sei
+	LoadW	downloadTimeout, 50*30
+	plp
+	bcc	@10		; request issued
+	
+	; no more files
+	LoadB	sysDBData, OK
+	jmp	RstrFrmDialogue
+
+@102:
+@10:
+	rts
+cancelDownload:
+
+	; cancel cleanup not implemented yet
+	; DL_STATE_DHCP
+	; DL_STATE_DNS
+	; DL_STATE_HTTP
+	; DL_STATE_INIT
+
+	rts
+
+downloadGetRequest:
+	lda	a2L
+	cmp	#(bootstrapTableEnd - bootstrapTable) / 5
+	bne	@ok
+	jmp	@err
+@ok:
+	LoadW	a3, 0
+	lda	a2L
+	asl
+	rol	a3H
+	asl
+	rol	a3H
+	clc
+	adc	a2L
+	sta	a3L
+	lda	a3H
+	adc	#0
+	sta	a3H
+	clc
+	lda	#<bootstrapTable
+	adc	a3L
+	sta	a3L
+	lda	#>bootstrapTable
+	adc	a3H
+	sta	a3H
+	ldy	#0
+	lda	(a3), y
+	sta	r2L
+	iny
+	lda	(a3), y
+	sta	r2H
+
+	iny
+	lda	(a3), y
+	sta	r6L
+	iny
+	lda	(a3), y
+	sta	r6H
+	iny
+	lda	(a3), y
+	sta	a9L
+	iny
+	MoveW	r6, current_name
+
+	MoveW	r6, r7
+	PushW	r1
+	PushW	r6
+	jsr	FindFile
+	PopW	r6
+	PopW	r1
+	txa
+	bne	@doIt	
+	jmp	@findNext
+@doIt:
+	LoadW	kbytes, 0
+
+	jsr	printProgress
+
+	; send http GET request
+	ldy	#0
+@nextChar:
+	lda	(r2),y
+	beq	@get
+	iny
+	jmp	@nextChar
+@get:
+	sty	r3L
+	LoadB	r3H, 0
+	;PushW	r0
+	;PushW	r1
+	jsr	HTTP_GET
+	inc	a2L
+@done:
+	clc
+	rts
+@findNext:
+	inc	a2L
+	lda	a2L
+	cmp	#(bootstrapTableEnd - bootstrapTable) / 5
+	beq	@err
+	jsr	downloadGetRequest
+	php
+	sei
+	LoadW	downloadTimeout, 50*60*3
+	plp
+	rts
+@err:
+	sec
+	rts
+
+startDownload:
+	; correct text clipping, workaround for kernel bug?
+	DecW	rightMargin
+
+	LoadW	appMain, runDownload
+	LoadW	intTopVector, MyInt
+
 prepare_network:
-	cli
 
 	;// Setup WeeIP
 
@@ -78,57 +613,171 @@ prepare_network:
 	LoadW	r2H, ethName
 	jsr	task_add
 
-	LoadB	dblClickCount, 250
+	;LoadB	dblClickCount, 250
 @22:
-	lda	dblClickCount
-	bne	@22
-
-	;// Do DHCP auto-configuration
-	LoadB	dhcp_configured, 0
-	;printf("Configuring network via DHCP\n");
-	jsr	dhcp_autoconfig
-
-@20:
-	lda	dhcp_configured
-	bne	@10
-	jsr	task_periodic
-	LoadB	dblClickCount, 1
-@21:
-	lda	dblClickCount
-	bne	@21
-	bra	@20
-@10:
-	brk
-	lda	#$FF
-	LoadW	r0, hostName
-	LoadW	r1, hostIP
-	jsr	dns_hostname_to_ip
-
-	LoadB	$D020, 0
-	; send http GET request
-	LoadW	r2, gp128cvt
-	LoadW	r3, 10
-	jsr	HTTP_GET
-	;  printf("My IP is %d.%d.%d.%d\n",
-	;	 ip_local.b[0],ip_local.b[1],ip_local.b[2],ip_local.b[3]);
+	;lda	dblClickCount
+	;bne	@22
+	
+	LoadB	downloadState, DL_STATE_INIT
+	LoadB	initCounter, 250
 	rts
 
-; r0,r1 up address to connect to
-; r2 = address of file name or URL (for re-direct)
-; r3 = length of file name
+runRequest:
+	CmpBI	http_state, HTTP_STATE_CONNECT
+	bne	@11
+	lda	http_connected
+	bne	@connected
+
+	lda	requestTimeout
+	ora	requestTimeout+1
+	bne	@14
+
+	CmpBI	requestRetry, 12	; aprox 2 min max
+	bne	@13
+	jmp	@connect_timeout
+@14:
+	jmp	@10
+@13:
+	inc	requestRetry
+
+	jsr	socket_reset
+	MoveW	a0, r0
+	MoveW	a1, r1
+	LoadW	r2, 80
+	jsr	socket_connect
+
+	php
+	sei
+	LoadW	requestTimeout, 50*10
+	plp
+	rts
+@connect_timeout:
+	jsr	socket_disconnect
+	MoveW	http_socket, r1
+	jsr	socket_release
+	ldx	#10
+	LoadB	http_state, HTTP_STATE_IDLE
+	jmp	@10
+
+@connected:
+	LoadB	http_state, HTTP_STATE_IDLE
+	lda	requestRedirect
+	bne	@redir
+	jmp	doSendRequest
+@redir:	
+	jmp 	doSendRequestRedirect
+@11:	CmpBI	http_state, HTTP_STATE_REQUEST
+	bne	@12
+	; handle timeout here
+	lda	requestTimeout
+	ora	requestTimeout+1
+	beq 	@16
+	jmp	@10
+@16:
+	jsr	socket_disconnect
+	MoveW	http_socket, r1
+	jsr	socket_release
+
+	LoadB	http_state, HTTP_STATE_IDLE
+	ldx	#TIMEOUT_ERR
+	jmp	@10
+
+
+@12:	CmpBI 	http_state, HTTP_STATE_REDIRECT
+	bne	@15
+	;inc	$D020
+
+	MoveW	http_socket, r1
+	jsr	socket_disconnect
+	;MoveW	http_socket, r1
+	;jsr	socket_reset
+	MoveW	http_socket, r1
+	jsr	socket_release
+
+	MoveW	ip_address, r0
+	MoveW	ip_address+2, r1
+	LoadW	r2, 0
+	LoadW	r3, 0
+	jsr	HTTP_GET
+	rts
+@15:
+	CmpBI	http_state, HTTP_STATE_COMPLETE
+	bne	@10
+
+	MoveW	http_socket, r1
+	jsr	socket_disconnect
+	;MoveW	http_socket, r1
+	;jsr	socket_reset
+	MoveW	http_socket, r1
+	jsr	socket_release
+
+	; file downloaded successful?
+	LoadW	r6, tempName2
+	jsr	ConvertCVT
+	cpx	#0
+	beq	@done
+	; cleanup remove temp file
+	txa
+	pha
+	LoadW	r0, tempName2
+	jsr	DeleteFile
+	pla
+	tax
+@done:
+	LoadB	requestComplete, $FF
+
+@10:
+	rts
+
+requestCancel:
+
+	MoveW	http_socket, r1
+	jsr	socket_disconnect
+	;MoveW	http_socket, r1
+	;jsr	socket_reset
+	MoveW	http_socket, r1
+	jsr	socket_release
+@10:
+	rts
+
+; input:
+;   r0,r1 up address to connect to
+;   r2 = address of file name or URL (for re-direct)
+;   r3 = length of file name
+;   a9L = Folder number
+; output:
+;   x = result code, 0 is success (and file has been created)
 HTTP_GET:
-	PushW	r2
-	PushW	r3
+	;PushW	r2
+	;PushW	r3
+
+	MoveW 	r2, requestFileName
+	MoveW	r3, requestFileNameLen
+
 	PushW	r0
 	PushW	r1
+
+	LoadB	requestComplete, 0
+	LoadB	requestRedirect, 0
+
+	LoadW	r0, tempName2
+	jsr	DeleteFile
+	; ignore error
 
 	LoadB	http_state, HTTP_STATE_IDLE
 	LoadB	http_line_buf_pos, 0
 	LoadB	http_redirect, 0
+	lda	r2L
+	ora	r2H
+	bne	@10
+	LoadB	requestRedirect, $FF
+
+@10:
 	LoadB	http_connected, 0
 	LoadW	download_count, 1
 	LoadB	download_pos, 2
 	LoadW	download_packets, 0
+	LoadW	download_packets2, 0
 	LoadW	r3, 0		; lookup next free block from beginning
 	jsr	SetNextFree
 	cpx	#0
@@ -148,7 +797,7 @@ HTTP_GET:
 	LoadW	r0, HTTP_GET_callback
 	jsr	socket_set_callback
 
-	LoadW	r0, $5000
+	LoadW	r0, $5500
 	LoadW	r1, 2048
 	jsr	socket_set_rx_buffer
 
@@ -156,20 +805,67 @@ HTTP_GET:
 	PopW	r0
 	MoveW	r0, a0
 	MoveW	r1, a1
+	LoadW	a8, 0
+@reconn:
 	LoadW	r2, 80
 	jsr	socket_connect
 
+	LoadB	http_state, HTTP_STATE_CONNECT
+	php
+	sei
+	LoadW	requestTimeout, 50*10
+	LoadB	requestRetry, 0
+	plp
+
+	rts
+@err:
+	LoadB	requestComplete, $FF
+	rts
+
+.if 0
 	; wait to be connected
-@20:
+	ldx	#50
+	ldy	#10
+@20:	dex
+	bne	@20a
+	ldx	#50
+	dey
+	bne	@20a
+	jsr	socket_reset
+	MoveW	a0, r0
+	MoveW	a1, r1
+	jmp	@reconn
+@20a:
 	lda	http_connected
 	bne	@10
+	txa
+	pha
+	tya
+	pha
 	jsr	task_periodic
+	pla
+	tay
+	pla
+	tax
 	LoadB	dblClickCount, 1
 @21:
-	;lda	dblClickCount
-	;bne	@21
-	bra	@20
+	lda	dblClickCount
+	bne	@21
+
+	; timeout
+	IncW	a8
+	CmpWI	a8, 50*120	; 2 min
+	bne 	@20
+
+	jsr	socket_disconnect
+	MoveW	http_socket, r1
+	jsr	socket_release
+	ldx	#TIMEOUT_ERR
+	jmp	@err
 @10:
+.endif
+
+doSendRequest:
 	LoadB	http_state, HTTP_STATE_REQUEST
 
 	; construct request
@@ -195,14 +891,14 @@ HTTP_GET:
 	LoadW	r0, fileRequestLocationEnd - fileRequestLocation 
 	AddW	r0, r7
 
-	PopW	r3
-	PopW	r2
-	MoveW	r2, @nameFrom
-	MoveW	r3, @fromNameSize
+	;PopW	r3
+	;PopW	r2
+	MoveW	requestFileName, @nameFrom
+	MoveW	requestFileNameLen, @fromNameSize
 	LoadW	r0, fileRequestBuf
 	AddW	r7, r0
 	MoveW	r0, @nameTo
-	AddW	r3, r7
+	AddW	requestFileNameLen, r7
 	; add name
 	jsr	i_MoveData
 @nameFrom:
@@ -227,8 +923,20 @@ HTTP_GET:
 	; connected, send request
 	LoadW	r0, fileRequestBuf
 	MoveW	r7, r1		; request len
+	
+	LoadW	a8, 0
 	jsr	socket_send
 
+
+	php
+	sei
+	LoadW	requestTimeout, 50*60 ; wait aprox 1 mins without data
+	LoadB	requestRetry, 0
+	plp
+
+	rts
+
+.if 0
 @30:
 	jsr	task_periodic
 	LoadB	dblClickCount, 1
@@ -236,14 +944,27 @@ HTTP_GET:
 	lda	dblClickCount
 	bne	@31
 
-	lda	http_connected
-	bne	@30
+	IncW	a8
+	CmpWI	a8, 50*60	; wait aprox 1 mins without data
+	bne	@_33b
 
+	;inc	$D020
+
+	jsr	socket_disconnect
+	MoveW	http_socket, r1
+	jsr	socket_release
+
+	ldx	#TIMEOUT_ERR
+	jmp	@err
+@_33b:
+	CmpBI	http_state, HTTP_STATE_REQUEST
+	beq	@30
 	CmpBI	http_state, HTTP_STATE_REDIRECT
 	beq	@_33
 	jmp	@33
 @_33:
-	brk
+
+doSendRequestRedirect:
 	lda	#$71
 
 	LoadW	r5, http_line_buf + (httpLocationHeaderEnd-httpLocationHeader)
@@ -253,43 +974,82 @@ HTTP_GET:
 	lda	#<(httpDomainEnd - httpDomain)
 	jsr	CmpFString
 
+	;MoveW	http_socket, r1
+	;jsr	socket_reset
+
+	MoveW	http_socket, r1
+	jsr	socket_release
 
 	LoadB	http_line_buf_pos, 0
 	LoadB	http_connected, 0
 
 	LoadB	http_state, HTTP_STATE_REQUEST
 
-	MoveW	http_socket, r1
-	jsr	socket_reset
-	jsr	socket_release
 
 	LoadB	r0L, SOCKET_TCP
 	jsr	socket_create
 	MoveW	r1, http_socket
-	
-	MoveW	a1, r1
-	MoveW	a0, r0
 	jsr	socket_select
+	
+	LoadW	r0, HTTP_GET_callback
+	jsr	socket_set_callback
+
+	LoadW	r0, $5500
+	LoadW	r1, 2048
+	jsr	socket_set_rx_buffer
+	LoadW	a8, 0
+@_reconn:
+	MoveW	a1, r1		; same IP address as the original request
+	MoveW	a0, r0
 	LoadW	r2, 80
 	jsr	socket_connect
 
-	; wait until connected
-@_20:
+
+
+	; wait to be connected
+	ldx	#50
+	ldy	#10
+@_20:	dex
+	bne	@_20a
+	ldx	#50
+	dey
+	bne	@_20a
+	;inc	$D020
+	jsr	socket_reset
+	jmp	@_reconn
+@_20a:
 	lda	http_connected
 	bne	@_10
+	txa
+	pha
+	tya
+	pha
 	jsr	task_periodic
+	pla
+	tay
+	pla
+	tax
 	LoadB	dblClickCount, 1
 @_21:
-	;lda	dblClickCount
-	;bne	@21
-	bra	@_20
+	lda	dblClickCount
+	bne	@_21
+	IncW	a8
+	CmpWI	a8, 50*120
+	bne	@_20
+
+	jsr	socket_disconnect
+	MoveW	http_socket, r1
+	jsr	socket_release
+	ldx	#TIMEOUT_ERR
+	jmp	@err
 @_10:
+.endif
+
+doSendRequestRedirect:
 	; redirect request
 	; construct request
-	LoadW	r7, 0
-	
-	brk
-	lda	#$F7
+	LoadB	http_state, HTTP_STATE_REQUEST
+	LoadW	r7, 0	
 	
 	; get get
 	jsr	i_MoveData
@@ -300,8 +1060,8 @@ HTTP_GET:
 	AddW	r0, r7
 
 	; copy url path
-	AddW	r7, r0
 	LoadW	r0, fileRequestBuf
+	AddW	r7, r0
 	ldy	#0
 	ldx	#<((httpLocationHeaderEnd-httpLocationHeader)+(httpDomainEnd - httpDomain)-1)
 @27:
@@ -317,6 +1077,7 @@ HTTP_GET:
 	AddW	r7, r0
 	MoveW	r0, @suffixTo2
 	; get suffix
+
 	jsr	i_MoveData
 	.word	fileRequestSuffix
 @suffixTo2:
@@ -328,23 +1089,246 @@ HTTP_GET:
 	; connected, send request
 	LoadW	r0, fileRequestBuf
 	MoveW	r7, r1
+
 	jsr	socket_send
 
+	php
+	sei
+	LoadW	requestTimeout, 50*60 ; wait aprox 1 mins without data
+	LoadB	requestRetry, 0
+	plp
+
+	rts
+
+.if 0
+
+
+	LoadW	a7, 0
+
+	LoadW	a8, 0
 @34:
 	jsr	task_periodic
 	LoadB	dblClickCount, 1
 @33:
 	lda	dblClickCount
 	bne	@33
+	IncW	a8
 
-	lda	http_connected
+	CmpW	download_packets, a7
+	beq	@33c 
+	MoveW	download_packets, a7
+	LoadW	a8, 0
+@33c:
+	CmpWI	a8, 50*60	; wait aprox 1 mins without data
+	bne	@33b
+
+	;inc	$D020
+
+	jsr	socket_disconnect
+	MoveW	http_socket, r1
+	jsr	socket_release
+
+	ldx	#TIMEOUT_ERR
+	jmp	@err
+@33b:
+	CmpBI	http_state, HTTP_STATE_REQUEST
+	beq	@34
+	CmpBI	http_state, HTTP_STATE_COMPLETE
 	bne	@34
+
+	MoveW	http_socket, r1
+	jsr	socket_disconnect
+	;MoveW	http_socket, r1
+	;jsr	socket_reset
+	MoveW	http_socket, r1
+	jsr	socket_release
+
+	; file downloaded successful?
+	LoadW	r6, tempName2
+	jsr	ConvertCVT
+	cpx	#0
+	beq	@done
+	; cleanup remove temp file
+	txa
+	pha
+	LoadW	r0, tempName2
+	jsr	DeleteFile
+	pla
+	tax
+@done:
+	LoadB	requestComplete, $FF
 	rts
 @err:
+	LoadB	requestComplete, $FF
 	rts
+.endif
 
+; r6 - file name
+ConvertCVT:
+	jsr	FindFile
+	txa
+	bne	@err
+
+	; validate file? -> assume that it is correct file for now
+	MoveW	r1, r3
+
+	; load cvt header block $8100
+	LoadW	r4, fileHeader		;$8100
+	MoveW	dirEntryBuf+1, r1
+	MoveW	r1, r6
+	jsr	GetBlock
+	txa
+	bne	@err
+
+	; copy file entry
+	ldx	#0
+@dirEntryCopy:
+	lda	fileHeader+2, x
+	sta	dirEntryBuf, x
+	inx
+	cpx	#30
+	bne	@dirEntryCopy
+
+	; load 2nd block = geos info block $8100
+	MoveW	fileHeader, r1
+	jsr	GetBlock
+	txa
+	beq	@gotInfo
+@err:
+	rts
+@gotInfo:
+	MoveW	r1, dirEntryBuf+19
+	MoveW	fileHeader, r2
+	LoadB	fileHeader, $00
+	LoadB	fileHeader+1, $FF
+	jsr	PutBlock
+	txa
+	bne	@err
+
+	MoveW	r2, r1
+
+	lda	fileHeader+70
+	cmp	#1		;VLIR
+	beq	@vlir
+	jmp	@doneSeq
+
+@vlir:
+	; load VLIR block
+	jsr	GetBlock
+	txa	
+	bne	@err
+
+	MoveW	fileHeader, r7	; next block
+	LoadB	r8L, 2		; initial module
+@nextStrm:
+	ldx	r8L
+	beq	@done
+	lda	fileHeader, x
+	sta	r8H		; block count
+	lda	fileHeader+1, x
+	sta	r9L		; stream end bytes
+
+	lda	r8H
+	bne	@recFound
+	lda	r9L
+	cmp	#$FF
+	beq	@nextMod
+	jmp	@done
+@recFound:
+	lda	r7L
+	sta	fileHeader, x
+	lda	r7H
+	sta	fileHeader+1, x
+
+	LoadW	r4, diskBlkBuf
+@nextBlk:
+	MoveW	r7, r1
+	jsr	GetBlock
+	txa
+	beq	@noErr
+	jmp	@err
+@noErr:
+	MoveW	diskBlkBuf, r7
+	dec	r8H
+	bne	@nextBlk
+
+	; this is last Block
+	LoadB	diskBlkBuf, 0
+	MoveB	r9L, diskBlkBuf+1
+
+	jsr	PutBlock
+	txa
+	beq	@nextMod
+	jmp	@err
+@nextMod:
+	; next module
+	inc	r8L
+	inc	r8L
+
+	jmp	@nextStrm
+@done:
+	; write VLIR block
+	LoadB	fileHeader, 0
+	LoadB	fileHeader+1, $FF
+	MoveW	r2, r1
+	LoadW	r4, fileHeader
+	jsr	PutBlock
+	txa
+	bne	@err2
+@doneSeq:
+	MoveW	r2, dirEntryBuf+1
+
+	; remember GEOS file structure type (SEQ, VLIR)
+	; remember referrence to next block
+
+	; storage disconnected block
+	; remeber correct block/sector
+
+	; load next block (VLIR block table) $8100
+ 
+	; for each entry, uncut the block sequence
+
+	MoveW	r3, r1
+	LoadW	r4, diskBlkBuf
+	jsr	GetBlock
+	txa
+	bne	@err2
+
+	ldx	r5L
+	ldy	#0
+@copyBack:
+	lda	dirEntryBuf,y
+	sta	diskBlkBuf,x
+	inx
+	iny
+	cpy	#30
+	bne	@copyBack
+
+	ldx	#32
+	CmpBI	r5L, 2 
+	beq	@firstFile
+	ldx	r5L
+	dex
+@firstFile:
+	lda	a9L
+	sta	diskBlkBuf, x
+
+	jsr	PutBlock
+	txa
+	bne	@err2
+
+	; free original header block
+	jsr	FreeBlock
+	txa
+	bne	@err2
+	jsr	PutDirHead
+	txa
+	bne	@err2
+	ldx	#0	; no error
+	rts
+@err2:
+	rts
 HTTP_GET_callback:
-
 	tax
 	PushW	r0
 	PushW	r1
@@ -357,7 +1341,6 @@ HTTP_GET_callback:
 	PushW	r8
 	PushW	r9
 	txa
-
 	cmp	#WEEIP_EV_CONNECT
 	bne	@10
 
@@ -367,9 +1350,14 @@ HTTP_GET_callback:
 	cmp	#WEEIP_EV_DATA
 	beq	@12b
 	cmp	#WEEIP_EV_DISCONNECT_WITH_DATA
-	beq	@12b
+	beq	@12bb
+	cmp	#WEEIP_EV_CLOSE_WITH_DATA
+	beq	@12bb
 	jmp	@12
+@12bb:
+	;inc	$D020
 @12b:
+	LoadB	http_connected, $FF
 	pha
 	jsr	socket_data_size		; get data size to r0
 
@@ -377,7 +1365,7 @@ HTTP_GET_callback:
 	;AddW	r0, download_packets
 
 	LoadW	r1, 0
-	LoadW	r2, $5000
+	LoadW	r2, $5500
 	CmpWI	r0, 0
 	bne	@haveData			; skip if not data available
 @12c:
@@ -397,7 +1385,6 @@ HTTP_GET_callback:
 	jmp	@12c				; idle? drop data
 
 @processLine:
-
 	; process next byte
 
 	ldy	#0
@@ -454,12 +1441,23 @@ HTTP_GET_callback:
 
 	; add bytes to buffer @diskBlkBuf
 @bodyLoop:
+	php
+	sei
+	LoadW	downloadTimeout, 50*30
+	plp
+
 	IncW	download_packets
+	IncW	download_packets2
+	CmpWI	download_packets2, 1024
+	bne	@noKB
+	IncW	kbytes
+	LoadW	download_packets2, 0
 	txa
 	pha
-	jsr	WriteBlockCount
+	jsr	printProgress
 	pla
 	tax
+@noKB:
 	ldy	#0
 	lda	(r2), y
 
@@ -482,7 +1480,7 @@ HTTP_GET_callback:
 	bne	@bodyErr
 	IncW	download_count
 
-	jsr	WriteBlockCount
+	jsr	printProgress
 
 	; write block
 	MoveW	r3, diskBlkBuf
@@ -520,18 +1518,28 @@ HTTP_GET_callback:
 	brk
 	lda	#$92
 @12:
+	cmp	#WEEIP_EV_CLOSE
+	beq	@14bb
+	cmp	#WEEIP_EV_CLOSE_WITH_DATA
+	bne	@12cc
+@14bb:
+	jsr	socket_disconnect
+	bra	@11
+@12cc:
 	cmp	#WEEIP_EV_DISCONNECT
 	beq	@11b
 	cmp	#WEEIP_EV_DISCONNECT_WITH_DATA
 	bne	@11
 @11b:
-	brk
-	lda	#$93
+	MoveW	http_socket, r1
+	jsr	socket_disconnect
+	;brk
+	;lda	#$93
 	lda	http_state
 	cmp	#HTTP_STATE_BODY
 	bne	@17
 	jsr	CloseFile
-
+	LoadB	http_state, HTTP_STATE_COMPLETE
 @17:
 	LoadB	http_connected, 0
 @11:
@@ -582,6 +1590,7 @@ ProcessLine:
 
 @10:	; handle wrong/unexpected result
 	LoadB	http_state, HTTP_STATE_ERROR
+	MoveW	http_socket, r1
 	jsr	socket_disconnect
 	bra	@end
 @100:
@@ -597,18 +1606,18 @@ ProcessLine:
 	jsr	CmpFString
 	bne	@end
 
-	brk
-	lda	#$85
+	;brk
+	;lda	#$85
 
 	;
 	LoadB	http_state, HTTP_STATE_REDIRECT
+	MoveW	http_socket, r1
 	jsr	socket_disconnect
 
 @end:
 	rts
 
 CloseFile:
-	brk
 	lda	#$FF
 
 	LoadB	diskBlkBuf, $00
@@ -670,50 +1679,6 @@ CloseFile:
 
 	rts
 
-WriteBlockCount:
-PushW	r0
-PushW	r1
-PushW	r2
-PushW	r3
-PushW	r4
-PushW	r5
-PushW	r6
-PushW	r7
-PushW	r8
-PushW	r9
-PushW	r10
-PushW	r11
-PushW	r12
-PushW	r13
-jsr	UseSystemFont
-MoveW	download_count, r0
-LoadW	r11, 10
-LoadB	r1H, 10
-lda	#SET_SURPRESS|SET_LEFTJUST
-jsr	PutDecimal
-
-MoveW	download_packets, r0
-LoadW	r11, 10
-LoadB	r1H, 26
-lda	#SET_SURPRESS|SET_LEFTJUST
-jsr	PutDecimal
-
-PopW	r13
-PopW	r12
-PopW	r11
-PopW	r10
-PopW	r9
-PopW	r8
-PopW	r7
-PopW	r6
-PopW	r5
-PopW	r4
-PopW	r3
-PopW	r2
-PopW	r1
-PopW	r0
-rts
-
 CountMissingFiles:
 	LoadW	r0, 0
 	LoadW	r8, bootstrapTable
@@ -734,15 +1699,165 @@ CountMissingFiles:
 	bne	@10
 	rts
 
+WelcomeInit:
+	LoadW	keyVector, WelcomeKeyHandler
+	rts
+
+WelcomeKeyHandler:
+	lda	keyData
+	cmp	#'1'
+	beq	@10
+	cmp	#'2'
+	beq	@20
+	rts
+@10:
+	LoadB	sysDBData, OK
+	jmp	RstrFrmDialogue	
+@20:
+	LoadB	sysDBData, CANCEL
+	jmp	RstrFrmDialogue
+
+InstallFirstInput:
+	; find the first input driver on diskBlkBuf
+	LoadB	r7L, INPUT_DEVICE
+	LoadB	r7H, 1
+	LoadW	r10, NULL	; no class to compare
+	LoadW	r6, FrontBuffer
+	jsr	FindFTypes
+	cpx	#0
+	bne	@done	; on error do nothing
+
+	CmpBI	r7H, 0
+	bne	@done
+
+	; found something, load it
+	LoadW	r6, FrontBuffer
+	lda	#$00
+	sta	r0L
+	sta	r10L
+	jsr	GetFile
+@done:
+	rts
+
+;	r1	File name of input driver to move to front
+;
+MakeFirstInput:
+	; find the first input driver on diskBlkBuf
+	MoveW	r1, a2
+	LoadB	r7L, INPUT_DEVICE
+	LoadB	r7H, 1
+	LoadW	r10, NULL	; no class to compare
+	LoadW	r6, FrontBuffer
+	jsr	FindFTypes
+
+	cpx	#0
+	beq	@ok
+@done2:
+	jmp	@done
+@ok:
+	CmpBI	r7H, 0
+	bne	@done2
+	LoadW	r0, FrontBuffer
+	ldx	#a2
+	ldy	#r0
+	jsr	CmpString
+	beq	@done2
+
+	; find dir entry of this
+	LoadW	r6, FrontBuffer
+	jsr	FindFile
+	cpx	#0
+	bne	@done
+
+	MoveW	r1, a0
+	MoveW	r5, a1
+
+	jsr	@swap
+
+	; find entry to be MoveData
+	MoveW	a2, r6
+	jsr	FindFile
+	cpx	#0
+	bne	@done
+
+	jsr	@swap
+	LoadW	r4, diskBlkBuf
+	jsr	PutBlock
+	cpx	#0
+	bne	@done
+	LoadW	r4, diskBlkBuf
+	MoveW	a0, r1
+	jsr	GetBlock
+	cpx	#0
+	bne	@done
+	MoveW	a1, r5
+	jsr	@swap
+	LoadW	r4, diskBlkBuf
+	jsr	PutBlock
+
+	MoveW	a2,r6
+	lda	#$00
+	sta	r0L
+	sta	r10L
+	jmp	GetFile	
+@done:
+	rts
+@swap:
+	; copy dir entry to buffer
+	ldy	#0
+@loop1:
+	lda	(r5), y
+	tax
+	lda	FrontBuffer, y
+	sta	(r5), y
+	txa
+	sta	FrontBuffer, y
+	iny	
+	cpy	#30
+	bne	@loop1
+
+	rts
+
+tempName2:
+	.byte	"Temp Download", NULL
 
 tempName:
 	.byte	"Temp Download", $a0, $a0, $a0
+
+FrontBuffer:
 http_line_buf:
 	.repeat	LINE_BUF_SIZE
 		.byte	0
 	.endrep
 http_line_buf_pos:
 	.byte	0
+
+kbytes:
+	.word	0
+
+file_count:
+	.byte	0
+total_count:
+	.word	0
+
+current_name:
+	.word	NULL
+
+error_count:
+	.byte	0
+missing_count:
+	.byte	0
+distro_count:
+	.byte	0
+
+retry_count:
+	.byte	0
+
+success_count:
+	.byte 	0
+
+oldAppMain:
+	.word	0
 
 http_connected:
 	.byte	0
@@ -763,11 +1878,35 @@ download_count:
 	.word	0
 download_packets:
 	.word 	0
+download_packets2:
+	.word 	0
+downloadState:
+	.byte	DL_STATE_IDLE
+initCounter:
+	.byte	0
+requestComplete:
+	.byte 	0
+ip_address:
+	.byte 	0, 0, 0, 0 
 
-fileRequestBuf:
-	.repeat		1024
-		.byte	0
-	.endrep
+requestTimeout:
+	.word	0
+requestRetry:
+	.byte 	0
+requestFileName:
+	.word 	0
+requestFileNameLen:
+	.word 	0
+requestRedirect:
+	.byte 	0
+
+downloadTimeout:
+	.word	0
+
+fileRequestBuf		= $5000
+;	.repeat		1024
+;		.byte	0
+;	.endrep
 
 fileRequestPrefix:
 	.byte	"GET "
@@ -815,75 +1954,315 @@ hostName:
 hostIP:
 	.byte	0, 0, 0, 0
 
+missingTextOf:
+	.byte	" of ", NULL
+missingText:
+	.byte 	" default distro files are missing.", NULL
+missingText2:
+	.byte 	" files are still missing!", PLAINTEXT, NULL
+missingText3:
+	.byte	"To retry the download later, manually", NULL
+missingText4:
+	.byte	"run GEOSPACE from TopDesk.", NULL
+downloadText:
+	.byte	BOLDON, "Are you connected to the internet and", NULL
+downloadText2:
+	.byte	"want to try downloading the files now?", NULL
+
+DrawMissing:
+
+	LoadW	r11, %1011101100000000 | ((-(117)) & $FF)
+	LoadB	r1H, (-36) & $FF
+
+	lda	#BOLDON
+	jsr	PutChar
+
+	LoadB	r0H, 0
+	MoveB	missing_count, r0L
+	lda	#SET_SURPRESS|SET_LEFTJUST
+	jsr	PutDecimal
+
+	LoadW	r0, missingTextOf
+	jsr	PutString
+
+	LoadB	r0H, 0
+	MoveB	distro_count, r0L
+	lda	#SET_SURPRESS|SET_LEFTJUST
+	jsr	PutDecimal
+
+	LoadW	r0, missingText
+	jsr	PutString
+
+	rts
+
+DrawMissing2:
+
+	lda	a1L
+	ora	a1H
+	beq	@done
+
+	LoadW	r11, %1011101100000000 | ((-(86)) & $FF)
+	LoadB	r1H, (-16) & $FF
+
+	lda	#BOLDON
+	jsr	PutChar
+
+	MoveW	a1, r0
+	lda	#SET_SURPRESS|SET_LEFTJUST
+	jsr	PutDecimal
+
+	LoadW	r0, missingTextOf
+	jsr	PutString
+
+	MoveW	a2, r0
+	lda	#SET_SURPRESS|SET_LEFTJUST
+	jsr	PutDecimal
+
+	LoadW	r0, missingText2
+	jsr	PutString
+
+	LoadW	r11, %1011101100000000 | ((-(86)) & $FF)
+	LoadB	r1H, (0) & $FF
+
+	LoadW	r0, missingText3
+	jsr	PutString
+
+	LoadW	r11, %1011101100000000 | ((-(86)) & $FF)
+	LoadB	r1H, (16) & $FF
+
+	LoadW	r0, missingText4
+	jsr	PutString
+@done:
+	rts
+
 CheckDialog:
-	.byte	$81	; standard dialog, light bachground
+	.byte	$1	; standard dialog, light bachground
 
-	.byte	OK
+	ByteCY	%101100000000 | ((-127) & $FF), %101100000000 | ((-50) & $FF)
+	ByteCY	%101100000000 | ((118) & $FF), %101100000000 | ((50) & $FF)
+	WordCX	%101100000000 | ((-(127)) & $FF), %101100000000 | ((-50) & $FF)
+	WordCX	%101100000000 | ((118) & $FF), %101100000000 | ((50) & $FF)
+
+	;.byte	DBTXTSTR, 10,16
+	;.word	missingText
+	.byte	DB_USR_ROUT
+	.word	DrawMissing
+
+	.byte	DBTXTSTR, 10,32+8
+	.word	downloadText
+
+	.byte	DBTXTSTR, 10,48+8
+	.word	downloadText2
+
+	.byte	YES
 	.byte	1, 74
-
-	.byte	CANCEL
-	.byte	17, 74
+	.byte	NO
+	.byte	24, 74
 
 	.byte	NULL
 
+downloadingInto:
+	.byte	BOLDON, "Downloading GEOS files from", NULL
+downloadingInto2:
+	.byte	"cbmfiles.com/geos (via archive.org):", NULL
+rulesText1:
+	.byte	ITALICON, "Please respect the downloading rules!", PLAINTEXT, NULL
+rulesText2:
+	.byte	"Even though GEOS 64 and GEOS 128 are being", NULL
+rulesText3:
+	.byte	"provided for free downloading, it is still commercial", NULL
+rulesText4:
+	.byte	"software. Therefore all existing copyrights apply.", NULL
+
+rulesText5:
+	.byte	"As a user, you are perfectly welcome to download", NULL
+rulesText6:
+	.byte	"GEOS and use it as much as you'd like. The only", NULL
+rulesText7:
+	.byte	"restrictions are you must not sell it or redistribute", NULL
+rulesText8:
+	.byte	"it in any form or fashion.", NULL
+
+rulesText9:
+	.byte	BOLDON, "Do you agree not to redistribute or sell", NULL
+rulesText10:
+	.byte	"GEOS?", NULL
+
+CheckLicenseDialog:
+	.byte	$1	; standard dialog, light bachground
+
+	ByteCY	%101100000000 | ((-127) & $FF), %101100000000 | ((-94) & $FF)
+	ByteCY	%101100000000 | ((118) & $FF), %101100000000 | ((90) & $FF)
+	WordCX	%101100000000 | ((-(127)) & $FF), %101100000000 | ((-94) & $FF)
+	WordCX	%101100000000 | ((118) & $FF), %101100000000 | ((90) & $FF)
+
+	.byte	DBTXTSTR, 10,16
+	.word	downloadingInto
+	.byte	DBTXTSTR, 10,26
+	.word	downloadingInto2
+
+	.byte	DBTXTSTR, 10,42
+	.word	rulesText1
+
+	.byte	DBTXTSTR, 10,42+16
+	.word	rulesText2
+	.byte	DBTXTSTR, 10,42+26
+	.word	rulesText3
+	.byte	DBTXTSTR, 10,42+36
+	.word	rulesText4
+
+	.byte	DBTXTSTR, 10,42+46+6
+	.word	rulesText5
+	.byte	DBTXTSTR, 10,42+56+6
+	.word	rulesText6
+	.byte	DBTXTSTR, 10,42+66+6
+	.word	rulesText7
+	.byte	DBTXTSTR, 10,42+76+6
+	.word	rulesText8
+
+	.byte	DBTXTSTR, 10,42+86+6+6
+	.word	rulesText9
+	.byte	DBTXTSTR, 10,42+96+6+6
+	.word	rulesText10
+
+	.byte	YES
+	.byte	1, 166
+	.byte	CANCEL
+	.byte	24, 166
+
+	.byte	NULL
+
+connectingText:
+	.byte	BOLDON, "Connecting...", NULL
+
+DownloadDialog:
+	.byte	$1	; standard dialog, light bachground
+
+	ByteCY	%101100000000 | ((-127) & $FF), %101100000000 | ((-60) & $FF)
+	ByteCY	%101100000000 | ((118) & $FF), %101100000000 | ((60) & $FF)
+	WordCX	%101100000000 | ((-(127)) & $FF), %101100000000 | ((-60) & $FF)
+	WordCX	%101100000000 | ((118) & $FF), %101100000000 | ((60) & $FF)
+
+	.byte	DBTXTSTR, 10,20
+	.word	connectingText
+
+	.byte	CANCEL
+	.byte	24, 100
+
+	.byte	DB_USR_ROUT
+	.word	startDownload
+
+	.byte	NULL
 
 WelcomeDialog:
 	.byte	$81	; standard dialog, light bachground
 
-	.byte	OK
-	.byte	17, 74
+	;.byte	OK
+	;.byte	17, 74
 
-	.byte	DBTXTSTR, 10,11
+	.byte	DBTXTSTR, 10,12
 	.word	welcomeText
 
-	.byte	DBTXTSTR, 10,21
+	.byte	DBTXTSTR, 10,23
 	.word	geosVersionText
 
 	.byte	DBTXTSTR, 10,33
 	.word	versionDetails
 
 	.byte	DBTXTSTR, 10,43
-	.word	coreInfo
-
-	.byte	DBTXTSTR, 10,55
-	.word	warranties
-
-	.byte	DBTXTSTR, 10,65
 	.word	warranties2
 
-	.byte	DBTXTSTR, 10,80
-	.word	geoSpaceInfo
+	.byte	DBTXTSTR, 10,59
+	.word	selectInputInstruc
 
-	.byte	DBTXTSTR, 10,89
-	.word	bluewayswInfo
+	.byte	DBTXTSTR, 10,73
+	.word	joystickInput
+
+	.byte	DBTXTSTR, 10,84
+	.word	mouseInput
+
+	;.byte	DBTXTSTR, 10,89
+	;.word	bluewayswInfo
+
+	.byte	DB_USR_ROUT
+	.word	WelcomeInit
+
+	.byte	NULL
+
+systemUpToDate:
+	.byte	BOLDON, "System disk is up to date!", NULL
+
+Welcome2Dialog:
+	.byte	$81	; standard dialog, light bachground
+
+	.byte	OK
+	.byte	17, 74
+
+	.byte	DBTXTSTR, 10,12
+	.word	welcome2Text
+
+	.byte	DBTXTSTR, 10,23
+	.word	geosVersionText
+
+	.byte	DBTXTSTR, 10,33
+	.word	versionDetails
+
+	.byte	DBTXTSTR, 10,43
+	.word	warranties2
+
+	.byte	DBTXTSTR, 10,62
+	.word	systemUpToDate
 
 	.byte	NULL
 
 
-
 welcomeText:
 	.byte	BOLDON, OUTLINEON, "Welcome!", PLAINTEXT, NULL
+welcome2Text:
+	.byte	BOLDON, OUTLINEON, "Hello Again!", PLAINTEXT, NULL
 geosVersionText:
-	.byte	BOLDON, "GEOS V6.0 for the MEGA65", PLAINTEXT, NULL
+	.byte	BOLDON, "GEOS 6.0",PLAINTEXT," (r4+ BETA) for the ", BOLDON,"MEGA65", PLAINTEXT, NULL
 versionDetails:
-	.byte	"(11/21/21, BETA)", NULL
-coreInfo:
-	.byte	"M65 Core: master@009727e, build 4", NULL
-warranties:
-	.byte	"M65 ROM version: V920254", NULL
+	.byte	"https://github.com/bluewaysw/geos.git", NULL
 warranties2:
 	.byte	BOLDON, "Use with care, no warranties!", PLAINTEXT, NULL
-geoSpaceInfo:
-	.byte	"establishing GeoSpace:", NULL
-bluewayswInfo:
-	.byte	BOLDON, "www.bluewaysw.de", NULL
+;geoSpaceInfo:
+;	.byte	"establishing GeoSpace:", NULL
+;bluewayswInfo:
+;	.byte	BOLDON, "www.bluewaysw.de", NULL
+selectInputInstruc:
+	.byte	PLAINTEXT, "Press <> key to set your input driver:", NULL
+joystickInput:
+	.byte	BOLDON, "  <1>  JOYSTICK", NULL
+mouseInput:
+	.byte	BOLDON, "  <2>  MEGA 1351", PLAINTEXT, " (Mouse)", NULL
+ResultDialog:
+	.byte	$81	; standard dialog, light bachground
 
+	.byte	OK
+	.byte	17, 74
+
+	.byte	DBVARSTR, 10,16
+	.byte	a0
+
+	.byte	DB_USR_ROUT
+	.word	DrawMissing2
+
+	.byte	NULL
+
+SuccessResultString:
+	.byte	BOLDON, "Download completed.", NULL
+CancelledResultString:
+	.byte	BOLDON, "Download cancelled.", NULL
+
+emptyString: 
+	.byte	"                                            ", NULL
 
 FOLDER_PRINTER_DRIVER	= 10
 FOLDER_APPLICATION 	= 3
 FOLDER_FONTS		= 6
-FOLDER_DEST_ACC		= 0
-FOLDER_OTHER_DATA	= 5
+FOLDER_DEST_ACC		= 5
+FOLDER_OTHER_DATA	= 9
 FOLDER_UTILITIES	= 7
 
 gw128cvt:
@@ -936,6 +2315,7 @@ merge128cvt:
 merge128name:
 	.byte	"GEOMERGE", NULL
 
+.if 0
 californiacvt:
 	.byte	"CALIF.CVT", NULL
 californianame:
@@ -985,7 +2365,7 @@ lwbarrowscvt:
 	.byte	"LWBARR.CVT", NULL
 lwbarrowsname:
 	.byte	"LW_Barrows", NULL
-
+.endif
 paint_driverscvt:
 	.byte	"PNTDRVRS.CVT", NULL
 paint_driversname:
@@ -1025,7 +2405,7 @@ tgg2128cvt:
 	.byte	"TGG2128.CVT", NULL
 tgg2128name:
 	.byte	"C128 Generic II", NULL
-
+.if 0
 COMMCOMPcvt:
 	.byte	"COMMCOMP.CVT", NULL
 COMMCOMPname:
@@ -1202,17 +2582,17 @@ MPS1000name:
 	.byte	"MPS-1000", NULL
 
 MPS1200cvt:
-	.byte	"MPS2000.CVT", NULL
+	.byte	"MPS1200.CVT", NULL
 MPS1200name:
 	.byte	"MPS 1200", NULL
 
 MPS1200DScvt:
-	.byte	"MPS2000DS.CVT", NULL
+	.byte	"MP1200DS.CVT", NULL
 MPS1200DSname:
 	.byte	"MPS-1200 DS", NULL
 
 MPS1200QScvt:
-	.byte	"MPS2000QS.CVT", NULL
+	.byte	"MP1200QS.CVT", NULL
 MPS1200QSname:
 	.byte	"MPS 1200 QS", NULL
 
@@ -1300,7 +2680,7 @@ TOSHP321cvt:
 	.byte	"TOSHP321.CVT", NULL
 TOSHP321name:
 	.byte	"Toshiba P321", NULL
-
+.endif
 
 
 
@@ -1345,7 +2725,7 @@ bootstrapTable:
 	.word	merge128cvt
 	.word	merge128name
 	.byte	FOLDER_APPLICATION
-
+.if 0
 	.word	californiacvt
 	.word	californianame
 	.byte	FOLDER_FONTS
@@ -1385,7 +2765,7 @@ bootstrapTable:
 	.word	lwbarrowscvt
 	.word	lwbarrowsname
 	.byte	FOLDER_FONTS
-
+.endif
 	.word	paint_driverscvt
 	.word	paint_driversname
 	.byte	FOLDER_UTILITIES
@@ -1417,7 +2797,7 @@ bootstrapTable:
 	.word	tgg2128cvt
 	.word	tgg2128name
 	.byte	FOLDER_OTHER_DATA
-
+.if 0
 	.word	COMMCOMPcvt
 	.word	COMMCOMPname
 	.byte	FOLDER_PRINTER_DRIVER
@@ -1637,4 +3017,6 @@ bootstrapTable:
 	.word	TOSHP321cvt
 	.word	TOSHP321name
 	.byte	FOLDER_PRINTER_DRIVER
+.endif
+
 bootstrapTableEnd:

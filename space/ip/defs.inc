@@ -64,6 +64,8 @@ WEEIP_EV_DISCONNECT = 2                  ;///< Disconnection from peer.
 WEEIP_EV_DISCONNECT_WITH_DATA = 3        ;///< Disconnection from peer, but packet also contains data
 WEEIP_EV_DATA = 4                        ;///< Data arrival.
 WEEIP_EV_DATA_SENT = 5                   ;///< Data sent.
+WEEIP_EV_CLOSE = 6                   	 ;///< 
+WEEIP_EV_CLOSE_WITH_DATA = 7             ;///< 
 
 TICK_TCP	=	44		;// one second
 
@@ -89,3 +91,6 @@ IP_HDR_DEST_OFFSET = 16
 
 UDP_HDR_CHECKSUM_OFFSET = 6+IP_HDR_SIZE
 UDP_HDR_LENGTH_OFFSET = 4+IP_HDR_SIZE
+
+.global dns_run
+.global dns_result

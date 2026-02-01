@@ -327,22 +327,41 @@ BitmapDecode2:
 	ora #1
 	sta config
 .endif
-	lda r0H
-	cmp #$a0
 
 	; get image from UNDERLAY
 	ldx	r1H
 	ldy	r1L
-	LDZ	#0
-	lda	#1
-	bcs	@11
+
+	lda	r0H
+	pha
+	taz
+	and	#$C0
+	cmp	#$C0
+	bne	@11	; <= $C0
+
+	; use underlay ptr
 	tza
-@11:	sta	r1L
+	and	#%10111111
+	ldz	#1
+	bra 	@11b
+@11:
+	tza
+	ldz	#0
+
+@11b:	sta	r0H
+
+	stz	r1L
+	ldz	#0
 	stz	r1H
+
 	EOM
 	lda 	(r0L), Z
 	sty	r1L
 	stx	r1H
+	tax
+	pla
+	sta	r0H
+	txa
 
 	;ldy #0
 	;lda (r0),y

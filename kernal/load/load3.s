@@ -28,7 +28,7 @@
 
 .global _LdFile
 .global _GetFile
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 .global _LdFile2
 .endif
 

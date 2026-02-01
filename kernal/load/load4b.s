@@ -16,19 +16,20 @@
 .import StartAppl
 .import GetFHdrInfo
 .import A885E
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 .import CheckAppCompat
 .import _LdFile2
 .else
 .import LdFile
 .endif
+.import FetchSerial
 
 .global _LdApplic
 
 .segment "load4b"
 
 _LdApplic:
-.ifdef bsw128
+.if .defined(bsw128) || .defined(mega65)
 	jsr UNK_5
 	jsr GetFHdrInfo
 	bnex @1
@@ -40,6 +41,7 @@ _LdApplic:
 	bbsf 0, A885E, @3
 	jsr UNK_4
 	MoveW_ fileHeader+O_GHST_VEC, r7
+	jsr FetchSerial
 	jmp StartAppl
 @3:	jmp EnterDeskTop
 .else

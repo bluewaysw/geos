@@ -37,34 +37,40 @@ MSB = DOUBLE_B
 MSB = 0
 .endif
 
+.ifdef mega65
+ICON_UNDERLAY_FLAG =	$4000
+.else
+ICON_UNDERLAY_FLAG =	0
+.endif
+
 DBDefIconsTab:
-	.word DBIcPicOK
+	.word DBIcPicOK | ICON_UNDERLAY_FLAG
 	.word 0
 	.byte MSB | 6, 16
 DBDefIconsTabRoutine:
 	.word DBIcOK
 
-	.word DBIcPicCANCEL
+	.word DBIcPicCANCEL | ICON_UNDERLAY_FLAG
 	.word 0
 	.byte MSB | 6, 16
 	.word DBIcCANCEL
 
-	.word DBIcPicYES
+	.word DBIcPicYES | ICON_UNDERLAY_FLAG
 	.word 0
 	.byte MSB | 6, 16
 	.word DBIcYES
 
-	.word DBIcPicNO
+	.word DBIcPicNO | ICON_UNDERLAY_FLAG
 	.word 0
 	.byte MSB | 6, 16
 	.word DBIcNO
 
-	.word DBIcPicOPEN
+	.word DBIcPicOPEN | ICON_UNDERLAY_FLAG
 	.word 0
 	.byte 6, 16
 	.word DBIcOPEN
 
-	.word DBIcPicDISK
+	.word DBIcPicDISK | ICON_UNDERLAY_FLAG
 	.word 0
 	.byte 6, 16
 	.word DBIcDISK

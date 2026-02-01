@@ -62,6 +62,8 @@
 .import vmiSpriteYPosOff
 .import vmiMaxY
 .import vmiFullCardsY
+.import screenRows
+.import Row478
 
 .segment "start"
 
@@ -123,6 +125,7 @@ ASSERT_NOT_BELOW_IO
 	LoadB 	vmiSpriteYPosOff+3, 1
 
 	LoadW 	vmiMaxY+6, 478
+	LoadW 	screenRows+6, Row478
 
 	LoadB 	vmiFullCardsY+3, 59
 

@@ -95,6 +95,23 @@ saveD058:
 	.byte 0
 saveD05E:
 	.byte 0
+saveD07B:
+	.byte 0
+saveD05B:
+	.byte 0
+saveD048:
+	.byte 0
+saveD04E:
+	.byte 0
+saveD049:
+	.byte 0
+saveD04F:
+	.byte 0
+saveD04A:
+	.byte 0
+saveD04B:
+	.byte 0
+
 traceMode:
 	.byte TRACE_MODE
 u_cl:
@@ -199,7 +216,7 @@ DebugMain:
 
   rts
 
-welcome:  .byte "SuperDebugger V6.0",13,"(C) 2019-20 blueway.Softworks", 13, 13, 0
+welcome:  .byte "SuperDebugger V6.0",13,"(C) 2019-2026 blueway.Softworks", 13, 13, 0
 
 ClearConsole:
   ldx #0
@@ -645,7 +662,7 @@ traceNow:
 	sta	r0H
 
 	AddVW	2, r0
-	bra	@2
+	jmp	@2
 
 	;lda	r0L
 	;sta	$106+STACK_OFFSET, y
@@ -665,7 +682,7 @@ traceNow:
 	bne	@3b
 @4c2:
 	cmp	#$10	; BPL
-	bne	@4c
+	bne	@4c3
 
 	ldy	stackPointer
 	lda 	$105+STACK_OFFSET, y
@@ -673,6 +690,17 @@ traceNow:
 	beq	@3c	; it is positiv, branch off
 	lda	#$10
 	bne	@3b
+@4c3:
+	cmp	#$30	; BMI
+	bne	@4c
+
+	ldy	stackPointer
+	lda 	$105+STACK_OFFSET, y
+	and	#$80
+	bne	@3c	; it is positiv, branch off
+	lda	#$30
+	bne	@3b
+
 @4c:
 	cmp	#$F0	; BEQ
 	bne	@4d
@@ -688,14 +716,15 @@ traceNow:
 	ldy	stackPointer
 	lda 	$105+STACK_OFFSET, y
 	and	#$02
-	beq	@3c	; it is zero/equal, branch off
+	beq	@3c2	; it is zero/equal, branch off
 	lda	#$D0
 	bra	@3b
 
 @4d2:
 	cmp	#$80	; BRA
 	bne	@4g
-	bra	@3c	; it is zero/equal, branch off
+@3c2:
+	jmp	@3c	; it is zero/equal, branch off
 @4g:
 	cmp	#$60	; RTS
 	bne	@3b
@@ -982,6 +1011,11 @@ ProcessDump:
 	MoveW r1, u_cl
 	MoveW r2, u_cl_h
 @6c:
+
+	ldz #0
+@dumpLine:
+	phz
+
 	MoveW u_cl, r0
 
 	lda	#'$'
@@ -1012,12 +1046,44 @@ ProcessDump:
 	pla
 	tax
 	inx
-	cpx	#20
+	cpx	#16
 	bne	@6b
+
+	lda	#' '
+	jsr	PutChar
+
+	ldx #0
+@6cc:
+	txa
+	pha
+	tay
+	;lda	(r0), y
+	jsr	GetByteLong
+	cmp	#13
+	beq	@putPoint
+	cmp	#0
+	bne 	@put
+@putPoint:
+	lda	#'.'
+@put:
+	jsr	PutChar
+	pla
+	tax
+	inx
+	cpx	#16
+	bne	@6cc
 
 	lda	#13
 	jsr	PutChar
 
+	AddVW	16, u_cl
+
+	plz
+	inz
+	cpz	#16
+	beq	@done
+	jmp	@dumpLine
+@done:
 	MoveW r0, u_cl
 	MoveW r2, u_cl_h
 	clc
@@ -1191,6 +1257,10 @@ colloop:
   bne @do
   rts
 @do:
+	;lda	$D05D
+	;ora	#%10000000
+	;sta	$D05D
+
 	MoveB	$D063, saveD063
 	MoveB	$D060, saveD060
 	MoveB	$D061, saveD061
@@ -1243,9 +1313,41 @@ colloop:
 	lda #$c8		; 40 column etc
 	sta $d016
 
+	lda #C65_VIC_INIT1
+	sta $d02f
+	lda #C65_VIC_INIT2
+	sta $d02f
+
+	MoveB $d07B, saveD07B
+	lda	#24
+	sta	$D07B
+	MoveB $d05B, saveD05B
+	lda	#1
+	sta	$D05B
+
+;	lda	#42
+	MoveB $d048, saveD048
+	MoveB $d04E, saveD04E
+	lda	#42
+	sta 	$d048
+	sta	$d04e
+	MoveB $d049, saveD049
+	MoveB $d04F, saveD04F
+	lda 	#0
+	sta 	$d049
+	sta	$d04f
+
+	MoveB $d04A, saveD04A
+	lda 	#<442
+	sta 	$D04A
+	MoveB $d04B, saveD04B
+	lda 	#>442
+	sta 	$D04B
+
 	MoveB $d031, saveD031
 	lda #%11000000
 	sta $d031
+
 
 	;; Compute's Mapping the 64, p156
 	;; We use a different colour scheme of white text on all blue
@@ -1296,6 +1398,15 @@ ExitConsole:
   MoveB	saveD06A, $D06A
   MoveB	saveD058, $D058
   MoveB	saveD05E, $D05E
+
+  MoveB saveD07B, $D07B
+  MoveB saveD05B, $D05B
+  MoveB saveD048, $D048
+  MoveB saveD04E, $D04E
+  MoveB saveD049, $D049
+  MoveB saveD04F, $D04F
+  MoveB saveD04A, $D04A
+  MoveB saveD04B, $D04B
 
   jsr SwapConsoleBuf
   LoadW consoleBufAddr, consoleBuf

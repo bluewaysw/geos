@@ -1,4 +1,4 @@
-HEADER APPLICATION "GEOSPACE" "GeoSpace" "V1.0" {
+HEADER AUTO_EXEC "GEOSPACE" "GeoSpace" "V1.0" {
     author    "Falk Rehwagen"
     dostype   USR
     structure SEQ

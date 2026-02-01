@@ -23,6 +23,8 @@
 .export task_add
 .export task_cancel
 
+.import oldAppMain
+
 ;// Periodically show the scheduled tasks
 ;//#define DEBUG_TASKS
 ;// Show each task as it is called
@@ -150,7 +152,6 @@ task_add:
 	;bool_t ok;
 	;volatile tid_t *task;
 	;uint8_t j;
-
 	CmpW	r0, NULL
 	beq	@err
 
@@ -206,6 +207,7 @@ task_add:
 	inx
    	bra	@loop
 @endLoop:
+	brk
 @err:
 	clc
 	rts
@@ -221,7 +223,7 @@ task_cancel:
 	;volatile tid_t *task;
 	;bool_t ok;
 
-	CmpW	r0, NULL
+	CmpWI	r0, NULL
 	beq	@10
 
 	;*

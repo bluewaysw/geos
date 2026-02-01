@@ -14,12 +14,21 @@
 .import pingTabEnd
 .import alarmWarnFlag
 .import dateCopy
+.import MapUnderlay
+.import UnmapUnderlay
 
 .global _DoUpdateTime
 
 .segment "time1"
-
 _DoUpdateTime:
+    jsr MapUnderlay
+    jsr __DoUpdateTime
+    jmp UnmapUnderlay
+
+
+.segment "time1b"
+
+__DoUpdateTime:
 	sei
 	START_IO_X
 	lda cia1base+15

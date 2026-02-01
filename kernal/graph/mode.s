@@ -56,6 +56,8 @@
 .global vmiSpriteYPosOff
 .global vmiMaxY
 .global vmiFullCardsY
+.global screenRows
+.global Row478
 
 .global SetRightMargin
 _SetNewMode:
@@ -418,6 +420,8 @@ Row400:
 	.word	50, 100, 150, 200, 250, 300, 350, 399
 Row569:
 	.word	71, 142, 213, 284, 355, 426, 497, 568
+Row478:
+	.word	60, 120, 180, 240, 299, 359, 419, 477
 
 
 .endif

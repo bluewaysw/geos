@@ -71,6 +71,8 @@
 .export socket_reset
 .export socket_release
 
+.import task_periodic
+
 .export weeip_init
 
 .import upstreamName
@@ -92,8 +94,8 @@ _sckt:
 ;*
 ;* Local port definitions.
 ;*
-PORT_MIN	=	1024
-PORT_MAX	=	4096
+PORT_MIN	=	49152	;1024
+PORT_MAX	=	65534	;4096
 
 
 port_used:                              ;///< Next port to use.
@@ -164,9 +166,23 @@ socket_create:
 ; in: r1 socket ptr
 ; destroy: r0-r2L
 socket_release:
-	CmpW	r1, NULL
+	CmpWI	r1, NULL
 	beq	@done
+@20:
+	ldy	#SOCKET_TO_SEND_OFFSET
+	lda	(r1), y
+	beq	@ready
 
+	PushW	r1
+	jsr	task_periodic
+	PopW	r1
+	LoadB	dblClickCount, 1
+@21:
+	lda	dblClickCount
+	bne	@21
+	bra	@20
+
+@ready:
 	LoadW	r0, SOCKET_SIZE
 	jsr	ClearRam
 
@@ -295,7 +311,7 @@ socket_connect:
 	;*
 	;* Check socket availability.
 	;*
-	CmpW	_sckt, NULL
+	CmpWI	_sckt, NULL
 	bne	@1
 	jmp	@err
 @1:
@@ -322,7 +338,7 @@ socket_connect:
 	lda	port_used
 	sta	(r8), y
 
-	CmpW	port_used, PORT_MAX
+	CmpWI	port_used, PORT_MAX
 	bne	@20
 	LoadW	port_used, PORT_MIN
 	bra	@30
@@ -396,7 +412,7 @@ socket_connect:
 ; in: r0 - ptr to data buffer, r1 - size of data buffer
 ; out: carry, set if success
 socket_send:
-	CmpW	_sckt, NULL
+	CmpWI	_sckt, NULL
 	beq	@err
 
 	ldy	#SOCKET_STATE_OFFSET
@@ -457,7 +473,7 @@ socket_send:
 ; out: r0 - data size
 socket_data_size:
 
-	CmpW	_sckt, NULL
+	CmpWI	_sckt, NULL
 	beq	@err
 	MoveW	_sckt, r8
 	ldy	#SOCKET_RX_DATA_OFFSET
@@ -479,7 +495,7 @@ socket_data_size:
 ;*/
 ; out: carry set if succeeded
 socket_disconnect:
-	CmpW	_sckt, NULL
+	CmpWI	_sckt, NULL
 	beq	@err
 	MoveW	_sckt, r8
 

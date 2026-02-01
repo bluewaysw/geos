@@ -1114,8 +1114,8 @@ TestGraphMode:
 	lda	$8160
 	cmp	#$80		; c64 only?
 	bne	@05
-	ldx	#15
-	rts
+;;	ldx	#15
+;;	rts
 @05:	cmp	#$40		; 40 or 80 col, not extended
 	beq	@10
 ;	lda	$d505

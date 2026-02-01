@@ -32,6 +32,8 @@
 .import StashRAM
 .endif
 
+.import FetchSerial
+
 .global _LdDeskAcc
 .global _RstrAppl
 
@@ -160,6 +162,7 @@ tmp3:	.byte 0
 	PopW DeskAccPC
 	tsx
 	stx DeskAccSP
+	jsr FetchSerial
 	ldx fileHeader+O_GHST_VEC+1
 	lda fileHeader+O_GHST_VEC
 	jmp _MNLP_DeskAcc

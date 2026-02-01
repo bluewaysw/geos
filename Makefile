@@ -608,9 +608,9 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo geoswrite $(BUILD_DIR)/geospace.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/mount.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/clock.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite $(BUILD_DIR)/joydrv.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/mega1351.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/mse1351.cvt | $(C1541) $@ >/dev/null; \
-		echo geoswrite $(BUILD_DIR)/joydrv.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/autostart.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/topdesk.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/input_driver.cvt | $(C1541) $@ >/dev/null; \
@@ -628,6 +628,136 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo geosfolder "Input\\ Drivers" "COMM\\ 1351"| $(C1541) $@ >/dev/null; \
 		echo geosfolder "Input\\ Drivers" "JOYSTICK"| $(C1541) $@ >/dev/null; \
 		echo geosfolder "Input\\ Drivers" "MEGA\\ 1351"| $(C1541) $@ >/dev/null; \
+		echo geoswrite california.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite cory.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite dwinelle.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite roma.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite university.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite commfont.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite lwroma.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite lwcal.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite lwgreek.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite lwbarrows.cvt | $(C1541) $@ >/dev/null; \
+		echo geosfolder "Fonts" "California"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Fonts" "Cory"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Fonts" "Dwinelle"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Fonts" "Roma"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Fonts" "University"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Fonts" "Commodore"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Fonts" "LW_Roma"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Fonts" "LW_Cal"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Fonts" "LW_Greek"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Fonts" "LW_Barrows"| $(C1541) $@ >/dev/null; \
+		echo geoswrite COMMCOMP.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite 1526.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite ASC.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite BCM120.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite CI8510.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite CI8510A.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite CI8510DS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite CI8510QS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite CIRED.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite EPFX80.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite EPFX80DS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite EPFX80QS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite EPJX80.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite EPLQ1500.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite EPLX80.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite EPMX80.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite EPRED.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite GEM10X.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite GEMDS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite GEMQS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite IBM51P.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite IBM51PDS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite IBM51PQS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite IMW.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite IMWDS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite IMWQS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite IMW2.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite IMW2DS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite IMW2QS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite LJPAR.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite LJSER.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite LW21.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite MPS801.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite MPS803.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite MPS1000.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite MPS1200.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite MP1200DS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite MP1200QS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite OK120.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite OK120NLQ.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite OKML92.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite OK10.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite OK20.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite OLPR2300.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite RITECP.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite SCRIBE.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite SNB15.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite SNL10COM.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite SNX10.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite SNX10DS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite SNX10QS.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite SNX10C.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite NX1000R.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite SSG10.CVT | $(C1541) $@ >/dev/null; \
+		echo geoswrite TOSHP321.CVT | $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "1526"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "ASCII\\ Only"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "BlueChip\\ M120"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "C.Itoh\\ 8510"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "C.Itoh\\ 8510A"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "C.Itoh\\ 8510\\ D.S."| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "C.Itoh\\ 8510\\ Q.S."| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "C.Itoh\\ RED."| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Comm.\\ Compat."| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Epson\\ FX-80"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Epson\\ FX-80\\ DS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Epson\\ FX-80\\ QS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Epson\\ JX-80"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Epson\\ LQ-1500"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Epson\\ LX-80"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Epson\\ MX-80"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Epson\\ RED."| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Gemini\\ 10x"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Gemini\\ DS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Gemini\\ QS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "IBM\\ 5152+"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "IBM\\ 5152+\\ DS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "IBM\\ 5152+\\ QS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "ImageWriter"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "ImageWriterDS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "ImageWriterQS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "ImageWriter\\ II"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "ImWrtr\\ II\\ DS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "ImWrtr\\ II\\ QS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "LaserJet\\ PAR."| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "LaserJet\\ SER."| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "LaserWriter\\ 2.1"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "MPS-801"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "MPS-803"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "MPS-1000"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "MPS\\ 1200"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "MPS-1200\\ DS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "MPS\\ 1200\\ QS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Oki\\ 120"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Oki\\ 120\\ NLQ"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Oki\\ ML-92/93"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Okimate\\ 10"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Okimate\\ 20"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Olivetti\\ PR2300"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Riteman\\ C+"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Scribe"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Star\\ NB-15"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Star\\ NL-10(com)"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Star\\ NX-10"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Star\\ NX-10\\ DS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Star\\ NX-10\\ QS"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Star\\ NX-10C"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "NX-1000\\ Rainbow"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Star\\ SG-10/15"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Printer\\ Drivers" "Toshiba\\ P321"| $(C1541) $@ >/dev/null; \
 		if [ "$(CONFIRM_CBMFILES_PERSONAL_USE_LICENSE)" = "ACCEPT_CBMFILES_LICENSE" ]; then \
 			echo geoswrite prmgr128.cvt | $(C1541) $@ >/dev/null; \
 			echo geoswrite pdmgr128.cvt | $(C1541) $@ >/dev/null; \
@@ -641,16 +771,6 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 			echo geoswrite spell128.cvt | $(C1541) $@ >/dev/null; \
 			echo geoswrite spelldata.cvt | $(C1541) $@ >/dev/null; \
 			echo geoswrite merge128.cvt | $(C1541) $@ >/dev/null; \
-			echo geoswrite california.cvt | $(C1541) $@ >/dev/null; \
-			echo geoswrite cory.cvt | $(C1541) $@ >/dev/null; \
-			echo geoswrite dwinelle.cvt | $(C1541) $@ >/dev/null; \
-			echo geoswrite roma.cvt | $(C1541) $@ >/dev/null; \
-			echo geoswrite university.cvt | $(C1541) $@ >/dev/null; \
-			echo geoswrite commfont.cvt | $(C1541) $@ >/dev/null; \
-			echo geoswrite lwroma.cvt | $(C1541) $@ >/dev/null; \
-			echo geoswrite lwcal.cvt | $(C1541) $@ >/dev/null; \
-			echo geoswrite lwgreek.cvt | $(C1541) $@ >/dev/null; \
-			echo geoswrite lwbarrows.cvt | $(C1541) $@ >/dev/null; \
 			echo geoswrite paint_drivers.cvt | $(C1541) $@ >/dev/null; \
 			echo geoswrite geolaser.cvt | $(C1541) $@ >/dev/null; \
 			echo geoswrite text_grabber128.cvt | $(C1541) $@ >/dev/null; \
@@ -659,61 +779,6 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 			echo geoswrite tgww128.cvt | $(C1541) $@ >/dev/null; \
 			echo geoswrite tgg1128.cvt | $(C1541) $@ >/dev/null; \
 			echo geoswrite tgg2128.cvt | $(C1541) $@ >/dev/null; \
-			echo geoswrite COMMCOMP.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite 1526.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite ASC.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite BCM120.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite CI8510.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite CI8510A.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite CI8510DS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite CI8510QS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite CIRED.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite EPFX80.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite EPFX80DS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite EPFX80QS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite EPJX80.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite EPLQ1500.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite EPLX80.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite EPMX80.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite EPRED.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite GEM10X.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite GEMDS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite GEMQS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite IBM51P.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite IBM51PDS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite IBM51PQS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite IMW.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite IMWDS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite IMWQS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite IMW2.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite IMW2DS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite IMW2QS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite LJPAR.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite LJSER.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite LW21.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite MPS801.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite MPS803.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite MPS1000.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite MPS1200.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite MP1200DS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite MP1200QS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite OK120.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite OK120NLQ.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite OKML92.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite OK10.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite OK20.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite OLPR2300.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite RITECP.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite SCRIBE.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite SNB15.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite SNL10COM.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite SNX10.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite SNX10DS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite SNX10QS.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite SNX10C.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite NX1000R.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite SSG10.CVT | $(C1541) $@ >/dev/null; \
-			echo geoswrite TOSHP321.CVT | $(C1541) $@ >/dev/null; \
 			echo geosfolder "Applications" "GEOWRITE\\ 128"| $(C1541) $@ >/dev/null; \
 			echo geosfolder "Applications" "GEOPAINT"| $(C1541) $@ >/dev/null; \
 			echo geosfolder "Applications" "GEOSPELL\\ 128"| $(C1541) $@ >/dev/null; \
@@ -732,71 +797,6 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 			echo geosfolder "Other\\ Data" "WordWriter\\ 128"| $(C1541) $@ >/dev/null; \
 			echo geosfolder "Other\\ Data" "C128\\ Generic\\ I"| $(C1541) $@ >/dev/null; \
 			echo geosfolder "Other\\ Data" "C128\\ Generic\\ II"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Fonts" "California"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Fonts" "Cory"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Fonts" "Dwinelle"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Fonts" "Roma"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Fonts" "University"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Fonts" "Commodore"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Fonts" "LW_Roma"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Fonts" "LW_Cal"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Fonts" "LW_Greek"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Fonts" "LW_Barrows"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "1526"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "ASCII\\ Only"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "BlueChip\\ M120"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "C.Itoh\\ 8510"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "C.Itoh\\ 8510A"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "C.Itoh\\ 8510\\ D.S."| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "C.Itoh\\ 8510\\ Q.S."| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "C.Itoh\\ RED."| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Comm.\\ Compat."| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Epson\\ FX-80"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Epson\\ FX-80\\ DS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Epson\\ FX-80\\ QS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Epson\\ JX-80"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Epson\\ LQ-1500"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Epson\\ LX-80"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Epson\\ MX-80"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Epson\\ RED."| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Gemini\\ 10x"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Gemini\\ DS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Gemini\\ QS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "IBM\\ 5152+"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "IBM\\ 5152+\\ DS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "IBM\\ 5152+\\ QS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "ImageWriter"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "ImageWriterDS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "ImageWriterQS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "ImageWriter\\ II"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "ImWrtr\\ II\\ DS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "ImWrtr\\ II\\ QS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "LaserJet\\ PAR."| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "LaserJet\\ SER."| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "LaserWriter\\ 2.1"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "MPS-801"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "MPS-803"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "MPS-1000"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "MPS\\ 1200"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "MPS-1200\\ DS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "MPS\\ 1200\\ QS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Oki\\ 120"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Oki\\ 120\\ NLQ"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Oki\\ ML-92/93"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Okimate\\ 10"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Okimate\\ 20"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Olivetti\\ PR2300"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Riteman\\ C+"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Scribe"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Star\\ NB-15"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Star\\ NL-10(com)"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Star\\ NX-10"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Star\\ NX-10\\ DS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Star\\ NX-10\\ QS"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Star\\ NX-10C"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "NX-1000\\ Rainbow"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Star\\ SG-10/15"| $(C1541) $@ >/dev/null; \
-			echo geosfolder "Printer\\ Drivers" "Toshiba\\ P321"| $(C1541) $@ >/dev/null; \
 		fi; \
 		if [ -e $(DESKTOP_CVT) ]; then echo geoswrite $(DESKTOP_CVT) | $(C1541) $@; fi >/dev/null; \
 		echo \*\*\* Created fresh $@.; \
@@ -845,7 +845,7 @@ $(BUILD_DIR)/mount/mount.o:
 $(BUILD_DIR)/space/space.o:
 	@mkdir -p `dirname $@`
 	$(AS) space/spaceIcon.s -o $(BUILD_DIR)/space/spaceIcon.o
-	$(LD) -C space/spaceIcon.cfg $(BUILD_DIR)/space/spaceIcon.o -o $(BUILD_DIR)/space/space.bf
+	$(LD) -C space/spaceIcon.cfg $(BUILD_DIR)/space/spaceIcon.o -o $(BUILD_DIR)/space/space.bf 
 	$(GRC) -s $(BUILD_DIR)/space/space.s2 -o $(BUILD_DIR)/space/space.c space/space.grc
 	sed 's/192/1/g' $(BUILD_DIR)/space/space.s2 > $(BUILD_DIR)/space/space.s
 	$(AS) -D $(VARIANT)=1 -D $(DRIVE)=1 -D $(INPUT)=1 $(ASFLAGS) $(BUILD_DIR)/space/space.s -o $@

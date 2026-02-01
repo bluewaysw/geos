@@ -108,6 +108,9 @@ rectEnd2:
 ; Destroyed: a, x, y, r5 - r8
 ;---------------------------------------------------------------
 _InvertRectangle:
+	LoadW	r5, _InvertLine
+_SomeRectangle:
+	MoveW	r5, @1+1
 	PushW	r2
 	PushB	r3H
 	PushB	r4H
@@ -121,7 +124,7 @@ _InvertRectangle:
 	lda	r11L
 	cmp 	r2H
 	bne 	@3_
-	beq	@3
+	;beq	@3
 
 	lda	r4H
 	and	#$F0
@@ -162,6 +165,9 @@ _InvertRectangle:
 ; Destroyed: a, x, y, r5 - r8, r11
 ;---------------------------------------------------------------
 _RecoverRectangle:
+	LoadW r5, _RecoverLine
+	jmp _SomeRectangle
+.if 0
 	MoveB r2L, r11L
 @1:	jsr _RecoverLine
 	lda r11L
@@ -169,7 +175,7 @@ _RecoverRectangle:
 	cmp r2H
 	bne @1
 	jmp _EndScanLine
-
+.endif
 .segment "graph2g"
 
 ;---------------------------------------------------------------
@@ -183,6 +189,9 @@ _RecoverRectangle:
 ; Destroyed: a, x, y, r5 - r8, r11
 ;---------------------------------------------------------------
 _ImprintRectangle:
+	LoadW r5, ImprintLine
+	jmp _SomeRectangle
+.if 0
 	MoveB r2L, r11L
 @1:	jsr ImprintLine
 	lda r11L
@@ -190,6 +199,7 @@ _ImprintRectangle:
 	cmp r2H
 	bne @1
 	jmp _EndScanLine
+.endif
 
 .segment "graph2i1"
 

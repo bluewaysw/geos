@@ -607,6 +607,7 @@ ImprintLine:
 ;@11:
 	ldy r3L
 	lda r3H
+	and #$0F
 	beq @12
 	inc r5H
 	inc r6H
