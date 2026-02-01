@@ -1436,36 +1436,12 @@ _FindTrack:
 _ControlReg:
 	and #$FE
 	pha
-	;jsr _CheckDC
-.if 0
-	lda curType
-	cmp #DRV_F011_V
-	beq @4
-	lda #3
-	bra @5
-@4:
-	lda #2
-@5:
-	tsb $D080	; control
-.endif
 	jsr _WaitReady
-	
-	lda curType
-	cmp #DRV_F011_V
-	beq @2
 	pla
-	ora #1
-	bra @3
-@2:
-	pla
-@3:
+	ora mountDrive
 	sta $D080
 	sta control_store 
 	bra _WaitReady
-	
-;_CheckDC:
-	
-;	rts
 	
 _SettleHead:
 	jsr _WaitReady

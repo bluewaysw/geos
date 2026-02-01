@@ -34,6 +34,8 @@
 .import InitMachine
 .endif
 
+.import SerialNumber
+
 .global _EnterDeskTop
 .global _StartAppl
 
@@ -67,8 +69,9 @@ _EnterDeskTop:
 @1:
 	jsr ClrScr
 	ldx	#$00
-	lda	#$00
+	txa
 	jsr	_MapLow
+
 .ifdef useRamExp
 	MoveW DeskTopStart, r0
 	MoveB DeskTopLgh, r2H

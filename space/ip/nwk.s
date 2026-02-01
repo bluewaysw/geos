@@ -46,8 +46,8 @@ socket_timeout:
 	asl
 	asl
 	asl
-	asl
-	asl
+	;asl	use 8
+	;asl
 
 	clc
 	adc	#TIMEOUT_TCP
@@ -208,7 +208,6 @@ _flags:
 ;* Called periodically at a rate defined by TICK_TCP.
 ;*/
 nwk_tick:			; (byte_t sig)
-	rts
 	;static byte_t t=0;
 
 	;*
@@ -218,6 +217,8 @@ nwk_tick:			; (byte_t sig)
 	ldx	#0
 	LoadW	r8, _sockets
 @processSocket:
+	txa	
+	pha
 	ldy	#0
 	lda	(r8), y
 	cmp	#SOCKET_TCP
@@ -246,13 +247,12 @@ nwk_tick:			; (byte_t sig)
 	;* Timeout.
 	;* Check retransmissions.
 	;*/
-
 	ldy	#SOCKET_RETRY_OFFSET
 	lda	(r8), y
 	bne	@doRetry
 	jmp	@noRetry
 @doRetry:
-
+	
 .ifdef DEBUG_TCP_RETRIES
 	printf("tcp retry %d\n",_sckt->retry);
 .endif
@@ -291,8 +291,8 @@ nwk_tick:			; (byte_t sig)
 	ldy	#SOCKET_TO_SEND_OFFSET
 	lda	# ACK | PSH
 	sta	(r8), y
+	bra	@290
 @203:
-bra	@290
 	cmp	#_FIN_SENT
 	beq	@205
 	cmp	#_FIN_ACK_REC
@@ -373,8 +373,10 @@ bra	@290
 
 @nextSocket:
 	AddVW	SOCKET_SIZE, r8
+	pla
+	tax
 	inx
-	cmp	#MAX_SOCKET
+	cpx	#MAX_SOCKET
 	beq	@noNextSocket
 	jmp	@processSocket
 
@@ -692,8 +694,8 @@ nwk_upstream:		; (byte_t sig)
 	 lda	(r8), y
 	 beq	@noTimeout
 
-	 brk
-	 lda	#$89
+	;brk
+	;lda	#$89
 
 	 ;*
 	 ;* Retransmission.
@@ -702,7 +704,20 @@ nwk_upstream:		; (byte_t sig)
 	 lda	data_size
 	 ora	data_size+1
 	 beq	@61
-	 SubW	seq, data_size
+
+	 sec
+	 lda	seq
+	 sbc	data_size
+	 sta	seq
+	 lda	seq+1
+	 sbc	data_size+1
+	 sta	seq+1
+	 lda	seq+2
+	 sbc	#0
+	 sta	seq+2
+	 lda	seq+3
+	 sbc	#0
+	 sta	seq+3
 @61:
 	;// XXX Why on earth do we subtract one here?
 	;// This messes up connections sometimes, because
@@ -712,6 +727,26 @@ nwk_upstream:		; (byte_t sig)
 	;// by one, so the other side gets VERY confused, and says
 	;// RST!
 	;//            if(_sckt->toSend & (SYN | FIN)) seq.d--;
+	ldy	#SOCKET_TO_SEND_OFFSET
+	lda	(r8), y
+	and	#SYN|FIN
+	beq	@61b
+	dec	seq
+	lda	seq
+	cmp	#$FF
+	bne	@61b
+	dec	seq+1
+	lda	seq+1
+	cmp	#$FF
+	bne	@61b
+	dec	seq+2
+	lda	seq+2
+	cmp	#$FF
+	bne	@61b
+	dec	seq+3
+@61b:
+
+
 @noTimeout:
 	MoveB	seq+3, _header+TCP_HDR_N_SEQ_OFFSET
 	MoveB	seq+2, _header+TCP_HDR_N_SEQ_OFFSET+1
@@ -771,6 +806,19 @@ nwk_upstream:		; (byte_t sig)
 	bne	@71
 	inc	seq+3
 @71:
+	;lda	(r8), y
+	;and	#SYN|ACK
+	;cmp	#SYN|ACK
+	;beq	@71b
+
+	;inc	seq
+	;bne	@71b
+	;inc	seq+1
+	;bne	@71b
+	;inc	seq+2
+	;bne	@71b
+	;inc	seq+3
+@71b:
 
 	ldy	#SOCKET_SEQ_OFFSET_DW
 	lda	seq
@@ -808,7 +856,6 @@ nwk_upstream:		; (byte_t sig)
 	jmp	@cont
 
 @handleUDP:
-
 	;*
 	;* UDP message header.
 	;*
@@ -992,7 +1039,6 @@ nwk_schedule_oo_ack:
 ;* Parse incoming network messages.
 ;*/
 nwk_downstream:
-
 	PushW	r0
 	PushW	r1
 	PushW	r2
@@ -1036,6 +1082,7 @@ nwk_downstream:
 
 	jmp	@drop
 @9:
+	;inc	$D020
 .if 0
 	;printf("\nI am %d.%d.%d.%d\n",ip_local.b[0],ip_local.b[1],ip_local.b[2],ip_local.b[3]);
 	;printf("P=%02x: %d.%d.%d.%d:%d -> %d.%d.%d.%d:%d\n",
@@ -1169,7 +1216,7 @@ nwk_downstream:
 	bne	@next		;// another port.
 	bra	@found		;// found!
 @next:
-	AddW	r8, SOCKET_SIZE
+	AddVW	SOCKET_SIZE, r8 
 	inx
 	cpx	#MAX_SOCKET
 	bne	@socketLoop
@@ -1263,7 +1310,6 @@ nwk_downstream:
 	
 @parse_tcp:
 	;//   printf(":");
-
 	;*
 	;* TCP message.
 	;* Check flags.
@@ -1296,8 +1342,8 @@ nwk_downstream:
 	beq	@ack
 
 @wrongAck:
-	brk
-	lda	#$33
+	;brk
+	;lda	#$33
 	;*
 	;* Out of order, drop it.
 	;* XXX This is when the other side has ACKed a different part
@@ -1311,7 +1357,7 @@ nwk_downstream:
 	cmp	#_CONNECT
 	bne	@67
 	;printf("Drop\n");
-	jmp	@drop
+	;jmp	@drop
 @67:
 @ack:
 	LoadB	_flags, ACK
@@ -1885,6 +1931,7 @@ lda	#$04
 	sta	(r8), y
 	lda	data_size
 	ora	data_size
+	;inc	$D020
 	bne 	@301
 	;// No data, so just disconnect
 	LoadB	r7L, WEEIP_EV_DISCONNECT
@@ -1892,8 +1939,8 @@ lda	#$04
 @301:
 	;// Disconnect AND valid data
 	LoadB	r7L, WEEIP_EV_DISCONNECT_WITH_DATA
-	jmp 	@done
 @302:
+	jmp 	@done
 
 @300:
 	;// If FIN flag is set, then we also acknowledge all data so far,
@@ -2075,8 +2122,14 @@ lda	#$04
 	lda	#ACK|FIN
 	sta	(r8), y
 
-	;LoadB	r7L, WEEIP_EV_DISCONNECT		; // TESTE
+	lda	data_size
+	ora	data_size+1
+	beq	@417
 
+	LoadB	r7L, WEEIP_EV_DISCONNECT		; // TESTE
+	jmp 	@500
+@419b:
+	LoadB	r7L, WEEIP_EV_DISCONNECT_WITH_DATA
 	jmp 	@500
 @419:
 	lda	_flags
@@ -2128,10 +2181,10 @@ lda	#$04
 	ldy	#SOCKET_STATE_OFFSET
 	lda	#_IDLE
 	sta	(r8), y
+	;inc	$D020
 	ldy	#SOCKET_TO_SEND_OFFSET
 	lda	#ACK
 	sta	(r8), y
-
 
 	LoadB	r7L, WEEIP_EV_DISCONNECT
 	;// Allow the final state to be selected based on ACK and FIN flag state.
@@ -2174,6 +2227,11 @@ lda	#$04
 	lda	#_IDLE
 	sta	(r8), y
 	LoadB	r7L, WEEIP_EV_DISCONNECT
+	lda	data_size
+	ora	data_size+1
+	beq	@431
+
+	LoadB	r7L, WEEIP_EV_DISCONNECT_WITH_DATA
 @431:
 	jmp	@500
 @440:
@@ -2195,6 +2253,10 @@ lda	#$04
 	lda	#ACK
 	sta	(r8), y
 	LoadB	r7L, WEEIP_EV_DISCONNECT
+	lda	data_size
+	ora	data_size+1
+	beq	@441
+	LoadB	r7L, WEEIP_EV_DISCONNECT_WITH_DATA
 @441:
 @500:
  	jmp 	@done
@@ -2316,8 +2378,8 @@ lda	#$04
 	sta	r4H
 	lda	r7L
 	jsr	(r4)
-	jsr	remove_rx_data
 @177:
+	jsr	remove_rx_data
 
 @drop:
 	PopW	r9

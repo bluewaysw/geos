@@ -338,9 +338,11 @@ _OpenRecordFile:
 OpRFile1:
 	LoadB DeskTopOpen,0
 .endif
+.ifndef mega65
 	MoveW r0, r6
 	jsr FindFile
 	bnex ClearRecordTableTS
+.endif
 	ldx #10
 	ldy #OFF_CFILE_TYPE
 	lda (r5),y

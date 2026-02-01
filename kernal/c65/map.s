@@ -36,6 +36,9 @@
 .endif
 .import _MNLP
 
+.import FindFile
+.import RecordTableTS
+
 .import _FollowChain
 .import _FindFTypes
 .import _FindFile
@@ -107,6 +110,7 @@
 .global MapUnderlay
 .global UnmapUnderlay
 
+.import FetchSerial
 
 ;---------------------------------------------------------------
 ; MapHigh
@@ -230,18 +234,18 @@ _map_SetDevice:
 _map_GetFHdrInfo:
     jsr MapUnderlay
     jsr _GetFHdrInfo
-    jmp UnmapUnderlay
+    bra __unmap2
 _map_LdDeskAcc:
     jsr MapUnderlay
     jsr _LdDeskAcc
-    jmp UnmapUnderlay
+    bra __unmap2
 _MNLP_DeskAcc:
     jsr UnmapUnderlay
     jmp	_MNLP
 _map_RstrAppl:
     jsr MapUnderlay
     jsr _RstrAppl
-    jmp UnmapUnderlay
+    bra __unmap2
 _map_LdApplic:
     jsr UNK_5
     jsr LdFile
@@ -249,6 +253,9 @@ _map_LdApplic:
     bbsf 0, A885E, @1
     jsr UNK_4
     MoveW_ fileHeader+O_GHST_VEC, r7
+    jsr MapUnderlay
+    jsr FetchSerial
+    jsr UnmapUnderlay
     jmp StartAppl
 @1: rts
     ;jsr MapUnderlay
@@ -257,35 +264,46 @@ _map_LdApplic:
 _map_SaveFile:
     jsr MapUnderlay
     jsr _SaveFile
-    jmp UnmapUnderlay
+    bra __unmap2
 _map_SetGDirEntry:
     jsr MapUnderlay
     jsr _SetGDirEntry
-    jmp UnmapUnderlay
+    bra __unmap2
 _map_BldGDirEntry:
     jsr MapUnderlay
     jsr _BldGDirEntry
-    jmp UnmapUnderlay
+    bra __unmap2
 _map_DeleteFile:
     jsr MapUnderlay
     jsr _DeleteFile
-    bra __unmap
+    bra __unmap3
 _map_FreeFile:
     jsr MapUnderlay
     jsr _FreeFile
-    bra __unmap
+__unmap3:
+    jmp UnmapUnderlay
 _map_FastDelFile:
     jsr MapUnderlay
     jsr _FastDelFile
-    bra __unmap
+    bra __unmap3
 _map_RenameFile:
     jsr MapUnderlay
     jsr _RenameFile
     bra __unmap
 _map_OpenRecordFile:
+.ifdef mega65
+    MoveW r0, r6
+    jsr FindFile
+    bnex @10	
+.endif
     jsr MapUnderlay
     jsr _OpenRecordFile
     bra __unmap
+.ifdef mega65
+@10:
+    LoadB RecordTableTS, NULL
+    rts
+.endif
 _map_CloseRecordFile:
     jsr MapUnderlay
     jsr _CloseRecordFile

@@ -14,6 +14,7 @@
 
 .import i_Rectangle
 .import SetPattern
+.import SerialNumber
 
 .global ClrScr
 
@@ -72,6 +73,8 @@ ClrScr:
 .endif
 	dex
 	bne @1
+	stx SerialNumber
+	stx SerialNumber+1
 	rts
 .endif
 .if .defined(bsw128) || .defined(mega65)
@@ -90,6 +93,9 @@ ClrScr:
 	.word 0   ; x1
 	.word SCREENPIXELWIDTH-1 ; x2
 .endif
+	ldx #0
+	stx SerialNumber
+	stx SerialNumber+1
 	rts
 .endif
 

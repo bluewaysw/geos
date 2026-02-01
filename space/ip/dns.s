@@ -30,7 +30,21 @@
 .export dns_query
 .export dns_buf
 .export dns_hostname_to_ip
+.export dns_result
+.export dns_timeout
 
+DNS_STATE_IDLE		=	0
+DNS_STATE_QUERY		=	1
+DNS_STATE_DONE		=	2
+DNS_STATE_ERROR		=	3
+DNS_STATE_CANCELED	=	4
+
+
+dns_retry:
+	.byte	0
+
+dns_timeout:
+	.word 	0
 
 dns_query_returned:
 	.byte	0
@@ -53,6 +67,8 @@ dns_buf:
 		.byte	0
 	.endrep
 
+dns_state:
+	.byte 	DNS_STATE_IDLE
 
 ; in: r0 ptr to host name to query:
 dns_construct_hostname_to_ip_query:
@@ -456,7 +472,8 @@ dns_hostname_to_ip:
 
 	lda	r2L
 	sta	dns_return_ip, x
-	jmp	@done
+	LoadB	dns_state, DNS_STATE_DONE
+	rts
 
  @100:
  	PushW	r1
@@ -504,31 +521,66 @@ dns_hostname_to_ip:
 	MoveW	dns_query_len, r1
   	jsr	socket_send
 
+	LoadB	dns_state, DNS_STATE_QUERY
+
+	LoadB	dns_retry, 30
+	php
+	sei
+	LoadW	dns_timeout, 50
+	plp
+
 	PopW	r1
 
 	;// Run normal network state machine
 	;// XXX Call-back handlers for other network tasks can still occur
  	LoadB	dns_query_returned, 0
+	rts
 
-	;// Retry for approx 30 seconds (will be slightly longer on NTSC, as we
-	;// time retries based on elapsed video frames).
-	LoadB	r2L, 30
-	LoadB	dblClickCount, 50
-@203:
-	lda	dns_query_returned
-	bne	@200
+; drives the next step
+; carry set on retrun if still active
 
-	jsr	task_periodic
+dns_run:
+	jsr		dns_run_iter
 
-	;// Detect timeout, and retry for ~30 seconds
-	lda	dblClickCount
-	bne	@202
-
-	lda	r2L
-	bne	@204
+	; check if still active
+	CmpBI	dns_state, DNS_STATE_QUERY
+	beq	@active
 	clc
 	rts
-@204:
+@active:
+	sec
+	rts
+
+dns_run_iter:
+	CmpBI	dns_state, DNS_STATE_QUERY
+	bne	@10
+	jmp	dns_run_query
+@10:
+	rts
+
+dns_run_query:
+	lda	dns_query_returned
+	beq	@200
+	LoadB	dns_state, DNS_STATE_DONE
+	rts
+
+@wait:
+	; check for timeout
+	lda	dns_timeout
+	ora	dns_timeout+1
+	bne	@no_timeout
+
+	dec	dns_retry
+	bne	@retry
+
+	; request failed
+	MoveW	dns_socket, r1
+	jsr	socket_release
+	LoadB	dns_state, DNS_STATE_ERROR
+	rts
+
+@retry:
+	dec	dns_retry
 	MoveW	dns_socket, r1
 	jsr	socket_select
 
@@ -536,16 +588,20 @@ dns_hostname_to_ip:
 	MoveW	dns_query_len, r1
 	jsr	socket_send
 
-	dec	r2L
-	LoadB	dblClickCount, 50
-@202:
-	bra	@203
-@200:
-	MoveW	dns_socket, r1
-	jsr	socket_release
+	php
+	sei
+	LoadW	dns_timeout, 50
+	plp
 
-@done:
-	;// Copy resolved IP address
+@no_timeout:
+@200:
+	rts
+	
+
+dns_result:
+	CmpBI	dns_state, DNS_STATE_DONE
+	bne		@err
+
 	ldx	#0
 @201:
 	lda	dns_return_ip, x
@@ -553,6 +609,9 @@ dns_hostname_to_ip:
 	inx
 	cpx	#4
 	bne	@201
+	clc
+	rts
 
-	sec
+@err:
+	sec	; error or cancelled or never started or still active
 	rts

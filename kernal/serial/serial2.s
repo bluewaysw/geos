@@ -30,6 +30,10 @@ _GetSerialNumber:
 GetSerialNumber2:
 	lda SerialNumber+1
 	sta r0H
+	ora r0L
+	bne @done
+	LoadW r0, $FD8D 	; cbmfiles default for GEOS 128
+@done:
 	rts
 
 .if (!.defined(wheels_size)) && (!.defined(bsw128))

@@ -30,7 +30,7 @@ by Berkeley Softworks, reverse engineered by *Maciej Witkowiak*, *Michael Steil*
 
 
 ### Status
-The status of the MEGA65 version of GEOS as present on the master branch is considered early **BETA** and still under development. Please use with care!
+The status of the MEGA65 version of GEOS as present on the master branch is still considered early **BETA** and still under development. Please use with care!
 
 Learn more details about the GEOS MEGA65 implementation (soon) in the [Technical Documentation](MEGA65.md) section.
 

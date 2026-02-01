@@ -19,6 +19,7 @@
 .import _Rectangle
 .import _FrameRectangle
 .import CallRoutine
+.import _EndScanLine
 
 GraphPenXL = GraphPenX
 GraphPenXH = GraphPenX+1
@@ -47,6 +48,7 @@ GraphPenXH = GraphPenX+1
 ; Destroyed: a, x, y, r0 - r15
 ;---------------------------------------------------------------
 _GraphicsString:
+	jsr _EndScanLine
 	jsr GetR0AndInc
 .ifdef wheels_size_and_speed
 	tay

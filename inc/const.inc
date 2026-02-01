@@ -252,6 +252,7 @@ HDR_CHKSUM_ERR          =       $27
 DSK_ID_MISMAT           =       $29
 BYTE_DEC_ERR            =       $2e
 DOS_MISMATCH            =       $73
+TIMEOUT_ERR		=	$74
 
 ;Offsets
 ; ???

@@ -147,6 +147,14 @@ _GetBankParams:
 	;lda	#0
 	;bne	@1
 
+;	lda	ramExpSize
+;	cmp	#1
+;	bne 	@2
+
+;	ldy	#5
+;	lda	#0
+;	bra	@1
+;@2:
 	lda	r3L
 
 	tax

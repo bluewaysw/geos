@@ -702,7 +702,7 @@ dhcp_send_query_or_request:
 	IncW	r3
 	IncW	r4
 
-	lda	#$05
+	lda	#$04
 	sta	(r4), y
 	IncW	r3
 	IncW	r4
@@ -727,10 +727,10 @@ dhcp_send_query_or_request:
 	IncW	r3
 	IncW	r4
 
-	lda	#$06
-	sta	(r4), y
-	IncW	r3
-	IncW	r4
+	;lda	#$06
+	;sta	(r4), y
+	;IncW	r3
+	;IncW	r4
 @608:
 	;// End of request
 	LoadW	r4, dns_query

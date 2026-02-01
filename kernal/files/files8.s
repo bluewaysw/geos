@@ -31,11 +31,31 @@
 .segment "files8"
 
 _SaveFile:
+
+.ifdef mega65
+	PushW	r9
+	PushW	r10
+	LoadW	r10, 0
+
+	LDZ	#0
+	ldy	#0
+@1:
+	EOM
+	lda	(r9), Z
+	sta 	fileHeader,y
+	;inz
+	IncW	r9
+	iny
+	bne	@1
+	PopW	r10
+	PopW	r9
+.else
 	ldy #0
 @1:	lda (r9),y
 	sta fileHeader,y
 	iny
 	bne @1
+.endif
 	jsr GetDirHead
 .ifdef wheels
 	bne @2

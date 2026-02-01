@@ -115,7 +115,7 @@ _DoBOp:
 	PushW r3
 
 	lda	r3L
-	cmp	#0		; bank 1
+	cmp	#0		; bank 1 is "0" here
 	beq	@fetch
 
 	; r0 main mem src
@@ -124,10 +124,10 @@ _DoBOp:
 
 	lda	r1L
 	sec
-	sbc	#$00
+	sbc	#$0
 	sta	r1L
 	lda	r1H
-	sbc	#0
+	sbc	#$40
 	sta	r1H
 
 	jsr	_StashRAM
@@ -148,10 +148,10 @@ _DoBOp:
 
 	lda	r1L
 	sec
-	sbc	#$00
+	sbc	#$0
 	sta	r1L
 	lda	r1H
-	sbc	#0
+	sbc	#$40
 	sta	r1H
 
 	jsr	_FetchRAM
