@@ -59,12 +59,10 @@
 .export dmalist_dest_addr
 .export do_dma
 
-
-
 .segment "STARTUP"
 
 _PROMISCUOUS	=	1
-NOCRCCHECK	=	1
+NOCRCCHECK	=	0
 
 eth_log_mode:
 	.byte	0
@@ -405,7 +403,6 @@ eth_task:	; (uint8_t p)
 @unknownIP:
 	bra	@drop
 @ipEnd:
-
 	jsr	nwk_downstream
 
 @other:
@@ -687,11 +684,9 @@ eth_init:
 	ora	#$01
 	sta	$D6E5
 .endif
-.ifdef NOCRCCHECK
 	lda	$D6E5
-	ora	#$02
+	and	#$FD
 	sta	$D6E5
-.endif
 
 	;// Set ETH TX Phase to 1
 	lda	$D6E5
@@ -713,6 +708,13 @@ eth_init:
 	LoadW	dmalist_count, 6
 	LoadW	dmalist_dest_addr, mac_local
 	jsr	do_dma
+
+.ifdef NOCRCCHECK
+	lda	$D6E5
+	ora	#$02
+	sta	$D6E5
+.endif
+
 	;lcopy(0xFFD36E9,(unsigned long)&mac_local.b[0],6);
 
 	;// Reset, then release from reset and reset TX FSM
