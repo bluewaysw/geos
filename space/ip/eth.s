@@ -675,7 +675,7 @@ eth_init:
 	;*
 	;* Setup frame reception filter.
 	;*
-.if .defined(_PROMISCUOUS)
+.if _PROMISCUOUS
 	lda	$D6E5
 	and	#$FE
 	sta	$D6E5
@@ -709,7 +709,7 @@ eth_init:
 	LoadW	dmalist_dest_addr, mac_local
 	jsr	do_dma
 
-.ifdef NOCRCCHECK
+.if NOCRCCHECK
 	lda	$D6E5
 	ora	#$02
 	sta	$D6E5

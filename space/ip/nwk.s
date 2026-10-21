@@ -18,6 +18,18 @@
 ;#include "memory.h"
 ;#include "debug.h"
 
+.if DEBUG
+.import DumpStats
+.import G_debugTcpIn
+.import G_debugTcpInPortType
+.import G_debugTcpRemIp
+.import G_debugTcpRemPort
+.import G_debugTcpParse
+.import G_debugTcpParse2
+.import G_debugTcpInLastPort
+.import G_debugTcpInPort
+.endif
+
 ;// On MEGA65 we have deep enough stack we don't need to schedule sending
 ;// ACKs, we can just send them immediately.
 ;// #define INSTANT_ACK
@@ -172,6 +184,9 @@ ETH_RX_BUFFER 	= 	$FFDE800
 MTU = 1000
 ;extern unsigned char tx_frame_buf[MTU];
 ;extern unsigned short eth_tx_len;
+
+adv_window_last:
+    .word 0
 
 ;**
 ;* Packet counter.
@@ -368,6 +383,7 @@ nwk_tick:			; (byte_t sig)
 	jsr	(r7)
 
 	jsr    	remove_rx_data
+	jsr		nwk_maybe_winupdate      
 
 @noTimeout:
 
@@ -471,6 +487,14 @@ remove_rx_data:
 @done:
 	rts
 
+;// Largest window we ever advertise. We have no out-of-order buffering
+;// and only a few ethernet RX buffers, so a large window just lets the
+;// peer burst segments that we then drop. We send no MSS option, so
+;// peers use 536 byte segments: 536 = one segment in flight (safest),
+;// 1072 = two. Tune here.
+MAX_RX_WINDOW = 1072
+
+
 ; in: r8 socket ptr
 ; destroy: r6, r7
 compute_window_size:
@@ -484,7 +508,7 @@ compute_window_size:
 	sta	r6L
 	iny
 	lda	(r8), y
-	sta	r6
+	sta	r6H
 	CmpW	r6, r7
 	bcc	@10
 	MoveW	r6, r7
@@ -494,22 +518,78 @@ compute_window_size:
 	sta	r6L
 	iny
 	lda	(r8), y
-	sta	r6
+	sta	r6H
 	CmpW	r6, r7
-	bcc	@11
+	bcc	@11a
 	MoveW	r6, r7
-@11:
+@11a:
 	ldy	#SOCKET_RX_SIZE_OFFSET
 	lda	(r8),y
 	sta	r6L
 	iny
 	lda	(r8),y
 	sta	r6H
-	SubW	r6, r7
-
+	
+	CmpW	r6, r7
+	bcs	@11			; rx_size >= in use
+	LoadW	r6, 0			; inconsistent state, advertise nothing
+	bra	@12
+@11:
+	SubW	r7, r6			; r6 = r6 - r7
+	;// clamp to MAX_RX_WINDOW
+	CmpWI	r6, MAX_RX_WINDOW
+	bcc	@12
+	LoadW	r6, MAX_RX_WINDOW
+@12:
+	;// TCP window field is big-endian
 	MoveB	r6H, default_header+WINDOW_SIZE_OFFSET+0
 	MoveB	r6L, default_header+WINDOW_SIZE_OFFSET+1
+	MoveW	r6, adv_window_last
 	rts
+
+; in: r8 socket ptr
+nwk_maybe_winupdate:
+    ; Nur wenn letztes advertised Window 0 war
+    lda     adv_window_last
+    ora     adv_window_last+1
+    bne     @done               ; war nicht 0 → nichts tun
+
+    ; Prüfen ob jetzt Platz ist
+    ; r6 = rx_size - rx_data (vereinfacht)
+    ldy     #SOCKET_RX_SIZE_OFFSET
+    lda     (r8), y
+    sta     r6L
+    iny
+    lda     (r8), y
+    sta     r6H
+    ldy     #SOCKET_RX_DATA_OFFSET
+    sec
+    lda     r6L
+    sbc     (r8), y
+    sta     r6L
+    iny
+    lda     r6H
+    sbc     (r8), y
+    sta     r6H
+
+    ; Wenn immer noch 0 → nichts tun
+    lda     r6L
+    ora     r6H
+    beq     @done
+
+    ; Platz ist da → ACK mit neuem Window senden
+    ldy     #SOCKET_TO_SEND_OFFSET
+    lda     #ACK
+    sta     (r8), y
+
+    LoadW   r0, nwk_upstream
+    jsr     task_cancel
+    LoadB   r1L, 0
+    LoadB   r1H, 0
+    LoadW   r2, upstreamName
+    jsr     task_add
+@done:
+    rts
 
 ;**
 ;* Network upstream task. Send outgoing network messages.
@@ -1150,7 +1230,14 @@ nwk_downstream:
 	CmpBI	_header+IP_HDR_PROTO_OFFSET, IP_PROTO_ICMP
 	bne	@noICMP
 	jmp	@parse_icmp
+@next_far:
+	jmp		@next
 @noICMP:
+.if DEBUG
+	IncW	G_debugTcpIn
+	jsr		DumpStats
+.endif
+
 	lda	_header+TCP_HDR_DEST_OFFSET+1
 
 	;*
@@ -1162,26 +1249,36 @@ nwk_downstream:
 	ldy	#SOCKET_TYPE_OFFSET
 	lda	(r8), y
 	cmp	#SOCKET_FREE
-	beq	@next
+	beq	@next_far
 	ldy	#SOCKET_PORT_OFFSET
 	lda	(r8), y
 	cmp	_header+TCP_HDR_DEST_OFFSET
-	bne	@next
+	bne	@next_far
 	iny
 	lda	(r8), y
 	cmp	_header+TCP_HDR_DEST_OFFSET+1
 	bne	@next		;// another port.
+.if DEBUG
+	IncW	G_debugTcpInPort
+	jsr		DumpStats
+.endif
 	ldy	#SOCKET_TYPE_OFFSET
 	lda	(r8), y
 	cmp	#SOCKET_UDP
 	bne	@noUDP	;// another protocol.
 	CmpBI	_header+IP_HDR_PROTO_OFFSET, IP_PROTO_UDP
-	bne	@next
+	bne	@next_far
 	bra 	@use
 @noUDP:
 	CmpBI	_header+IP_HDR_PROTO_OFFSET, IP_PROTO_TCP
-	bne	@next
+	bne	@next_far
 @use:
+.if DEBUG
+	IncW	G_debugTcpInPortType
+	jsr		DumpStats
+.endif
+
+
 	ldy	#SOCKET_LISTEN_OFFSET
 	lda	(r8), y
 	bne	@found		;// waiting for a connection
@@ -1206,6 +1303,12 @@ nwk_downstream:
 	cpy	#SOCKET_REMIP_OFFSET+4
 	bne	@remIPCheck     ;// another source.
 @remIPChecked:
+.if DEBUG
+	IncW	G_debugTcpRemIp
+	jsr		DumpStats
+.endif
+
+
 	ldy	#SOCKET_REMPORT_OFFSET
 	lda	(r8), y
 	cmp	_header+TCP_HDR_SOURCE_OFFSET
@@ -1214,12 +1317,23 @@ nwk_downstream:
 	lda	(r8), y
 	cmp	_header+TCP_HDR_SOURCE_OFFSET+1
 	bne	@next		;// another port.
+.if DEBUG
+	IncW	G_debugTcpRemPort
+	jsr		DumpStats
+.endif
 	bra	@found		;// found!
 @next:
 	AddVW	SOCKET_SIZE, r8 
 	inx
 	cpx	#MAX_SOCKET
-	bne	@socketLoop
+	beq	@nextdone
+	jmp	@socketLoop
+@nextdone:
+.if DEBUG
+	MoveB	_header+TCP_HDR_DEST_OFFSET+1, G_debugTcpInLastPort
+	MoveB	_header+TCP_HDR_DEST_OFFSET, G_debugTcpInLastPort+1
+	jsr		DumpStats
+.endif
 
    	jmp	@drop                   ;// no socket for the message.
 
@@ -1240,7 +1354,7 @@ nwk_downstream:
 	lda	_header+TCP_HDR_SOURCE_OFFSET
 	sta	(r8), y
 	iny
-	ldy	_header+TCP_HDR_SOURCE_OFFSET+1
+	lda	_header+TCP_HDR_SOURCE_OFFSET+1
 	sta	(r8), y
 
 	lda	#0 ; FALSE
@@ -1309,6 +1423,10 @@ nwk_downstream:
 	jmp 	@done
 	
 @parse_tcp:
+.if DEBUG
+	IncW	G_debugTcpParse
+	jsr		DumpStats
+.endif
 	;//   printf(":");
 	;*
 	;* TCP message.
@@ -1388,11 +1506,39 @@ nwk_downstream:
 	lda	(r8),y
 	ldy	#SOCKET_REMSEQSTART_OFFSET_DW
 	sta	(r8), y
+	ldy	#SOCKET_REMSEQ_OFFSET_DW+1
+	lda	(r8),y
+	ldy	#SOCKET_REMSEQSTART_OFFSET_DW+1
+	sta	(r8), y
+	ldy	#SOCKET_REMSEQ_OFFSET_DW+2
+	lda	(r8),y
+	ldy	#SOCKET_REMSEQSTART_OFFSET_DW+2
+	sta	(r8), y
+	ldy	#SOCKET_REMSEQ_OFFSET_DW+3
+	lda	(r8),y
+	ldy	#SOCKET_REMSEQSTART_OFFSET_DW+3
+	sta	(r8), y
 
 	ldy	#SOCKET_REMSEQ_OFFSET_DW
 	lda	(r8), y
 	inc
 	sta	(r8), y
+	bne	@xxx
+	iny
+	lda	(r8), y
+	inc
+	sta	(r8), y
+	bne	@xxx
+	iny
+	lda	(r8), y
+	inc
+	sta	(r8), y
+	bne	@xxx
+	iny
+	lda	(r8), y
+	inc
+	sta	(r8), y
+@xxx:
 	lda	_flags
 	ora	#SYN|ACK
 	sta	_flags
@@ -1512,6 +1658,10 @@ lda	#$59
 .endif
 	;} else if (rel_sequence.w[0]==_sckt->rx_data) {
 @102:
+.if DEBUG
+	IncW	G_debugTcpParse2
+	jsr		DumpStats
+.endif
 
 	ldy	#SOCKET_RX_DATA_OFFSET+1
 	lda	(r8), y
@@ -1684,7 +1834,6 @@ lda	#$04
 	cmp	r6L
 	bne	@107
 	iny
-	ldy	#SOCKET_RX_OO_START_OFFSET
 	lda	(r8),y
 	cmp	r6H
 	bne	@107
@@ -1692,7 +1841,7 @@ lda	#$04
 	;// Copy to start of OO data in RX buffer
 	;//       printf("oo prepend");
 	lda	data_size
-	ora	data_size
+	ora	data_size+1
 	beq 	@122
 
 	; setup dmalist to receive from ETH_RX_BUFFER
@@ -1731,7 +1880,6 @@ lda	#$04
 	lda	(r8) ,y
 	sta	r5L
 	iny
-	ldy	#SOCKET_RX_SIZE_OFFSET
 	lda	(r8) ,y
 	sta	r5H
 
@@ -1906,7 +2054,8 @@ lda	#$04
 	jsr	remove_rx_data
 
 @125:
-	;// And ACK every packet, because we don't have buffer space for multiple ones,
+    jsr     nwk_maybe_winupdate
+    sta     (r8), y	;// And ACK every packet, because we don't have buffer space for multiple ones,
 	;// and its thus very easy for the sender to not know where we are upto, and for
 	;// everything to generally get very confused if we have encountered any out-of-order
 	;// packets.
@@ -1930,7 +2079,7 @@ lda	#$04
 	lda	#_IDLE
 	sta	(r8), y
 	lda	data_size
-	ora	data_size
+	ora	data_size+1
 	;inc	$D020
 	bne 	@301
 	;// No data, so just disconnect

@@ -38,6 +38,18 @@
 
 .segment "STARTUP"
 
+.if DEBUG
+.export DumpStats
+.export G_debugTcpIn
+.export G_debugTcpInPortType
+.export G_debugTcpRemIp
+.export G_debugTcpRemPort
+.export G_debugTcpParse
+.export G_debugTcpParse2
+.export G_debugTcpInLastPort
+.export G_debugTcpInPort
+.endif
+
 
 INIT_STATE_FRESH	=	0
 INIT_STATE_MOUSE	=	1
@@ -1357,6 +1369,10 @@ HTTP_GET_callback:
 @12bb:
 	;inc	$D020
 @12b:
+.if DEBUG
+	IncW	G_debugDataPakets
+	jsr		DumpStats
+.endif
 	LoadB	http_connected, $FF
 	pha
 	jsr	socket_data_size		; get data size to r0
@@ -1956,6 +1972,16 @@ hostIP:
 
 missingTextOf:
 	.byte	" of ", NULL
+.ifdef DEBUG
+missingText:
+missingText2:
+missingText3:
+missingText4:
+downloadText:
+downloadText2:
+	.byte	NULL
+
+.else
 missingText:
 	.byte 	" default distro files are missing.", NULL
 missingText2:
@@ -1968,7 +1994,7 @@ downloadText:
 	.byte	BOLDON, "Are you connected to the internet and", NULL
 downloadText2:
 	.byte	"want to try downloading the files now?", NULL
-
+.endif
 DrawMissing:
 
 	LoadW	r11, %1011101100000000 | ((-(117)) & $FF)
@@ -2061,6 +2087,166 @@ CheckDialog:
 
 	.byte	NULL
 
+.if DEBUG
+
+G_debugDataPakets:
+	.word 	0
+
+G_debugTcpIn:
+	.word 	0
+
+G_debugTcpInPortType:
+	.word	0
+
+G_debugTcpRemIp:
+	.word	0
+
+G_debugTcpRemPort:
+	.word	0
+
+G_debugTcpParse:
+	.word	0
+
+G_debugTcpParse2:
+	.word	0
+
+G_debugTcpInLastPort:
+	.word 	0
+
+G_debugTcpInPort:
+	.word 	0
+
+DumpStats:
+	PushW	r0
+	PushW	r1
+	PushW	r2
+	PushW	r3
+	PushW	r4
+	PushW	r5
+	PushW	r6
+	PushW	r7
+	PushW	r8
+	PushW	r9
+	PushW	r10
+	PushW	r11
+	PushW	r12
+	PushW	r13
+	PushW	r14
+	PushW	r15
+
+	LoadW	r11, 10
+	LoadW	r1H, 90
+
+	MoveW	G_debugDataPakets, r0
+	lda		#SET_LEFTJUST | SET_SURPRESS
+	jsr 	PutDecimal
+
+	lda		#'/'
+	jsr		PutChar
+
+	MoveW	G_debugTcpIn, r0
+	lda		#SET_LEFTJUST | SET_SURPRESS
+	jsr 	PutDecimal
+
+	lda		#'/'
+	jsr		PutChar
+
+	MoveW	G_debugTcpInPortType, r0
+	lda		#SET_LEFTJUST | SET_SURPRESS
+	jsr 	PutDecimal
+
+	lda		#'/'
+	jsr		PutChar
+
+	MoveW	G_debugTcpRemIp, r0
+	lda		#SET_LEFTJUST | SET_SURPRESS
+	jsr 	PutDecimal
+
+	lda		#'/'
+	jsr		PutChar
+
+	MoveW	G_debugTcpRemPort, r0
+	lda		#SET_LEFTJUST | SET_SURPRESS
+	jsr 	PutDecimal
+
+	lda		#'/'
+	jsr		PutChar
+
+	MoveW	G_debugTcpParse, r0
+	lda		#SET_LEFTJUST | SET_SURPRESS
+	jsr 	PutDecimal
+
+	lda		#'/'
+	jsr		PutChar
+
+	MoveW	G_debugTcpParse2, r0
+	lda		#SET_LEFTJUST | SET_SURPRESS
+	jsr 	PutDecimal
+
+	lda		#'/'
+	jsr		PutChar
+
+	MoveW	G_debugTcpInLastPort, r0
+	lda		#SET_LEFTJUST | SET_SURPRESS
+	jsr 	PutDecimal
+
+	lda		#'/'
+	jsr		PutChar
+
+	MoveW	G_debugTcpInPort, r0
+	lda		#SET_LEFTJUST | SET_SURPRESS
+	jsr 	PutDecimal
+
+	lda		#' '
+	jsr		PutChar
+	lda		#' '
+	jsr		PutChar
+	lda		#' '
+	jsr		PutChar
+	lda		#' '
+	jsr		PutChar
+	lda		#' '
+	jsr		PutChar
+
+	PopW	r15
+	PopW	r14
+	PopW	r13
+	PopW	r12
+	PopW	r11
+	PopW	r10
+	PopW	r9
+	PopW	r8
+	PopW	r7
+	PopW	r6
+	PopW	r5
+	PopW	r4
+	PopW	r3
+	PopW	r2
+	PopW	r1
+	PopW	r0
+
+	rts
+.endif
+
+.if DEBUG
+downloadingInto:
+downloadingInto2:
+rulesText1:
+rulesText2:
+rulesText3:
+rulesText4:
+
+rulesText5:
+rulesText6:
+rulesText7:
+rulesText8:
+
+rulesText9:
+rulesText10:
+	.byte	NULL
+
+.else
+
 downloadingInto:
 	.byte	BOLDON, "Downloading GEOS files from", NULL
 downloadingInto2:
@@ -2087,6 +2273,7 @@ rulesText9:
 	.byte	BOLDON, "Do you agree not to redistribute or sell", NULL
 rulesText10:
 	.byte	"GEOS?", NULL
+.endif
 
 CheckLicenseDialog:
 	.byte	$1	; standard dialog, light bachground
