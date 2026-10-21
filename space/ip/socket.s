@@ -168,9 +168,12 @@ socket_create:
 socket_release:
 	CmpWI	r1, NULL
 	beq	@done
+	LoadB	release_wait, 100	; give pending sends ~2s, then free anyway
 @20:
 	ldy	#SOCKET_TO_SEND_OFFSET
 	lda	(r1), y
+	beq	@ready
+	dec	release_wait
 	beq	@ready
 
 	PushW	r1
@@ -189,6 +192,9 @@ socket_release:
 @done:
 	rts
 
+release_wait:
+	.byte	0
+
 ;**
 ;* Select a socket for the next operations.
 ;* @param s Socket identifier.
@@ -205,7 +211,7 @@ socket_select:
 ;*/
 ; in:  r0 - ptr to buffer, r1 - size of buffer
 socket_set_rx_buffer:
-	CmpW	_sckt, NULL
+	CmpWI	_sckt, NULL
 	beq	@done
 	MoveW	_sckt, r8
 	ldy	#SOCKET_RX_OFFSET
@@ -242,7 +248,7 @@ socket_set_rx_buffer:
 ;*/
 ; in: r0 - callback ptr
 socket_set_callback:
-	CmpW	_sckt, NULL
+	CmpWI	_sckt, NULL
 	beq	@done
 	MoveW	_sckt, r8
 	ldy	#SOCKET_CALLBACK_OFFSET
@@ -262,7 +268,7 @@ socket_set_callback:
 ; in: r0 - port to listen on
 ; out: carry set on success, socket is (or was already) active
 socket_listen:
-	CmpW	_sckt, NULL
+	CmpWI	_sckt, NULL
 	beq	@err
 	MoveW	_sckt, r8
 
@@ -518,10 +524,18 @@ socket_disconnect:
 	;*/
 	;printf("TCP close\n");
 
+	;// Nothing to do if the connection is already gone or our FIN is
+	;// already queued/sent. Queuing a second FIN would advance seq again.
 	ldy	#SOCKET_STATE_OFFSET
 	lda	(r8), y
-	cmp	#_CONNECT
-	;bne	@err
+	cmp	#_IDLE
+	beq	@done
+	cmp	#_FIN_SENT
+	beq	@done
+	cmp	#_FIN_REC
+	beq	@done
+	cmp	#_FIN_ACK_REC
+	beq	@done
 
 	ldy	#SOCKET_STATE_OFFSET
 	lda	#_FIN_SENT
@@ -549,7 +563,7 @@ socket_disconnect:
 ;* Reset a socket, possibly sending a RST message.
 ;*/
 socket_reset:
-	CmpW	_sckt, NULL
+	CmpWI	_sckt, NULL
 	beq	@done
 	MoveW	_sckt, r8
 	ldy	#SOCKET_TYPE_OFFSET

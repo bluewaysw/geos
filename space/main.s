@@ -1407,9 +1407,7 @@ HTTP_GET_callback:
 	lda	(r2), y
 	bne	@20
 
-	brk					; fail on \0 in lines
-	lda	#$89
-	lda	(r2), y
+	jmp	@30				; ignore \0 in header lines
 
 @20:
 	cmp	#CR				; skip, we check for  \n
@@ -1972,7 +1970,7 @@ hostIP:
 
 missingTextOf:
 	.byte	" of ", NULL
-.ifdef DEBUG
+.if DEBUG
 missingText:
 missingText2:
 missingText3:

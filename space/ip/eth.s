@@ -318,7 +318,7 @@ eth_task:	; (uint8_t p)
 	;* Check destination address.
 	;*
 	lda	#$FF
-	ldx	#6
+	ldx	#7			; compare all 6 bytes (dest+5 .. dest+0)
 @chkBroadcast:
 	dex
 	beq	@processPkt

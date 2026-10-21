@@ -185,9 +185,6 @@ MTU = 1000
 ;extern unsigned char tx_frame_buf[MTU];
 ;extern unsigned short eth_tx_len;
 
-adv_window_last:
-    .word 0
-
 ;**
 ;* Packet counter.
 ;*/
@@ -241,126 +238,85 @@ nwk_tick:			; (byte_t sig)
 	jmp	@nextSocket
 			;// UDP socket or unused.
 @processTCP:
-	;//      if(_sckt->time == 0) continue;
-			;// does not have timing requirements.
-
 	;*
-	;* Do socket timing.
+	;* Do socket timing. time == 0 means no timer is running.
 	;*
 	ldy	#SOCKET_TIME_OFFSET
 	lda	(r8),y
-	beq	@10
+	bne	@10
+	jmp	@noTimeout
+@10:
 	dec
 	sta	(r8), y
-
-@10:
 	beq	@processTimeout
 	jmp	@noTimeout
 
 @processTimeout:
 	;*
-	;* Timeout.
-	;* Check retransmissions.
-	;*/
+	;* Timer expired. Select what to retransmit for this state.
+	;* x is free here (socket index is on the stack).
+	;*
+	ldy	#SOCKET_STATE_OFFSET
+	lda	(r8), y
+	ldx	#SYN
+	cmp	#_SYN_SENT
+	beq	@retx
+	cmp	#_ACK_REC
+	beq	@retx
+	ldx	#SYN|ACK
+	cmp	#_SYN_REC
+	beq	@retx
+	ldx	#ACK|PSH
+	cmp	#_ACK_WAIT
+	beq	@retx
+	ldx	#FIN|ACK
+	cmp	#_FIN_SENT
+	beq	@retx
+	cmp	#_FIN_REC
+	beq	@retx
+	ldx	#ACK
+	cmp	#_FIN_ACK_REC
+	beq	@retx
+
+	;* Nothing outstanding (CONNECT, LISTEN, IDLE): just stop the timer,
+	;* don't burn a retry.
+	ldy	#SOCKET_TIMEOUT_OFFSET
+	lda	#0
+	sta	(r8), y
+	jmp	@noTimeout
+
+@retx:
 	ldy	#SOCKET_RETRY_OFFSET
 	lda	(r8), y
 	bne	@doRetry
 	jmp	@noRetry
 @doRetry:
-	
 .ifdef DEBUG_TCP_RETRIES
 	printf("tcp retry %d\n",_sckt->retry);
 .endif
-	ldy	#SOCKET_RETRY_OFFSET
-	lda	(r8), y
 	dec
 	sta	(r8), y
+	txa
+	ldy	#SOCKET_TO_SEND_OFFSET
+	sta	(r8), y
 
 	jsr	socket_timeout
 	ldy	#SOCKET_TIME_OFFSET
 	sta	(r8), y
 
-	ldy	#SOCKET_STATE_OFFSET
-	lda	(r8), y
-
-	cmp	#_SYN_SENT
-	beq	@201
-	cmp	#_ACK_REC
-	bne	@200
-@201:
-	lda	#SYN
-	ldy	#SOCKET_TO_SEND_OFFSET
-	sta	(r8), y
-	bra	@290
-@200:
-	cmp	#_SYN_REC
-	bne	@202
-	ldy	#SOCKET_TO_SEND_OFFSET
-	lda	#SYN|ACK
-	sta	(r8), y
-	bra	@290
-@202:
-	cmp	#_ACK_WAIT
-	bne	@203
-
-	ldy	#SOCKET_TO_SEND_OFFSET
-	lda	# ACK | PSH
-	sta	(r8), y
-	bra	@290
-@203:
-	cmp	#_FIN_SENT
-	beq	@205
-	cmp	#_FIN_ACK_REC
-	bne	@204
-@205:
-	ldy	#SOCKET_TO_SEND_OFFSET
-	lda	# ACK
-	sta	(r8), y
-.ifdef DEBUG_ACK
-	debug_msg("Asserting ACK: _FIN_ACK_REC state");
-.endif
-	bra	@290
-@204:
-	cmp	#_FIN_REC
-	bne	@206
-	ldy	#SOCKET_TO_SEND_OFFSET
-	lda	# FIN|ACK
-	sta	(r8), y
-.ifdef DEBUG_ACK
-	debug_msg("Asserting ACK: _FIN_REC state");
-.endif
-	bra	@290
-@206:
-	jsr	socket_timeout
-	ldy	#SOCKET_TIME_OFFSET
-	sta	(r8), y
-	ldy	#SOCKET_TIMEOUT_OFFSET
-	lda	#0
-	sta	(r8), y
-@290:
-	ldy	#SOCKET_TO_SEND_OFFSET
-	lda	(r8), y
-	beq	@207
 	;*
-	;* Force nwk_upstream() to execute.
+	;* Mark as retransmission and force nwk_upstream() to execute.
 	;*
 	ldy	#SOCKET_TIMEOUT_OFFSET
 	lda	#$FF
 	sta	(r8), y
-.ifdef INSTANT_ACK
-	jsr	nwk_upstream
-.endif
-.ifdef DEBUG_ACK
-	debug_msg("scheduling nwk_upstream 0 0");
-.endif
 	LoadW	r0, nwk_upstream
 	jsr	task_cancel
 	LoadB	r1L, 0
 	LoadB	r1H, 0
 	LoadW	r2, upstreamName
 	jsr	task_add
-@207:
-	bra	@noTimeout
+	jmp	@noTimeout
 
 @noRetry:
 	;*
@@ -383,7 +339,6 @@ nwk_tick:			; (byte_t sig)
 	jsr	(r7)
 
 	jsr    	remove_rx_data
-	jsr		nwk_maybe_winupdate      
 
 @noTimeout:
 
@@ -544,52 +499,7 @@ compute_window_size:
 	;// TCP window field is big-endian
 	MoveB	r6H, default_header+WINDOW_SIZE_OFFSET+0
 	MoveB	r6L, default_header+WINDOW_SIZE_OFFSET+1
-	MoveW	r6, adv_window_last
 	rts
-
-; in: r8 socket ptr
-nwk_maybe_winupdate:
-    ; Nur wenn letztes advertised Window 0 war
-    lda     adv_window_last
-    ora     adv_window_last+1
-    bne     @done               ; war nicht 0 → nichts tun
-
-    ; Prüfen ob jetzt Platz ist
-    ; r6 = rx_size - rx_data (vereinfacht)
-    ldy     #SOCKET_RX_SIZE_OFFSET
-    lda     (r8), y
-    sta     r6L
-    iny
-    lda     (r8), y
-    sta     r6H
-    ldy     #SOCKET_RX_DATA_OFFSET
-    sec
-    lda     r6L
-    sbc     (r8), y
-    sta     r6L
-    iny
-    lda     r6H
-    sbc     (r8), y
-    sta     r6H
-
-    ; Wenn immer noch 0 → nichts tun
-    lda     r6L
-    ora     r6H
-    beq     @done
-
-    ; Platz ist da → ACK mit neuem Window senden
-    ldy     #SOCKET_TO_SEND_OFFSET
-    lda     #ACK
-    sta     (r8), y
-
-    LoadW   r0, nwk_upstream
-    jsr     task_cancel
-    LoadB   r1L, 0
-    LoadB   r1H, 0
-    LoadW   r2, upstreamName
-    jsr     task_add
-@done:
-    rts
 
 ;**
 ;* Network upstream task. Send outgoing network messages.
@@ -622,12 +532,15 @@ nwk_upstream:		; (byte_t sig)
 	debug_msg("scheduling nwk_upstream 2 0");
 .endif
 	LoadW	r0, nwk_upstream
+	jsr	task_cancel
+	LoadW	r0, nwk_upstream
 	LoadB	r1L, 2
 	LoadB	r1H, 0
 	LoadW	r2, upstreamName
 	jsr	task_add
 	jmp	@done
 @ready:
+	LoadB	r9H, 0			; set to $FF if a send failed
 	;*
 	;* Search for pending messages.
 	;*
@@ -1032,6 +945,7 @@ nwk_upstream:		; (byte_t sig)
 	jsr	socket_timeout
 	ldy	#SOCKET_TIME_OFFSET
 	sta	(r8), y
+	jmp	@nextSocket
 
 @failed:
 	;// Sending the IP packet failed, possibly because there was no ARP
@@ -1045,11 +959,7 @@ nwk_upstream:		; (byte_t sig)
 .ifdef DEBUG_ACK
 	debug_msg("scheduling nwk_upstream 5 0");
 .endif
-	LoadW	r0, nwk_upstream
-	LoadB	r1L, 5
-	LoadB	r1H, 0
-	LoadW	r2, upstreamName
-	jsr	task_add
+	LoadB	r9H, $FF		; retry later, once for all sockets
 @nextSocket:
 	AddVW	SOCKET_SIZE, r8
    	ldx	r9L
@@ -1058,6 +968,15 @@ nwk_upstream:		; (byte_t sig)
 	beq	@noNextSocket
 	jmp	@processSocket
 @noNextSocket:
+	lda	r9H
+	beq	@done
+	LoadW	r0, nwk_upstream
+	jsr	task_cancel
+	LoadW	r0, nwk_upstream
+	LoadB	r1L, 5
+	LoadB	r1H, 0
+	LoadW	r2, upstreamName
+	jsr	task_add
 	;*
 	;* Job done, finish.
 	;*
@@ -1157,10 +1076,7 @@ nwk_downstream:
 	CmpWI	chks, $FFFF
 	beq	@9
 
-	brk
-	lda	#$56
-
-	jmp	@drop
+	jmp	@drop			; bad IP header checksum
 @9:
 	;inc	$D020
 .if 0
@@ -1580,11 +1496,7 @@ nwk_downstream:
 
 	CmpW	r4, data_size
 	bcs	@180		; if r4 bigger than data_size
-	beq	@180
-
-	brk
-	lda	#$01
-	MoveW	r4, data_size
+	jmp	@drop		; segment larger than our buffer (or malformed)
 @180:
 	MoveB	_header+TCP_HDR_N_SEQ_OFFSET+3, r2L	;rel_sequence
 	MoveB	_header+TCP_HDR_N_SEQ_OFFSET+2, r2H	;rel_sequence+1
@@ -1699,11 +1611,7 @@ lda	#$59
 	beq	@104		; branch r5 == r6
 	bcs	@104		; branch r5 > r6
 
-	brk
-	lda	#$1
-
-	MoveW	r5, data_size
-	SubW	r6, data_size
+	jmp	@drop		; would overflow rx buffer, let peer retransmit
 @104:
 	lda	data_size
 	ora	data_size+1
@@ -1747,12 +1655,6 @@ lda	#$59
 	adc	data_size+1
 	sta	(r8), y
 	
-	cmp	#$08
-	bne	@999
-	
-	brk
-	lda	#$1
-@999:
 	jmp	@200
 
 	;} else if (rel_sequence.w[0]==_sckt->rx_oo_end) {
@@ -1948,12 +1850,21 @@ lda	#$04
 @108:
 	lda	r2L				;rel_sequence
 	ora	r2H
+	ora	r3L
+	ora	r3H
 	beq	@200
 
+	;// Out of sequence. Pure ACKs are fine, but data or a FIN that does
+	;// not start at remSeq must not be accepted (a FIN overtaking a lost
+	;// segment would otherwise skip that data and truncate the stream).
 	;//       printf("drop(b)");
+	lda	_header+TCP_HDR_FLAGS
+	and	#FIN
+	bne	@108b
 	lda	data_size
 	ora	data_size + 1
 	beq	@200
+@108b:
 	jsr	nwk_schedule_oo_ack
 	jmp	@drop
 @200:
@@ -2054,8 +1965,11 @@ lda	#$04
 	jsr	remove_rx_data
 
 @125:
-    jsr     nwk_maybe_winupdate
-    sta     (r8), y	;// And ACK every packet, because we don't have buffer space for multiple ones,
+	;// Data accepted in order: the peer is making progress, reset retries.
+	ldy	#SOCKET_RETRY_OFFSET
+	lda	#RETRIES_TCP
+	sta	(r8), y
+	;// And ACK every packet, because we don't have buffer space for multiple ones,
 	;// and its thus very easy for the sender to not know where we are upto, and for
 	;// everything to generally get very confused if we have encountered any out-of-order
 	;// packets.
@@ -2271,14 +2185,9 @@ lda	#$04
 	lda	#ACK|FIN
 	sta	(r8), y
 
-	lda	data_size
-	ora	data_size+1
-	beq	@417
-
-	LoadB	r7L, WEEIP_EV_DISCONNECT		; // TESTE
-	jmp 	@500
-@419b:
-	LoadB	r7L, WEEIP_EV_DISCONNECT_WITH_DATA
+	;// Any data in this segment was already delivered with
+	;// WEEIP_EV_DATA above, so always report a plain disconnect.
+	LoadB	r7L, WEEIP_EV_DISCONNECT
 	jmp 	@500
 @419:
 	lda	_flags
@@ -2293,6 +2202,9 @@ lda	#$04
 	;* The peer acknowledged the previously sent data.
 	;*
 	lda	#_CONNECT
+	sta	(r8), y
+	ldy	#SOCKET_RETRY_OFFSET
+	lda	#RETRIES_TCP
 	sta	(r8), y
 @418:
 	lda	data_size

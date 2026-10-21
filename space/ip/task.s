@@ -152,7 +152,7 @@ task_add:
 	;bool_t ok;
 	;volatile tid_t *task;
 	;uint8_t j;
-	CmpW	r0, NULL
+	CmpWI	r0, NULL
 	beq	@err
 
 	;*
@@ -207,7 +207,7 @@ task_add:
 	inx
    	bra	@loop
 @endLoop:
-	brk
+	;// Task table full: report failure instead of crashing.
 @err:
 	clc
 	rts
@@ -468,7 +468,9 @@ task_periodic:
 	
 	txa
 	pha
+	PushW	r3		; tasks may call task_add/task_cancel (use r3)
 	jsr	(r2)
+	PopW	r3
 
 	pla
 	tax
@@ -503,7 +505,5 @@ task_periodic:
 	inx
 	bra	@loop2
 @endLoop2:
-
-	lda	#$67
-	brk
+	;// No task left at all - should not happen, but don't crash.
 	rts
