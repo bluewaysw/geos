@@ -185,9 +185,6 @@ MTU = 1000
 ;extern unsigned char tx_frame_buf[MTU];
 ;extern unsigned short eth_tx_len;
 
-adv_window_last:
-    .word 0
-
 ;**
 ;* Packet counter.
 ;*/
@@ -342,7 +339,6 @@ nwk_tick:			; (byte_t sig)
 	jsr	(r7)
 
 	jsr    	remove_rx_data
-	jsr		nwk_maybe_winupdate      
 
 @noTimeout:
 
@@ -503,7 +499,6 @@ compute_window_size:
 	;// TCP window field is big-endian
 	MoveB	r6H, default_header+WINDOW_SIZE_OFFSET+0
 	MoveB	r6L, default_header+WINDOW_SIZE_OFFSET+1
-	MoveW	r6, adv_window_last
 	rts
 
 ; in: r8 socket ptr
@@ -2028,8 +2023,11 @@ lda	#$04
 	jsr	remove_rx_data
 
 @125:
-    jsr     nwk_maybe_winupdate
-    sta     (r8), y	;// And ACK every packet, because we don't have buffer space for multiple ones,
+	;// Data accepted in order: the peer is making progress, reset retries.
+	ldy	#SOCKET_RETRY_OFFSET
+	lda	#RETRIES_TCP
+	sta	(r8), y
+	;// And ACK every packet, because we don't have buffer space for multiple ones,
 	;// and its thus very easy for the sender to not know where we are upto, and for
 	;// everything to generally get very confused if we have encountered any out-of-order
 	;// packets.
