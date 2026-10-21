@@ -2165,7 +2165,7 @@ hostIP:
 
 missingTextOf:
 	.byte	" of ", NULL
-.if DEBUG
+.ifdef DEBUG
 missingText:
 missingText2:
 missingText3:

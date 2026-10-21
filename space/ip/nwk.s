@@ -185,6 +185,9 @@ MTU = 1000
 ;extern unsigned char tx_frame_buf[MTU];
 ;extern unsigned short eth_tx_len;
 
+adv_window_last:
+    .word 0
+
 ;**
 ;* Packet counter.
 ;*/
@@ -339,6 +342,7 @@ nwk_tick:			; (byte_t sig)
 	jsr	(r7)
 
 	jsr    	remove_rx_data
+	jsr		nwk_maybe_winupdate      
 
 @noTimeout:
 
@@ -499,7 +503,52 @@ compute_window_size:
 	;// TCP window field is big-endian
 	MoveB	r6H, default_header+WINDOW_SIZE_OFFSET+0
 	MoveB	r6L, default_header+WINDOW_SIZE_OFFSET+1
+	MoveW	r6, adv_window_last
 	rts
+
+; in: r8 socket ptr
+nwk_maybe_winupdate:
+    ; Nur wenn letztes advertised Window 0 war
+    lda     adv_window_last
+    ora     adv_window_last+1
+    bne     @done               ; war nicht 0 ? nichts tun
+
+    ; Prüfen ob jetzt Platz ist
+    ; r6 = rx_size - rx_data (vereinfacht)
+    ldy     #SOCKET_RX_SIZE_OFFSET
+    lda     (r8), y
+    sta     r6L
+    iny
+    lda     (r8), y
+    sta     r6H
+    ldy     #SOCKET_RX_DATA_OFFSET
+    sec
+    lda     r6L
+    sbc     (r8), y
+    sta     r6L
+    iny
+    lda     r6H
+    sbc     (r8), y
+    sta     r6H
+
+    ; Wenn immer noch 0 ? nichts tun
+    lda     r6L
+    ora     r6H
+    beq     @done
+
+    ; Platz ist da ? ACK mit neuem Window senden
+    ldy     #SOCKET_TO_SEND_OFFSET
+    lda     #ACK
+    sta     (r8), y
+
+    LoadW   r0, nwk_upstream
+    jsr     task_cancel
+    LoadB   r1L, 0
+    LoadB   r1H, 0
+    LoadW   r2, upstreamName
+    jsr     task_add
+@done:
+    rts
 
 ;**
 ;* Network upstream task. Send outgoing network messages.
@@ -1979,11 +2028,8 @@ lda	#$04
 	jsr	remove_rx_data
 
 @125:
-	;// Data accepted in order: the peer is making progress, reset retries.
-	ldy	#SOCKET_RETRY_OFFSET
-	lda	#RETRIES_TCP
-	sta	(r8), y
-	;// And ACK every packet, because we don't have buffer space for multiple ones,
+    jsr     nwk_maybe_winupdate
+    sta     (r8), y	;// And ACK every packet, because we don't have buffer space for multiple ones,
 	;// and its thus very easy for the sender to not know where we are upto, and for
 	;// everything to generally get very confused if we have encountered any out-of-order
 	;// packets.
