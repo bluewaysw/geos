@@ -17,4 +17,9 @@ UNDEFINED_CLASS	= $45
 NOT_PRINTING_FILE= $46
 
 DRIVE_MASK	= %00011111
+; Laufwerkstypen (wie in inc/const.inc)
+DRV_F011_0	= 4
+DRV_F011_1	= 5
+DRV_SD_81	= 6
+DRV_F011_V	= 8
 CANCEL_ERR	= $0c
