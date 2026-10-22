@@ -1400,6 +1400,20 @@ nwk_downstream:
 	lda	_header+TCP_HDR_FLAGS
 	and	#SYN
 	beq	@synNotSet
+	;// Only take a SYN when opening a connection. In any other state it is
+	;// a retransmitted SYN(-ACK), sent because our ACK of the handshake got
+	;// lost. Re-ACK and drop it; otherwise remSeq is rewound to the ISN and
+	;// the state machine jumps to CONNECT (pending request never resent,
+	;// or all further data treated as out of order -> connection stalls).
+	ldy	#SOCKET_STATE_OFFSET
+	lda	(r8), y
+	cmp	#_SYN_SENT
+	beq	@synAccept
+	cmp	#_LISTEN
+	beq	@synAccept
+	jsr	nwk_schedule_oo_ack
+	jmp	@drop
+@synAccept:
 
 	;*
 	;* Restart of remote sequence number (connection?).
