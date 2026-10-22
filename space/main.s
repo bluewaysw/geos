@@ -88,6 +88,11 @@ HTTP_STATE_ERROR	=	4
 HTTP_STATE_REDIRECT	=	5
 HTTP_STATE_COMPLETE	=	6
 HTTP_STATE_CONNECT	=	7
+HTTP_STATE_ERRHDR	=	8	; 429/503 received, reading headers for Retry-After
+
+BACKOFF_DEFAULT_TICKS	=	50*60	; wait 60 s when rate limited without Retry-After
+BACKOFF_MAX_S		=	300	; never wait longer than 5 min per attempt
+MAX_RATELIMIT_WAITS	=	6	; rate-limit waits per file before they count as retries
 
 __STARTUP_RUN__:
 
@@ -255,6 +260,11 @@ MyInt:
 	beq	@30
 	DecW	dns_timeout
 @30:
+	lda	backoffTimer
+	ora	backoffTimer+1
+	beq	@40
+	DecW	backoffTimer
+@40:
 	jmp	InterruptMain
 
 MyRecover:
@@ -419,6 +429,8 @@ runDownload:
 
 	LoadB	error_count, 0
 	LoadB	success_count, 0
+	LoadB	ratelimit_count, 0
+	LoadB	rl_pending, 0
 	LoadB	downloadState, DL_STATE_HTTP
 
 	; get next file
@@ -451,6 +463,11 @@ runDownload:
 	beq	@102b
 	rts
 @102b:
+	lda	backoffTimer		; rate limited by the server: wait
+	ora	backoffTimer+1		; before issuing the next request
+	beq	@102c
+	jmp	@10
+@102c:
 	lda	requestComplete
 	bne 	@101b
 
@@ -461,6 +478,16 @@ runDownload:
 
 	jsr	requestCancel
 
+	; rate limited (429/503)? retry the same file without using up a retry
+	lda	rl_pending
+	beq	@101e
+	LoadB	rl_pending, 0
+	lda	ratelimit_count
+	cmp	#MAX_RATELIMIT_WAITS
+	bcs	@101e		; limited too often: count as a normal retry
+	inc	ratelimit_count
+	jmp	@101f
+@101e:
 	; retry the request
 	lda	retry_count
 	cmp	#3
@@ -471,6 +498,7 @@ runDownload:
 
 @101d:	
 	inc	retry_count
+@101f:
 	dec	a2L	; retry the last file
 
 	MoveW	ip_address, r0
@@ -488,6 +516,7 @@ runDownload:
 @101b:
 	inc	file_count
 	LoadB	retry_count, 0
+	LoadB	ratelimit_count, 0
 
 	MoveW	ip_address, r0
 	MoveW	ip_address + 2, r1
@@ -713,6 +742,10 @@ runRequest:
 	jsr	HTTP_GET
 	rts
 @15:
+	CmpBI	http_state, HTTP_STATE_ERROR
+	bne	@15c
+	jmp	requestError
+@15c:
 	CmpBI	http_state, HTTP_STATE_COMPLETE
 	bne	@10
 
@@ -739,6 +772,46 @@ runRequest:
 	LoadB	requestComplete, $FF
 
 @10:
+	rts
+
+; The server answered with an unexpected status. Fail the attempt at once
+; (instead of waiting for downloadTimeout). For 429/503 (rate limited or
+; overloaded, e.g. web.archive.org) wait Retry-After seconds, or 60 s,
+; before the next request; runDownload then retries the same file.
+requestError:
+	MoveW	http_socket, r1
+	jsr	socket_disconnect
+	MoveW	http_socket, r1
+	jsr	socket_release
+	LoadB	http_state, HTTP_STATE_IDLE
+	lda	http_ratelimited
+	beq	@fail
+	LoadB	rl_pending, $FF
+	LoadW	r0, BACKOFF_DEFAULT_TICKS
+	lda	retryAfter
+	ora	retryAfter+1
+	beq	@set
+	CmpWI	retryAfter, BACKOFF_MAX_S
+	bcc	@ok
+	LoadW	retryAfter, BACKOFF_MAX_S
+@ok:
+	MoveW	retryAfter, r0	; seconds -> ticks
+	LoadB	r1L, 50
+	ldx	#r0
+	ldy	#r1L
+	jsr	BMult
+@set:
+	php
+	sei
+	MoveW	r0, backoffTimer
+	LoadW	downloadTimeout, 0	; runDownload retries after the backoff
+	plp
+	rts
+@fail:
+	php
+	sei
+	LoadW	downloadTimeout, 0	; fail this attempt now
+	plp
 	rts
 
 requestCancel:
@@ -771,6 +844,8 @@ HTTP_GET:
 
 	LoadB	requestComplete, 0
 	LoadB	requestRedirect, 0
+	LoadB	http_ratelimited, 0
+	LoadW	retryAfter, 0
 
 	LoadW	r0, tempName2
 	jsr	DeleteFile
@@ -1396,8 +1471,12 @@ HTTP_GET_callback:
 	beq	@processLine
 	CmpBI	http_state, HTTP_STATE_HEADER
 	beq	@processLine
+	CmpBI	http_state, HTTP_STATE_ERRHDR
+	beq	@processLine
 	CmpBI	http_state, HTTP_STATE_BODY
-	beq	@processBody			; mode data for the body
+	bne	@notBody
+	jmp	@processBody			; mode data for the body
+@notBody:
 	jmp	@12c				; idle? drop data
 
 @processLine:
@@ -1444,6 +1523,13 @@ HTTP_GET_callback:
 
 	; fall through to body processing of last line after header passed
 @processBodyStart:
+	CmpBI	http_state, HTTP_STATE_ERRHDR
+	bne	@pbs
+	LoadB	http_state, HTTP_STATE_ERROR	; headers of the 429/503 done
+	MoveW	http_socket, r1
+	jsr	socket_disconnect
+	jmp	@12c
+@pbs:
 	LoadB	http_state, HTTP_STATE_BODY
 	IncW	r1
 	IncW	r2
@@ -1550,6 +1636,11 @@ HTTP_GET_callback:
 	;brk
 	;lda	#$93
 	lda	http_state
+	cmp	#HTTP_STATE_ERRHDR	; server closed before end of headers
+	bne	@17b
+	lda	#HTTP_STATE_ERROR
+	sta	http_state
+@17b:
 	cmp	#HTTP_STATE_BODY
 	bne	@17
 	jsr	CloseFile
@@ -1588,7 +1679,7 @@ ProcessLine:
 
 	; success, start reading header
 	LoadB	http_state, HTTP_STATE_HEADER
-	bra	@end
+	jmp	@end
 @11:
 	LoadW	r5, http_line_buf
 	LoadW	r6, httpRedirectResult
@@ -1603,12 +1694,22 @@ ProcessLine:
 	bra	@end
 
 @10:	; handle wrong/unexpected result
+	jsr	CheckRateLimitStatus
+	lda	http_ratelimited
+	beq	@10e
+	LoadB	http_state, HTTP_STATE_ERRHDR	; read on for Retry-After
+	bra	@end
+@10e:
 	LoadB	http_state, HTTP_STATE_ERROR
 	MoveW	http_socket, r1
 	jsr	socket_disconnect
 	bra	@end
 @100:
-	; reading header, just continue
+	CmpBI	http_state, HTTP_STATE_ERRHDR
+	bne	@100r
+	jsr	CheckRetryAfter
+	bra	@end
+@100r:
 	lda	http_redirect
 	beq	@end
 
@@ -1630,6 +1731,86 @@ ProcessLine:
 
 @end:
 	rts
+
+;**
+;* Status line "HTTP/1.x 429 ..." or "HTTP/1.x 503 ..." -> http_ratelimited = $FF
+;*
+CheckRateLimitStatus:
+	LoadB	http_ratelimited, 0
+	lda	http_line_buf+8
+	cmp	#' '
+	bne	@no
+	lda	http_line_buf+9
+	cmp	#'4'
+	bne	@5
+	lda	http_line_buf+10
+	cmp	#'2'
+	bne	@no
+	lda	http_line_buf+11
+	cmp	#'9'
+	bne	@no
+	beq	@yes
+@5:	cmp	#'5'
+	bne	@no
+	lda	http_line_buf+10
+	cmp	#'0'
+	bne	@no
+	lda	http_line_buf+11
+	cmp	#'3'
+	bne	@no
+@yes:	LoadB	http_ratelimited, $FF
+@no:	rts
+
+;**
+;* "Retry-After: <seconds>" (header name case-insensitive) -> retryAfter.
+;* The HTTP-date form is ignored (the default backoff is used then).
+;*
+CheckRetryAfter:
+	ldx	#0
+@c:	lda	http_line_buf, x
+	ora	#$20
+	cmp	retryAfterHdr, x
+	bne	@no
+	inx
+	cpx	#retryAfterHdrEnd-retryAfterHdr
+	bne	@c
+	LoadW	retryAfter, 0
+@sp:	lda	http_line_buf, x
+	cmp	#' '
+	bne	@d
+	inx
+	bne	@sp
+@d:	lda	http_line_buf, x
+	sec
+	sbc	#'0'
+	bcc	@no
+	cmp	#10
+	bcs	@no
+	sta	raDigit
+	lda	retryAfter+1
+	cmp	#>1000
+	bcs	@no			; large enough, capped later anyway
+	MoveW	retryAfter, raTmp	; retryAfter = retryAfter * 10 + digit
+	asl	retryAfter
+	rol	retryAfter+1
+	asl	retryAfter
+	rol	retryAfter+1
+	AddW	raTmp, retryAfter
+	asl	retryAfter
+	rol	retryAfter+1
+	lda	raDigit
+	clc
+	adc	retryAfter
+	sta	retryAfter
+	bcc	@n
+	inc	retryAfter+1
+@n:	inx
+	bne	@d
+@no:	rts
+
+retryAfterHdr:
+	.byte	"retry-after:"
+retryAfterHdrEnd:
 
 CloseFile:
 	lda	#$FF
@@ -1905,6 +2086,20 @@ ip_address:
 
 requestTimeout:
 	.word	0
+backoffTimer:		; ticks to wait before the next request (rate limited)
+	.word	0
+retryAfter:		; Retry-After of the last 429/503, seconds
+	.word	0
+raTmp:
+	.word	0
+raDigit:
+	.byte	0
+http_ratelimited:	; last response was 429/503
+	.byte	0
+rl_pending:		; tell runDownload the failed attempt was rate limited
+	.byte	0
+ratelimit_count:	; rate-limit waits for the current file
+	.byte	0
 requestRetry:
 	.byte 	0
 requestFileName:
@@ -1917,7 +2112,7 @@ requestRedirect:
 downloadTimeout:
 	.word	0
 
-fileRequestBuf		= $5000
+fileRequestBuf		= $5D00	; behind the rx buffer at $5500..$5CFF
 ;	.repeat		1024
 ;		.byte	0
 ;	.endrep
@@ -3205,3 +3400,7 @@ bootstrapTable:
 .endif
 
 bootstrapTableEnd:
+
+; link-time guard: code must not grow into the rx buffer at $5500
+.import __VLIR0_LAST__
+.assert __VLIR0_LAST__ <= $5500, error, "Space code overlaps the rx buffer at $5500"

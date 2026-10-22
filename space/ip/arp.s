@@ -24,6 +24,7 @@
 .import mac_local
 .import _header
 .import task_add
+.import task_cancel
 
 .export arp_query
 .export query_cache
@@ -535,6 +536,8 @@ arp_init:
 	bne	@10
 
 	; tick is applied from the outside
+	LoadW	r0, arp_tick	; remove an instance left from a previous init
+	jsr	task_cancel
 	LoadW	r0, arp_tick
 	LoadB	r1L, ARP_TICK_TIME
 	LoadB	r1H, 0

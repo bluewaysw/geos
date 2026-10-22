@@ -31,6 +31,7 @@
 .import ip_gate
 .import mac_local
 .import task_add
+.import task_cancel
 
 .export dhcp_configured
 .export dhcp_autoconfig
@@ -448,6 +449,8 @@ dhcp_autoconfig:
 	LoadB	dhcp_configured, 0
 
 	;// Schedule ourselves to retransmit DHCP query until we are configured
+	LoadW	r0, dhcp_autoconfig_retry	; remove an instance left from a previous init
+	jsr	task_cancel
 	LoadW	r0, dhcp_autoconfig_retry
 	LoadW	r1, DHCP_RETRY_TICKS
 	LoadW	r2, dhcprtryName

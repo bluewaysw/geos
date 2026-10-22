@@ -619,6 +619,8 @@ weeip_init:
 	jsr	GetRandom
 	MoveW	random, id
 
+	LoadW	r0, nwk_tick	; remove an instance left from a previous init
+	jsr	task_cancel
 	LoadW	r0, nwk_tick
 	LoadB	r1L, TICK_TCP
 	LoadB	r1H, 0
