@@ -580,7 +580,6 @@ dns_run_query:
 	rts
 
 @retry:
-	dec	dns_retry
 	MoveW	dns_socket, r1
 	jsr	socket_select
 

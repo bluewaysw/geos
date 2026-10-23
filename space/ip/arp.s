@@ -24,6 +24,7 @@
 .import mac_local
 .import _header
 .import task_add
+.import task_cancel
 
 .export arp_query
 .export query_cache
@@ -116,255 +117,184 @@ arp_cache:
 ;* @param mac Corresponding MAC address, if found.
 ;* @return TRUE if found.
 ;*
-; in:	r0/r1 ip address
-; out: c set if resolved, c if new entry has been reserved
-;	r3,r4,r5 mac
+;---------------------------------------------------------------
+; query_cache
+; in:  r0/r1  IP address BY VALUE (r0L = first octet)
+; out: carry set   = resolved, MAC in r3,r4,r5
+;      carry clear = not resolved yet. A pending entry (MAC = $FF..)
+;                    now exists for this IP; caller should arp_query.
+; destroys: a, x, y, r2, r6, r7
+;---------------------------------------------------------------
 query_cache:
-	;ARP_CACHE_ENTRY *i, *s;
-	;byte_t old;
-
-	;*
-	;* Checks if broadcast address.
-	;*
+	;* Broadcast IP -> broadcast MAC
 	ldx	#0
-@10:
-	lda	r0, x
-	cmp	#$ff
+	lda	#$FF
+@10:	cmp	r0, x
 	bne	@noBroadcast
 	inx
 	cpx	#4
 	bne	@10
+	ldx	#5
+@11:	sta	r3, x
+	dex
+	bpl	@11
+	sec
+	rts
 
+@noBroadcast:
+	jsr	find_entry		; r2 -> entry, carry set if found
+	bcc	@notFound
+
+	ldy	#4			; first MAC byte
+	lda	(r2), y
+	cmp	#$FF
+	beq	@pending		; reserved, reply not in yet
 	ldx	#0
-@20:
-	sta	r3,x
+@20:	lda	(r2), y
+	sta	r3, x
+	iny
 	inx
 	cpx	#6
 	bne	@20
 	sec
 	rts
-
-@noBroadcast:
-	;*
-	;* Loops into arp_cache.
-	;*/
-	ldx	#0
-	LoadW	r3, arp_cache
-@30:
-	ldy	#0
-@32:
-	lda	(r3), y
-	cmp	r0, y
-	bne	@31
-	iny
-	cpy	#4
-	bne	@32
-
-	; found ip address in cache
-	lda	(r3), y
-	cmp	#$FF
-	bne	@33
+@pending:
 	clc
 	rts
-@33:
+
+@notFound:
+	;* Reserve an entry holding the IP we are going to ask for,
+	;* so the ARP reply can be matched to it.
+	jsr	find_lru_slot		; r2 -> slot to reuse
 	ldy	#0
-	AddVW	4, r3
-	MoveW	r3, r2
-@34:
-	lda	(r2), y
-	sta	r3, y
-	iny
-	cpy	#6
-	bne	@34
-.if 0
-	 printf("IP %d.%d.%d.%d is in ARP cache\n",
-		ip->b[0],ip->b[1],ip->b[2],ip->b[3]);
-.endif
-	sec			; found successfully
-	rts
-
-@31:
-	AddVW	ARP_CACHE_ENTRY_SIZE, r3
-
-	inx
-	cpx	#MAX_CACHE
-	bne	@30
-.if 0
-	printf("IP %d.%d.%d.%d not in ARP cache\n",
-				ip->b[0],ip->b[1],ip->b[2],ip->b[3]);
-.endif
-
-	;*
-	;* Unknown IP.
-	;* Look for an empty entry.
-	;*/
-	LoadW	r5, $FF
-	ldx	#0
-	LoadW	r3, arp_cache
-	MoveW	r3, r6
-@40:
-	ldy	#ARP_CACHE_ENTRY_TIME_OFFSET
-	lda	(r3),y
-	sta	r4L
-	iny
-	lda	(r3),y
-	sta	r4H
-
-	CmpW	r4, r5
-	bcs	@41
-
-	;brk
-	;lda	#$39
-
-	MoveW	r3, r6		; remember this cache entry
-	MoveW	r4, r5		; remember this time out
-@41:
-	CmpWI	r5, 0
-	beq	@found
-		;*
-	 	;* Done: found an empty entry.
-	 	;*/
-
-	AddVW	ARP_CACHE_ENTRY_SIZE, r3
-	inx
-	cpx	#MAX_CACHE
-	bne	@40
-   	; use the oldest one
-
-@found:
-	; r6 points to cache entry to be filled
-
-	;*
-	;* Init the entry with the desired IP.
-	;*
-	ldy	#0
-@51:
-	lda	(r0),y
-	sta	(r6),y
+@30:	lda	r0, y			; IP by value
+	sta	(r2), y
 	iny
 	cpy	#4
-	bne	@51
-	AddVW	4, r6
-
-	ldy	#0
-@52:
-	lda	(r1),y
-	sta	(r6),y
+	bne	@30
+	lda	#$FF			; MAC unknown -> pending marker
+@31:	sta	(r2), y
 	iny
-	cpy	#6
-	bne	@52
-	AddVW	6, r6
-
-	ldy	#0
+	cpy	#ARP_CACHE_ENTRY_TIME_OFFSET
+	bne	@31
 	lda	#<MIN_TIMEOUT_ARP
-	sta	(r6), y
+	sta	(r2), y
 	iny
 	lda	#>MIN_TIMEOUT_ARP
-	sta	(r6), y
-
+	sta	(r2), y
 	clc
 	rts
 
-;**
-;* Update IP information into the ARP cache.
-;* @param ip IP Address, must already be into the cache.
-;* @param mac MAC address to update.
-;*/
-; in:	r0 ptr to IPV4
-;       r1 ptr to MAC
-; destroy: r2, r3, r6, r7, r8
-update_cache:
-.if 0
-	printf("ARP: IP %d.%d.%d.%d is at %x:%x:%x:%x:%x:%x\n",
-		ip->b[0],ip->b[1],ip->b[2],ip->b[3],
-		mac->b[0],mac->b[1],mac->b[2],mac->b[3],mac->b[4],mac->b[5]
-		);
-.endif
-
+;---------------------------------------------------------------
+; find_entry
+; in:  r0/r1  IP by value
+; out: carry set + r2 -> entry if found, carry clear otherwise
+; destroys: a, x, y, r2
+;---------------------------------------------------------------
+find_entry:
 	LoadW	r2, arp_cache
 	ldx	#0
-@10:
-	; compare ip
-	ldy	#0
-@12:
-	lda	(r0), y
-	cmp	(r2), y
-	bne	@11
+@loop:	ldy	#0
+@cmp:	lda	(r2), y
+	cmp	r0, y
+	bne	@next
 	iny
 	cpy	#4
-	bne	@12
-
-	; entry found
-	jmp	@set
-@11:
-	AddVW	ARP_CACHE_ENTRY_SIZE, r2
+	bne	@cmp
+	sec
+	rts
+@next:	AddVW	ARP_CACHE_ENTRY_SIZE, r2
 	inx
 	cpx	#MAX_CACHE
-	bne	@10
+	bne	@loop
+	clc
+	rts
 
-	;// Not an existing entry in the cache to be updated, so replace a random entry?
-	jsr	GetRandom
+;---------------------------------------------------------------
+; find_lru_slot - entry with the smallest time value
+; (free slots have 0, pending MIN_TIMEOUT_ARP, resolved MAX_TIMEOUT_ARP)
+; out: r2 -> slot
+; destroys: a, x, y, r6, r7
+;---------------------------------------------------------------
+find_lru_slot:
+	LoadW	r2, arp_cache
+	MoveW	r2, r6			; best slot so far
+	LoadW	r7, $FFFF		; best time so far
+	ldx	#0
+@loop:	ldy	#ARP_CACHE_ENTRY_TIME_OFFSET+1
+	lda	(r2), y
+	cmp	r7H
+	bne	@cmpDone
+	dey
+	lda	(r2), y
+	cmp	r7L
+@cmpDone:
+	bcs	@next			; time >= best, keep best
+	MoveW	r2, r6
+	ldy	#ARP_CACHE_ENTRY_TIME_OFFSET
+	lda	(r2), y
+	sta	r7L
+	iny
+	lda	(r2), y
+	sta	r7H
+@next:	AddVW	ARP_CACHE_ENTRY_SIZE, r2
+	inx
+	cpx	#MAX_CACHE
+	bne	@loop
+	MoveW	r6, r2
+	rts
 
-	PushW	r3
-	PushW	r6
-	PushW	r7
-	PushW	r8
-
-	MoveW	random, r6
-	LoadW	r7, MAX_CACHE
-	ldx	#r6
-	ldy	#r7
-	jsr	Ddiv
-
-	; r8 rest
-	MoveW	r8, r2
-	ldx	#r2
-	LoadW	r3, ARP_CACHE_ENTRY_SIZE
-	ldy	#r3
-	jsr 	DMult
-
-	LoadW	r6, arp_cache
-	AddW	r6, r2
-	PopW	r8
-	PopW	r7
-	PopW	r6
-	PopW	r3
-@setAll:
-
-	; set ip
+;---------------------------------------------------------------
+; learn_sender - store sender IP/MAC of the ARP packet in _header
+; in:  carry set   = insert if not cached (request addressed to us)
+;      carry clear = only update an existing entry (reply), so
+;                    unrelated ARP traffic can't evict our entries
+; destroys: a, x, y, r0, r1, r2, r6, r7
+;---------------------------------------------------------------
+learn_sender:
+	php
+	MoveW	_header+ARP_HDR_ORIG_IP4_OFFSET, r0
+	MoveW	_header+ARP_HDR_ORIG_IP4_OFFSET+2, r1
+	lda	r0L			; ignore 0.0.0.0 (ARP probes)
+	ora	r0H
+	ora	r1L
+	ora	r1H
+	bne	@valid
+	plp
+	rts
+@valid:
+	jsr	find_entry
+	bcs	@found
+	plp
+	bcs	@insert
+	rts				; reply for an IP we never asked for
+@insert:
+	jsr	find_lru_slot
 	ldy	#0
-@21:
-	lda	(r0), y
+@ip:	lda	r0, y
 	sta	(r2), y
 	iny
 	cpy	#4
-	bne	@21
-
-@set:
-	; set mac
-	AddVW	4, r2
-	ldy	#0
-@20:
-	lda	(r1), y
+	bne	@ip
+	bra	@setMac
+@found:
+	plp
+@setMac:
+	ldy	#4
+	ldx	#0
+@mac:	lda	_header+ARP_HDR_ORIG_HW_OFFSET, x
 	sta	(r2), y
 	iny
-	cpy	#6
-	bne	@20
-
-	; set timeout
+	inx
+	cpx	#6
+	bne	@mac
 	lda	#<MAX_TIMEOUT_ARP
-	sta	(r2),y
-	lda	#>MAX_TIMEOUT_ARP
+	sta	(r2), y
 	iny
-	sta	(r2),y
-
+	lda	#>MAX_TIMEOUT_ARP
+	sta	(r2), y
 	rts
 
-;**
-;* Send a ARP QUERY message to find about an IP address.
-;* @param IP address to find.
-;*/
-; in: r1 ptr to ip
 arp_query:
 	;*
 	;* ARP REQUEST message.
@@ -459,14 +389,8 @@ arp_mens:
 	;* Looking for us.
 	;* Insert sender address into cache.
 	;*
-	LoadW	r0, _header+ARP_HDR_ORIG_IP4_OFFSET
-	LoadW	r1, 0	; don't exepect to receive result
-
-	jsr	query_cache	; ensure entry exists, create in free
-				; slot if possible
-
-	LoadW	r1, _header+ARP_HDR_ORIG_HW_OFFSET
-	jsr	update_cache
+	sec			; insert if not yet cached
+	jsr	learn_sender
 
 	;*
 	;* Assemble a response message.
@@ -542,9 +466,8 @@ arp_mens:
 	;*
 	;* ARP response.
 	;*
-	LoadW	r0, _header+ARP_HDR_ORIG_IP4_OFFSET
-	LoadW	r1, _header+ARP_HDR_ORIG_HW_OFFSET
-	jsr	update_cache
+	clc			; only update entries we asked for
+	jsr	learn_sender
 	rts
 
 ;**
@@ -613,6 +536,8 @@ arp_init:
 	bne	@10
 
 	; tick is applied from the outside
+	LoadW	r0, arp_tick	; remove an instance left from a previous init
+	jsr	task_cancel
 	LoadW	r0, arp_tick
 	LoadB	r1L, ARP_TICK_TIME
 	LoadB	r1H, 0

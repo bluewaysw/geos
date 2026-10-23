@@ -31,6 +31,7 @@
 .import ip_gate
 .import mac_local
 .import task_add
+.import task_cancel
 
 .export dhcp_configured
 .export dhcp_autoconfig
@@ -96,15 +97,15 @@ dhcp_reply_handler:
 	lda	r0L
 	;// First time it will be the offer.
 	;// And actually, that's all we care about receiving.
-;// We MUST however, send the ACCEPT message.
-;// Checbk that XID matches us
-ldx	#0
+	;// We MUST however, send the ACCEPT message.
+	;// Checbk that XID matches us
+	ldx	#0
 @21:
 	lda	dhcp_xid, x
 	cmp	dns_buf+4,x
 	bne	@20
 	inx
-	cpx	#6
+	cpx	#4
 	bne	@21
 @20:
 	cpx	#4
@@ -193,7 +194,7 @@ ldx	#0
 .ifdef DEBUG_DHCP
 	printf("Parsing DHCP fields $%002x\n",dns_buf[0xf2]);
 .endif
-	lda	dns_buf+$f2
+	jsr	dhcp_find_msgtype	; A = option 53 value, 0 if none
 	cmp	#$02
 	beq	@501
 	jmp	@500
@@ -201,21 +202,24 @@ ldx	#0
 	LoadW	r2, $f0
 
 @loop:
+	CmpWI	r2, DNS_BUF_SIZE-2	; room for code+len+data?
+	bcc	@do
+	jmp	@cont2
+@do:
 	LoadW	r3, dns_buf
 	AddW	r2, r3
 	ldy	#0
 	lda	(r3),y
 	cmp	#$FF		; end of record?
-	beq	@cont2
-	CmpW	r2, 512
-	bcs	@do
+	bne	@97
+
 	jmp	@cont2
-@do:
-	ldy	#0
-	lda	(r3),y
+@97:
+	cmp	#0		; pad option: skip one byte, keep parsing
+
 	bne	@99
 	IncW	r2
-	jmp	@98
+	jmp	@loop
 @99:
 	sta	r4L
 
@@ -365,6 +369,47 @@ ldx	#0
 	PopW	r0
 	rts
 
+;---------------------------------------------------------------
+; dhcp_find_msgtype - scan DHCP options for option 53 (message type)
+; so we don't depend on it being the first option at $F0.
+; out: A = message type (2 = OFFER, 5 = ACK, ...), 0 if not found
+; destroys: y, r2, r3
+;---------------------------------------------------------------
+dhcp_find_msgtype:
+	LoadW	r2, $f0
+@loop:
+	CmpWI	r2, DNS_BUF_SIZE-2	; need code, len and one data byte
+	bcs	@none
+	LoadW	r3, dns_buf
+	AddW	r2, r3
+	ldy	#0
+	lda	(r3), y
+	cmp	#$FF			; end option
+	beq	@none
+	cmp	#0			; pad option
+	bne	@opt
+	IncW	r2
+	bra	@loop
+@opt:
+	cmp	#53			; DHCP message type
+	bne	@skip
+	ldy	#2
+	lda	(r3), y
+	rts
+@skip:
+	ldy	#1			; r2 += 2 + len
+	lda	(r3), y
+	clc
+	adc	r2L
+	sta	r2L
+	bcc	@1
+	inc	r2H
+@1:	AddVW	2, r2
+	bra	@loop
+@none:
+	lda	#0
+	rts
+
 dhcp_autoconfig_retry:
 	lda	dhcp_configured
 	bne	@10
@@ -404,6 +449,8 @@ dhcp_autoconfig:
 	LoadB	dhcp_configured, 0
 
 	;// Schedule ourselves to retransmit DHCP query until we are configured
+	LoadW	r0, dhcp_autoconfig_retry	; remove an instance left from a previous init
+	jsr	task_cancel
 	LoadW	r0, dhcp_autoconfig_retry
 	LoadW	r1, DHCP_RETRY_TICKS
 	LoadW	r2, dhcprtryName

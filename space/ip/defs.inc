@@ -2,6 +2,8 @@ MAX_SOCKET = 8
 
 SOCKET_SIZE = 43
 
+DEBUG = 0
+
 
 ;*
 ;* Transport Control Protocol flags.
