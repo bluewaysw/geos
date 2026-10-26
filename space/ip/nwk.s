@@ -501,50 +501,6 @@ compute_window_size:
 	MoveB	r6L, default_header+WINDOW_SIZE_OFFSET+1
 	rts
 
-; in: r8 socket ptr
-nwk_maybe_winupdate:
-    ; Nur wenn letztes advertised Window 0 war
-    lda     adv_window_last
-    ora     adv_window_last+1
-    bne     @done               ; war nicht 0 ? nichts tun
-
-    ; Prüfen ob jetzt Platz ist
-    ; r6 = rx_size - rx_data (vereinfacht)
-    ldy     #SOCKET_RX_SIZE_OFFSET
-    lda     (r8), y
-    sta     r6L
-    iny
-    lda     (r8), y
-    sta     r6H
-    ldy     #SOCKET_RX_DATA_OFFSET
-    sec
-    lda     r6L
-    sbc     (r8), y
-    sta     r6L
-    iny
-    lda     r6H
-    sbc     (r8), y
-    sta     r6H
-
-    ; Wenn immer noch 0 ? nichts tun
-    lda     r6L
-    ora     r6H
-    beq     @done
-
-    ; Platz ist da ? ACK mit neuem Window senden
-    ldy     #SOCKET_TO_SEND_OFFSET
-    lda     #ACK
-    sta     (r8), y
-
-    LoadW   r0, nwk_upstream
-    jsr     task_cancel
-    LoadB   r1L, 0
-    LoadB   r1H, 0
-    LoadW   r2, upstreamName
-    jsr     task_add
-@done:
-    rts
-
 ;**
 ;* Network upstream task. Send outgoing network messages.
 ;*/
