@@ -6,6 +6,9 @@
 
 .include "ip/defs.inc"
 
+; DEBUG2 / MIRROR / ETH_FILTER build options: see ip/defs.inc
+PACE_TICKS	= 50*6		; DEBUG2: wait 6 s between files (< 10 requests/min)
+
 .export __STARTUP_RUN__
 
 .export fileRequestBuf
@@ -393,6 +396,9 @@ runDownload:
 @21:
 	lda	dblClickCount
 	bne	@21
+.if DEBUG2
+	jsr	printDiag
+.endif
 
 	CmpBI	downloadState, DL_STATE_DHCP
 	bne	@100b
@@ -431,6 +437,7 @@ runDownload:
 	LoadB	success_count, 0
 	LoadB	ratelimit_count, 0
 	LoadB	rl_pending, 0
+	LoadB	file_count, 0		; restart the 'file n of m' count each pass
 	LoadB	downloadState, DL_STATE_HTTP
 
 	; get next file
@@ -514,6 +521,19 @@ runDownload:
 	jsr	runRequest
 	jmp	@10
 @101b:
+.if DEBUG2
+	; pause between files to stay below the server's rate limit
+	lda	pace_done
+	bne	@paced
+	LoadB	pace_done, 1
+	php
+	sei
+	LoadW	backoffTimer, PACE_TICKS
+	plp
+	jmp	@10
+@paced:
+	LoadB	pace_done, 0
+.endif
 	inc	file_count
 	LoadB	retry_count, 0
 	LoadB	ratelimit_count, 0
@@ -1664,9 +1684,15 @@ HTTP_GET_callback:
 	rts
 
 ProcessLine:
-
 	CmpBI	http_state, HTTP_STATE_REQUEST
 	bne	@100
+.if DEBUG2
+	ldx	#2			; remember the status code for the display
+@dc:	lda	http_line_buf+9, x
+	sta	last_status, x
+	dex
+	bpl	@dc
+.endif
 
 	; check for result code
 	LoadW	r5, http_line_buf
@@ -1731,6 +1757,106 @@ ProcessLine:
 
 @end:
 	rts
+
+.if DEBUG2
+.import eth_rx_ignored
+;**
+;* DEBUG2: status line under the progress display, refreshed twice a second.
+;*   <phase>  HTTP:<last status code>  TCP:<socket state>
+;* phase: DHCP/DNS, SYN sent, req sent, header, data, error, WAIT n s, ...
+;*
+printDiag:
+	inc	diag_cnt
+	lda	diag_cnt
+	cmp	#25
+	bcs	@draw
+	rts
+@draw:
+	LoadB	diag_cnt, 0
+	LoadW	r11, %1011101100000000 | ((-(117)) & $FF)
+	LoadB	r1H, (40) & $FF
+	lda	backoffTimer
+	ora	backoffTimer+1
+	beq	@noWait
+	LoadW	r0, diagWait
+	jsr	PutString
+	MoveW	backoffTimer, r0
+	LoadW	r2, 50
+	ldx	#r0
+	ldy	#r2
+	jsr	Ddiv
+	lda	#SET_SURPRESS|SET_LEFTJUST
+	jsr	PutDecimal
+	LoadW	r0, diagSec
+	jsr	PutString
+	jmp	@tail
+@noWait:
+	CmpBI	downloadState, DL_STATE_HTTP
+	beq	@http
+	LoadW	r0, diagNet
+	jsr	PutString
+	jmp	@tail
+@http:
+	ldx	http_state
+	cpx	#9
+	bcc	@st
+	ldx	#0
+@st:	lda	diagStateLo, x
+	sta	r0L
+	lda	diagStateHi, x
+	sta	r0H
+	jsr	PutString
+@tail:
+	LoadW	r0, diagHttp
+	jsr	PutString
+	LoadW	r0, last_status
+	jsr	PutString
+	LoadW	r0, diagTcp
+	jsr	PutString
+	MoveW	http_socket, r3
+	lda	r3L
+	ora	r3H
+	beq	@noSock
+	ldy	#SOCKET_STATE_OFFSET
+	lda	(r3), y
+	sta	r0L
+	LoadB	r0H, 0
+	lda	#SET_SURPRESS|SET_LEFTJUST
+	jsr	PutDecimal
+@noSock:
+	LoadW	r0, diagRx
+	jsr	PutString
+	MoveW	eth_rx_ignored, r0
+	lda	#SET_SURPRESS|SET_LEFTJUST
+	jsr	PutDecimal
+	LoadW	r0, diagClear
+	jsr	PutString
+	rts
+
+diagStateLo:
+	.byte	<diagS0, <diagS1, <diagS2, <diagS3, <diagS4, <diagS5, <diagS6, <diagS7, <diagS8
+diagStateHi:
+	.byte	>diagS0, >diagS1, >diagS2, >diagS3, >diagS4, >diagS5, >diagS6, >diagS7, >diagS8
+diagS0:	.byte	"idle", NULL
+diagS1:	.byte	"req sent", NULL
+diagS2:	.byte	"header", NULL
+diagS3:	.byte	"data", NULL
+diagS4:	.byte	"error", NULL
+diagS5:	.byte	"redirect", NULL
+diagS6:	.byte	"done", NULL
+diagS7:	.byte	"SYN sent", NULL
+diagS8:	.byte	"error hdr", NULL
+diagNet:	.byte	"DHCP/DNS", NULL
+diagWait:	.byte	"WAIT ", NULL
+diagSec:	.byte	" s", NULL
+diagHttp:	.byte	"  HTTP:", NULL
+diagTcp:	.byte	"  TCP:", NULL
+diagRx:	.byte	"  RX-:", NULL
+diagClear:	.byte	"          ", NULL
+last_status:	.byte	"---", NULL
+diag_cnt:	.byte	0
+pace_done:	.byte	0
+.endif
 
 ;**
 ;* Status line "HTTP/1.x 429 ..." or "HTTP/1.x 503 ..." -> http_ratelimited = $FF
@@ -2020,10 +2146,11 @@ tempName:
 	.byte	"Temp Download", $a0, $a0, $a0
 
 FrontBuffer:
-http_line_buf:
-	.repeat	LINE_BUF_SIZE
-		.byte	0
-	.endrep
+; HTTP header line buffer (LINE_BUF_SIZE = 256 bytes)
+; Runtime-only buffer in $5000-$54FF: that area is saved by Space at
+; startup (StashRAM $5000-$7FFF) and restored on exit, so it must not be
+; part of the loaded program image.
+http_line_buf	= $5200
 http_line_buf_pos:
 	.byte	0
 
@@ -2123,13 +2250,21 @@ fileRequestPrefixEnd:
 	.byte	NULL
 
 fileRequestLocation:
+.if MIRROR
+	.byte	"/archive_org/web/20111025045336if_/"	; own mirror
+.else
 	.byte	"/web/20111025045336if_/http://cbmfiles.com:80/geos/geosfiles/"
+.endif
 fileRequestLocationEnd:
 	.byte	NULL
 
 fileRequestSuffix:
 	.byte	" HTTP/1.0", CR, LF
+.if MIRROR
+	.byte	"Host: www.bluewaysw.de", CR, LF
+.else
 	.byte	"Host: web.archive.org", CR, LF
+.endif
 	.byte	"Connection: Close", CR, LF
 	.byte	CR, LF
 fileRequestSuffixEnd:
@@ -2151,14 +2286,22 @@ httpLocationHeader:
 httpLocationHeaderEnd:
 
 httpDomain:
+.if MIRROR
+	.byte	"http://www.bluewaysw.de/"
+.else
 	.byte	"http://web.archive.org/"
+.endif
 httpDomainEnd:
 	.byte	NULL
 
 hostName:
 	;.byte	"www.bluewaysw.de", NULL
 	;.byte	"192.168.17.116", NULL
+.if MIRROR
+	.byte	"www.bluewaysw.de", NULL	; own mirror
+.else
 	.byte	"web.archive.org", NULL
+.endif
 	;.byte	"breadbox.com", NULL
 hostIP:
 	.byte	0, 0, 0, 0
@@ -3401,6 +3544,16 @@ bootstrapTable:
 
 bootstrapTableEnd:
 
-; link-time guard: code must not grow into the rx buffer at $5500
+;**
+;* Memory map while downloading (GEOS application area $0400-$5FFF):
+;*   $0400-$4FFF  program image (loaded by GEOS, must end below $5000)
+;*   $5000-$5FFF  runtime buffers; saved at startup (StashRAM $5000-$7FFF)
+;*                and restored on exit, because GEOS uses this area:
+;*     $5000 dns_buf (512)   $5200 http_line_buf (256)
+;*     $5300 _sockets (344)  $5460 arp_cache (96)
+;*     $5500 rx buffer (2048)  $5D00 fileRequestBuf
+;*
+;* The program is loaded before Space can save $5000+, so the image itself
+;* must stay below $5000:
 .import __VLIR0_LAST__
-.assert __VLIR0_LAST__ <= $5500, error, "Space code overlaps the rx buffer at $5500"
+.assert __VLIR0_LAST__ <= $5000, error, "Space program image must end below $5000"

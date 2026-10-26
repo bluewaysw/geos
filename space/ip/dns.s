@@ -62,10 +62,11 @@ dns_query:
 
 dns_query_len:
 	.word	0
-dns_buf:
-	.repeat DNS_BUF_SIZE
-		.byte	0
-	.endrep
+; DHCP/DNS receive buffer (DNS_BUF_SIZE = 512 bytes)
+; Runtime-only buffer in $5000-$54FF: that area is saved by Space at
+; startup (StashRAM $5000-$7FFF) and restored on exit, so it must not be
+; part of the loaded program image.
+dns_buf	= $5000
 
 dns_state:
 	.byte 	DNS_STATE_IDLE

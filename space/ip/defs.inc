@@ -1,3 +1,18 @@
+; ---- build options (override with -D NAME=value in ASFLAGS) ----
+; DEBUG2     on-screen network diagnostics and a pause between files
+; MIRROR     download from www.bluewaysw.de instead of web.archive.org
+; ETH_FILTER hardware MAC filter on, multicast frames off (only own unicast
+;            and broadcast frames reach the 4 rx buffers)
+.ifndef DEBUG2
+DEBUG2 = 0
+.endif
+.ifndef MIRROR
+MIRROR = DEBUG2
+.endif
+.ifndef ETH_FILTER
+ETH_FILTER = 1
+.endif
+
 MAX_SOCKET = 8
 
 SOCKET_SIZE = 43

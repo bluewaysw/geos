@@ -61,7 +61,7 @@
 
 .segment "STARTUP"
 
-_PROMISCUOUS	=	1
+_PROMISCUOUS	=	1-ETH_FILTER	; ETH_FILTER=1: use the hardware MAC filter
 NOCRCCHECK	=	0
 
 eth_log_mode:
@@ -330,7 +330,14 @@ eth_task:	; (uint8_t p)
 @checkLocalMac:
 	lda	mac_local, x
 	cmp	eth_header_destination,x
+.if DEBUG2
+	beq	@macOk
+	IncW	eth_rx_ignored		; frame not for us (software filter)
+	jmp	@drop2
+@macOk:
+.else
 	bne	@drop2			; not for us
+.endif
 	inx
 	cpx	#6
 	bne	@checkLocalMac
@@ -669,6 +676,12 @@ eth_arp_send:
 ;**
 ;* Ethernet controller initialization and configuration.
 ;*
+.if DEBUG2
+.export eth_rx_ignored
+eth_rx_ignored:
+	.word	0
+.endif
+
 eth_init:
 	jsr	eth_drop
 
@@ -740,6 +753,16 @@ eth_init:
 	bne	@wait4
 
 	;// XXX Enable ethernet IRQs?
+.if ETH_FILTER
+	; after the controller reset: hardware MAC filter on ($D6E5.0), multicast
+	; off ($D6E5.5), broadcast on ($D6E5.4) for ARP/DHCP. Otherwise
+	; IPv6/mDNS/SSDP/IPTV multicast fills the 4 rx buffers and our TCP
+	; segments get dropped.
+	lda	$D6E5
+	and	#$DF
+	ora	#$11
+	sta	$D6E5
+.endif
 	rts
 
 ;**

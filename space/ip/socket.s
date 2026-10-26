@@ -81,10 +81,11 @@
 ;**
 ;* Socket list.
 ;*/
-_sockets:
-	.repeat MAX_SOCKET*SOCKET_SIZE
-	.byte	0
-	.endrep
+; socket table (MAX_SOCKET*SOCKET_SIZE = 344 bytes), cleared by weeip_init
+; Runtime-only buffer in $5000-$54FF: that area is saved by Space at
+; startup (StashRAM $5000-$7FFF) and restored on exit, so it must not be
+; part of the loaded program image.
+_sockets	= $5300
 ;**
 ;* Socket currently in use.
 ;*/
