@@ -103,10 +103,11 @@ arptickName:
 ;**
 ;* List of known MAC addresses.
 ;*
-arp_cache:
-	.repeat	MAX_CACHE*ARP_CACHE_ENTRY_SIZE
-		.byte	0
-	.endrep
+; ARP cache (MAX_CACHE*ARP_CACHE_ENTRY_SIZE = 96 bytes), set up by arp_init
+; Runtime-only buffer in $5000-$54FF: that area is saved by Space at
+; startup (StashRAM $5000-$7FFF) and restored on exit, so it must not be
+; part of the loaded program image.
+arp_cache	= $5460
 
 ;#define ARP(X) _header.arp.X
 
