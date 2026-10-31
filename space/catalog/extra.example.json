@@ -1,0 +1,12 @@
+[
+ {
+  "name": "GEOPUBLISH",
+  "cls": "geoPublish  V1.0",
+  "kb": 97,
+  "date": "1986-10-01",
+  "author": "Alice and Mike",
+  "desc": "geoPublish (english), extracted from a .d64 image",
+  "type": "Application",
+  "d64path": "/web/29991231235959id_/http://example.org/geos/geopublish.d64"
+ }
+]

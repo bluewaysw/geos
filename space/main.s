@@ -98,16 +98,43 @@ BACKOFF_MAX_S		=	300	; never wait longer than 5 min per attempt
 MAX_RATELIMIT_WAITS	=	6	; rate-limit waits per file before they count as retries
 
 __STARTUP_RUN__:
-
 	LoadB	dispBufferOn, ST_WR_FORE
 	LoadW	RecoverVector, MyRecover
-
+	MoveB	curDrive, appDrive	; drive GEOSPACE was started from
 	lda	firstBoot
 	cmp	#$FF
-	bne	@bootTime
-	jmp	NormalStart
+	bne	@installer
+	lda	#1			; normal start: missing system files?
+	jsr	LoadOverlay
+	txa
+	bne	@ovlErr
+	jsr	OvlCheck
+	lda	#2			; then the download catalog
+	jsr	LoadOverlay
+	txa
+	bne	@ovlErr
+	jmp	CatStart
+@installer:
+	lda	#1			; boot time: first-boot installer
+	jsr	LoadOverlay
+	txa
+	bne	@ovlErr
+	jmp	OvlStart
+@ovlErr:
+	jmp	EnterDeskTop
 
-@bootTime:
+.segment "OVERLAY1"		; ---- overlay 1: first-boot installer ----
+; normal start: missing files? ask, download (as at boot time), return
+OvlCheck:
+	LoadW	progressVec, printProgress
+	MoveW	intTopVector, savedIntTop
+	jsr	CheckMissing
+	MoveW	savedIntTop, intTopVector
+	rts
+
+; boot time
+OvlStart:
+	LoadW	progressVec, printProgress
 	LoadW	r0, $5000
 	LoadW	r1, 0
 	LoadW	r2, $3000
@@ -116,7 +143,7 @@ __STARTUP_RUN__:
 
 .if 1
 
-	MoveW	$8400+1, savedFirstBlock
+	; savedFirstBlock (first block of VLIR record 0) is set by LoadOverlay
 	CmpBI	initState, INIT_STATE_FRESH
 	beq	@fresh
 	sei
@@ -141,6 +168,30 @@ __STARTUP_RUN__:
 	jsr	SaveState
 
 @initDownload:
+	CmpBI	initState, INIT_STATE_DOWNLOAD	; boot download process completed
+	beq	@noMissingFiles			; once: no question at boot time
+	jsr	CheckMissing
+@noMissingFiles:
+	LoadB	initState, INIT_STATE_DOWNLOAD
+	jsr	SaveState
+
+	sec
+	LoadW	intTopVector, InterruptMain
+	cli
+.endif
+
+@finishDialog:
+@10:
+	LoadW	r0, $5000
+	LoadW	r1, 0
+	LoadW	r2, $3000
+	LoadB	r3L, 0
+	jsr	FetchRAM
+
+	jmp	EnterDeskTop
+
+; missing files: ask, download, show the result (boot time and normal start)
+CheckMissing:
 	jsr	CountMissingFiles		; -> r0
 	LoadW	r1, (bootstrapTableEnd - bootstrapTable) / 5
 	MoveW	r0, total_count
@@ -200,38 +251,19 @@ __STARTUP_RUN__:
 
 	LoadW	r0, ResultDialog
 	jsr	DoDlgBox
-
 @noDownload:
 @noMissingFiles:
-	LoadB	initState, INIT_STATE_DOWNLOAD
-	jsr	SaveState
+	rts
 
-	sec
-	LoadW	intTopVector, InterruptMain
-	cli
-.endif
-
-@finishDialog:
-@10:
-	LoadW	r0, $5000
-	LoadW	r1, 0
-	LoadW	r2, $3000
-	LoadB	r3L, 0
-	jsr	FetchRAM
-
-	jmp	EnterDeskTop
-
+.segment "OVERLAY1"		; ---- overlay 1: first-boot installer ----
 joystickFN:
 	.byte	"JOYSTICK", NULL
 mouseFN:
 	.byte	"MEGA 1351", NULL
 
-NormalStart:
-	LoadW	r0, Welcome2Dialog
-	jsr	DoDlgBox
 
-	jmp	EnterDeskTop
-
+savedIntTop:
+	.word	0
 
 SaveState:
 	MoveW	savedFirstBlock, r1
@@ -247,6 +279,86 @@ SaveState:
 	bne	@loop
 	jsr	PutBlock	
 	rts
+.segment "STARTUP"		; ---- resident ----
+;**
+;* Overlay handling (GEOSPACE is a VLIR application)
+;*   record 0: resident (network stack, HTTP, CVT conversion)
+;*   record 1: first-boot installer
+;* Overlays run at __OVERLAYADDR__ ($5000 - overlay size), below the
+;* runtime buffers at $5000.
+;* Note: in GEOS65 ReadFile/WriteFile (also ReadRecord, GetFile, WriteRecord)
+;* load kernal code into $5000-$53BC. ReadFile fails (BFR_OVERFLOW) if the
+;* target area r7..r7+r2 reaches into its code, or if a block would start
+;* at $4F00-$51FF: overlays at $3F00 may have at most 17 blocks. The network buffers there are only
+;* valid while no such call is made, i.e. during a download (which uses
+;* GetBlock/PutBlock only).
+;*
+.import __VLIR1_START__, __OVERLAYSIZE__
+; in: A = record number   out: X = GEOS error (0 = ok)
+LoadOverlay:
+	tax				; LoadW destroys A, keep the record in X
+	LoadW	r7, __VLIR1_START__
+	; r7+r2 must not reach into $5000-$51C1 (GEOS65 ReadFile code)
+	LoadW	r2, __OVERLAYSIZE__
+	txa
+; in: A = record, r7 = destination, r2 = max. size   out: X = GEOS error
+LoadRecord:
+	pha
+	PushW	r7
+	PushW	r2
+	LoadW	r0, appName
+	jsr	OpenRecordFile
+	txa
+	bne	@err
+	MoveW	fileHeader+2, savedFirstBlock	; first block of record 0 (SaveState)
+	PopW	r2
+	PopW	r7
+	pla
+	jsr	PointRecord
+	jsr	ReadRecord
+	txa
+	pha
+	jsr	CloseRecordFile
+	pla
+	tax
+	rts
+@err:
+	PopW	r2
+	PopW	r7
+	pla
+	rts
+
+; progress display of the active overlay (set by the overlay)
+callProgress:
+	jmp	(progressVec)
+callBody:
+	jmp	(bodyVec)
+bodyVec:			; <> 0: body data goes here instead of the temp file
+	.word	0
+progressVec:
+	.word	noProgress
+noProgress:
+	rts
+appName:
+	.byte	"GEOSPACE", NULL
+appDrive:
+	.byte	8
+last_status:		; status code of the last HTTP answer ("---": none)
+	.byte	"---", NULL
+redirPos:		; start of the path in the location header line
+	.byte	0
+lastConvertErr:		; result of the last ConvertCVT (0 = ok)
+	.byte	$FF
+; request path and suffix (Host: header), default: the installer's server
+reqLocPtr:
+	.word	fileRequestLocation
+reqLocLen:
+	.word	fileRequestLocationEnd - fileRequestLocation
+reqSufPtr:
+	.word	fileRequestSuffix
+reqSufLen:
+	.word	fileRequestSuffixEnd - fileRequestSuffix
+
 MyInt:
 	lda	requestTimeout
 	ora	requestTimeout+1
@@ -273,6 +385,7 @@ MyInt:
 MyRecover:
 	jmp	Rectangle
 
+.segment "OVERLAY1"		; ---- overlay 1: first-boot installer ----
 DownloadingString:
 	.byte 	BOLDON, "Downloading file ", NULL
 OfString:
@@ -621,7 +734,7 @@ downloadGetRequest:
 @doIt:
 	LoadW	kbytes, 0
 
-	jsr	printProgress
+	jsr	callProgress
 
 	; send http GET request
 	ldy	#0
@@ -661,7 +774,9 @@ startDownload:
 
 	LoadW	appMain, runDownload
 	LoadW	intTopVector, MyInt
+	jmp	prepare_network		; was a fall-through before the overlay split
 
+.segment "STARTUP"		; ---- resident ----
 prepare_network:
 
 	;// Setup WeeIP
@@ -779,6 +894,7 @@ runRequest:
 	; file downloaded successful?
 	LoadW	r6, tempName2
 	jsr	ConvertCVT
+	stx	lastConvertErr		; 0 = file converted
 	cpx	#0
 	beq	@done
 	; cleanup remove temp file
@@ -989,14 +1105,16 @@ doSendRequest:
 	LoadW	r0, fileRequestBuf
 	AddW	r7, r0
 	MoveW	r0, @locationTo
-	; get location
+	MoveW	reqLocPtr, @locationFrom
+	MoveW	reqLocLen, @locationSize
 	jsr	i_MoveData
+@locationFrom:
 	.word	fileRequestLocation
 @locationTo:
 	.word	0
+@locationSize:
 	.word	fileRequestLocationEnd - fileRequestLocation
-	LoadW	r0, fileRequestLocationEnd - fileRequestLocation 
-	AddW	r0, r7
+	AddW	reqLocLen, r7
 
 	;PopW	r3
 	;PopW	r2
@@ -1018,14 +1136,16 @@ doSendRequest:
 	LoadW	r0, fileRequestBuf
 	AddW	r7, r0
 	MoveW	r0, @suffixTo
-	; get suffix
+	MoveW	reqSufPtr, @suffixFrom
+	MoveW	reqSufLen, @suffixSize
 	jsr	i_MoveData
+@suffixFrom:
 	.word	fileRequestSuffix
 @suffixTo:
 	.word	0
+@suffixSize:
 	.word	fileRequestSuffixEnd - fileRequestSuffix
-	LoadW	r0, fileRequestSuffixEnd - fileRequestSuffix
-	AddW	r0, r7
+	AddW	reqSufLen, r7
 
 	; connected, send request
 	LoadW	r0, fileRequestBuf
@@ -1072,14 +1192,6 @@ doSendRequest:
 @_33:
 
 doSendRequestRedirect:
-	lda	#$71
-
-	LoadW	r5, http_line_buf + (httpLocationHeaderEnd-httpLocationHeader)
-	LoadW	r6, httpDomain
-	ldx	#r5
-	ldy	#r6
-	lda	#<(httpDomainEnd - httpDomain)
-	jsr	CmpFString
 
 	;MoveW	http_socket, r1
 	;jsr	socket_reset
@@ -1170,7 +1282,7 @@ doSendRequestRedirect:
 	LoadW	r0, fileRequestBuf
 	AddW	r7, r0
 	ldy	#0
-	ldx	#<((httpLocationHeaderEnd-httpLocationHeader)+(httpDomainEnd - httpDomain)-1)
+	ldx	redirPos
 @27:
 	lda	http_line_buf, x
 	sta	(r0), y
@@ -1183,15 +1295,16 @@ doSendRequestRedirect:
 	LoadW	r0, fileRequestBuf
 	AddW	r7, r0
 	MoveW	r0, @suffixTo2
-	; get suffix
-
+	MoveW	reqSufPtr, @suffixFrom2
+	MoveW	reqSufLen, @suffixSize2
 	jsr	i_MoveData
+@suffixFrom2:
 	.word	fileRequestSuffix
 @suffixTo2:
 	.word	0
+@suffixSize2:
 	.word	fileRequestSuffixEnd - fileRequestSuffix
-	LoadW	r0, fileRequestSuffixEnd - fileRequestSuffix
-	AddW	r0, r7
+	AddW	reqSufLen, r7
 
 	; connected, send request
 	LoadW	r0, fileRequestBuf
@@ -1557,6 +1670,11 @@ HTTP_GET_callback:
 	beq	@12d
 
 @processBody:
+	lda	bodyVec+1		; body receiver of an overlay (D64 extraction)?
+	beq	@fileBody
+	jsr	callBody		; r0 = bytes available, r1 = used, r2 = read pointer
+	jmp	@12c
+@fileBody:
 	ldx	download_pos
 
 	; add bytes to buffer @diskBlkBuf
@@ -1574,7 +1692,7 @@ HTTP_GET_callback:
 	LoadW	download_packets2, 0
 	txa
 	pha
-	jsr	printProgress
+	jsr	callProgress
 	pla
 	tax
 @noKB:
@@ -1600,7 +1718,7 @@ HTTP_GET_callback:
 	bne	@bodyErr
 	IncW	download_count
 
-	jsr	printProgress
+	jsr	callProgress
 
 	; write block
 	MoveW	r3, diskBlkBuf
@@ -1686,13 +1804,11 @@ HTTP_GET_callback:
 ProcessLine:
 	CmpBI	http_state, HTTP_STATE_REQUEST
 	bne	@100
-.if DEBUG2
-	ldx	#2			; remember the status code for the display
+	ldx	#2			; remember the status code (shown on errors)
 @dc:	lda	http_line_buf+9, x
 	sta	last_status, x
 	dex
 	bpl	@dc
-.endif
 
 	; check for result code
 	LoadW	r5, http_line_buf
@@ -1738,14 +1854,24 @@ ProcessLine:
 @100r:
 	lda	http_redirect
 	beq	@end
-
-	LoadW	r5, http_line_buf
 	LoadW	r6, httpLocationHeader
-	ldx	#r5
-	ldy	#r6
-	lda	#<(httpLocationHeaderEnd-httpLocationHeader)
-	jsr	CmpFString
-	bne	@end
+	lda	#httpLocationHeaderEnd-httpLocationHeader
+	jsr	HdrMatch
+	bcs	@end
+	; path: relative "/..." or after the 3rd '/' of "http(s)://host/..."
+	lda	http_line_buf, x
+	cmp	#'/'
+	beq	@path
+	ldy	#3
+@sl:	lda	http_line_buf, x
+	beq	@path
+	cmp	#'/'
+	bne	@sn
+	dey
+	beq	@path
+@sn:	inx
+	bne	@sl
+@path:	stx	redirPos
 
 	;brk
 	;lda	#$85
@@ -1759,6 +1885,7 @@ ProcessLine:
 	rts
 
 .if DEBUG2
+.segment "OVERLAY1"		; DEBUG2 status line: installer only
 .import eth_rx_ignored
 ;**
 ;* DEBUG2: status line under the progress display, refreshed twice a second.
@@ -1853,7 +1980,7 @@ diagHttp:	.byte	"  HTTP:", NULL
 diagTcp:	.byte	"  TCP:", NULL
 diagRx:	.byte	"  RX-:", NULL
 diagClear:	.byte	"          ", NULL
-last_status:	.byte	"---", NULL
+.segment "STARTUP"		; ---- resident ----
 diag_cnt:	.byte	0
 pace_done:	.byte	0
 .endif
@@ -1888,24 +2015,40 @@ CheckRateLimitStatus:
 @no:	rts
 
 ;**
+;* Header line starts with r6 (lower case, incl. ':', length A)?
+;* Case-insensitive. out: carry clear on match, X = first non-space after it
+HdrMatch:
+	sta	r5L
+	ldy	#0
+@c:	lda	http_line_buf, y
+	ora	#$20
+	cmp	(r6), y
+	bne	@no
+	iny
+	cpy	r5L
+	bne	@c
+@sp:	lda	http_line_buf, y
+	cmp	#' '
+	bne	@ok
+	iny
+	bne	@sp
+@ok:	tya
+	tax
+	clc
+	rts
+@no:	sec
+	rts
+
+;**
 ;* "Retry-After: <seconds>" (header name case-insensitive) -> retryAfter.
 ;* The HTTP-date form is ignored (the default backoff is used then).
 ;*
 CheckRetryAfter:
-	ldx	#0
-@c:	lda	http_line_buf, x
-	ora	#$20
-	cmp	retryAfterHdr, x
-	bne	@no
-	inx
-	cpx	#retryAfterHdrEnd-retryAfterHdr
-	bne	@c
+	LoadW	r6, retryAfterHdr
+	lda	#retryAfterHdrEnd-retryAfterHdr
+	jsr	HdrMatch
+	bcs	@no
 	LoadW	retryAfter, 0
-@sp:	lda	http_line_buf, x
-	cmp	#' '
-	bne	@d
-	inx
-	bne	@sp
 @d:	lda	http_line_buf, x
 	sec
 	sbc	#'0'
@@ -2000,6 +2143,7 @@ CloseFile:
 
 	rts
 
+.segment "OVERLAY1"		; ---- overlay 1: first-boot installer ----
 CountMissingFiles:
 	LoadW	r0, 0
 	LoadW	r8, bootstrapTable
@@ -2139,6 +2283,7 @@ MakeFirstInput:
 
 	rts
 
+.segment "STARTUP"		; ---- resident ----
 tempName2:
 	.byte	"Temp Download", NULL
 
@@ -2249,6 +2394,10 @@ fileRequestPrefix:
 fileRequestPrefixEnd:
 	.byte	NULL
 
+
+.if !DEBUG2			; (DEBUG2: overlay 1 is full, keep it resident)
+.segment "OVERLAY1"		; installer-only request data (the catalog sets its own)
+.endif
 fileRequestLocation:
 .if MIRROR
 	.byte	"/archive_org/web/20111025045336if_/"	; own mirror
@@ -2270,6 +2419,16 @@ fileRequestSuffix:
 fileRequestSuffixEnd:
 	.byte 	NULL
 
+.segment "OVERLAY1"		; only the installer needs it
+hostName:
+	;.byte	"www.bluewaysw.de", NULL
+	;.byte	"192.168.17.116", NULL
+.if MIRROR
+	.byte	"www.bluewaysw.de", NULL	; own mirror
+.else
+	.byte	"web.archive.org", NULL
+.endif
+.segment "STARTUP"		; ---- resident ----
 ethName:
 	.byte	"eth", NULL
 
@@ -2281,31 +2440,16 @@ httpRedirectResult:
 	.byte	"HTTP/1.1 302 "
 httpRedirectResultEnd:
 
-httpLocationHeader:
-	.byte	"location: "
+httpLocationHeader:		; compared case-insensitively
+	.byte	"location:"
 httpLocationHeaderEnd:
 
-httpDomain:
-.if MIRROR
-	.byte	"http://www.bluewaysw.de/"
-.else
-	.byte	"http://web.archive.org/"
-.endif
-httpDomainEnd:
-	.byte	NULL
 
-hostName:
-	;.byte	"www.bluewaysw.de", NULL
-	;.byte	"192.168.17.116", NULL
-.if MIRROR
-	.byte	"www.bluewaysw.de", NULL	; own mirror
-.else
-	.byte	"web.archive.org", NULL
-.endif
 	;.byte	"breadbox.com", NULL
 hostIP:
 	.byte	0, 0, 0, 0
 
+.segment "OVERLAY1"		; ---- overlay 1: first-boot installer ----
 missingTextOf:
 	.byte	" of ", NULL
 .if DEBUG
@@ -2712,37 +2856,11 @@ WelcomeDialog:
 
 	.byte	NULL
 
-systemUpToDate:
-	.byte	BOLDON, "System disk is up to date!", NULL
 
-Welcome2Dialog:
-	.byte	$81	; standard dialog, light bachground
-
-	.byte	OK
-	.byte	17, 74
-
-	.byte	DBTXTSTR, 10,12
-	.word	welcome2Text
-
-	.byte	DBTXTSTR, 10,23
-	.word	geosVersionText
-
-	.byte	DBTXTSTR, 10,33
-	.word	versionDetails
-
-	.byte	DBTXTSTR, 10,43
-	.word	warranties2
-
-	.byte	DBTXTSTR, 10,62
-	.word	systemUpToDate
-
-	.byte	NULL
 
 
 welcomeText:
 	.byte	BOLDON, OUTLINEON, "Welcome!", PLAINTEXT, NULL
-welcome2Text:
-	.byte	BOLDON, OUTLINEON, "Hello Again!", PLAINTEXT, NULL
 geosVersionText:
 	.byte	BOLDON, "GEOS 6.0",PLAINTEXT," (r4+ BETA) for the ", BOLDON,"MEGA65", PLAINTEXT, NULL
 versionDetails:
@@ -3555,5 +3673,19 @@ bootstrapTableEnd:
 ;*
 ;* The program is loaded before Space can save $5000+, so the image itself
 ;* must stay below $5000:
+.export __HIMEM__ : absolute = $5000	; overlays end below the runtime buffers
+; GEOS65 ReadFile handles blocks whose destination starts in $4F00-$51FF
+; specially (its own code is there) and fails; from $3F00 that allows 17
+; blocks (4318 bytes) per overlay.
+.import __VLIR1_LAST__, __VLIR2_START__, __VLIR2_LAST__
+.assert __VLIR1_LAST__ - __VLIR1_START__ <= 17*254, error, "overlay 1 too large for GEOS65 ReadFile (max 17 blocks)"
+.assert __VLIR2_LAST__ - __VLIR2_START__ <= 17*254, error, "overlay 2 too large for GEOS65 ReadFile (max 17 blocks)"
+; resident interface used by the catalog overlay (record 2)
+.import CatStart
+.export LoadRecord, appDrive, lastConvertErr, reqLocPtr, reqLocLen, reqSufPtr, reqSufLen
+.export prepare_network, HTTP_GET, runRequest, requestCancel, MyInt, progressVec
+.export downloadState, initCounter, ip_address, requestComplete, downloadTimeout
+.export backoffTimer, rl_pending, ratelimit_count, kbytes, current_name, http_state
+.export MyRecover, last_status, bodyVec, callProgress, tempName2
 .import __VLIR0_LAST__
 .assert __VLIR0_LAST__ <= $5000, error, "Space program image must end below $5000"
