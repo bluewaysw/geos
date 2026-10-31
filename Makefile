@@ -707,10 +707,6 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo geoswrite NX1000R.CVT | $(C1541) $@ >/dev/null; \
 		echo geoswrite SSG10.CVT | $(C1541) $@ >/dev/null; \
 		echo geoswrite TOSHP321.CVT | $(C1541) $@ >/dev/null; \
-		echo geoswrite gchess.cvt | $(C1541) $@ >/dev/null; \
-		echo geoswrite gcfont40.cvt | $(C1541) $@ >/dev/null; \
-		echo geoswrite gcfont80.cvt | $(C1541) $@ >/dev/null; \
-		echo geoswrite GeoCalc_128_GEOS65.cvt | $(C1541) $@ >/dev/null; \
 		echo geosfolder "Printer\\ Drivers" "1526"| $(C1541) $@ >/dev/null; \
 		echo geosfolder "Printer\\ Drivers" "ASCII\\ Only"| $(C1541) $@ >/dev/null; \
 		echo geosfolder "Printer\\ Drivers" "BlueChip\\ M120"| $(C1541) $@ >/dev/null; \
