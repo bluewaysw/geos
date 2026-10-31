@@ -1,0 +1,56 @@
+[
+ {
+  "name": "GEOPUBLISH",
+  "cls": "geoPublish  V1.0",
+  "kb": 97,
+  "date": "1988-10-04",
+  "author": "Alice and Mike",
+  "desc": "geoPublish is the answer to all your desktop publishing needs!",
+  "type": "Application",
+  "d64path": "/web/29991231235959id_/https://lyonlabs.lillianskinner.ca/commodore/onrequest/geos/geopublish-a.d64"
+ },
+ {
+  "name": "GEOFILE 128",
+  "cls": "GEOFILE V1.4",
+  "kb": 47,
+  "date": "1988-10-11",
+  "author": "John Wedgwood",
+  "desc": "This is geoFile-128, the GEOS personal file management system for the Commodore 128.",
+  "type": "Application",
+  "struct": "VLIR",
+  "path": "/docs/finke/geos-gateway/geos-gateway_geofile128/GEOFILE%20128.cvt"
+ },
+ {
+  "name": "GEOCALC 128",
+  "cls": "geoCalc     V1.0",
+  "kb": 46,
+  "date": "1988-08-10",
+  "author": "Dan Kaufman",
+  "desc": "geoCalc 128 is a powerful and easy to use spreadsheet.",
+  "type": "Application",
+  "struct": "VLIR",
+  "d64path": "/web/29991231235959id_/https://vtda.org/bits/floppy_images/CBM/C128/GEOS/GEOCALC128.D64"
+ },
+ {
+  "name": "GEOCHART",
+  "cls": "GEOCHART    V1.0",
+  "kb": 59,
+  "date": "1988-09-23",
+  "author": "Anna Lijphart",
+  "desc": "Use geoChart to create interesting presentation graphics.",
+  "type": "Application",
+  "struct": "VLIR",
+  "d64path": "/web/29991231235959id_/https://lyonlabs.lillianskinner.ca/commodore/onrequest/geos/geocalc.d64"
+ },
+ {
+  "name": "calculator",
+  "cls": "Calculator  V2.0",
+  "kb": 4,
+  "date": "1987-07-14",
+  "author": "David Durran",
+  "desc": "Use the Calculator for quick problem solving.",
+  "type": "Desk Acc",
+  "struct": "SEQ",
+  "urlpath": "/web/20111025045336if_/http://cbmfiles.com:80/geos/geosfiles/CALC128.CVT"
+ }
+]

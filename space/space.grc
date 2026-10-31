@@ -1,9 +1,16 @@
 HEADER AUTO_EXEC "GEOSPACE" "GeoSpace" "V1.0" {
     author    "Falk Rehwagen"
     dostype   USR
-    structure SEQ
+    structure VLIR
     info      "Service hub for the user and developer community of GEOS."
     date      21 11 21 07 01
     mode      80only
     icon      "build/mega65/space/space.bf"
+}
+
+MEMORY {
+    stacksize   0
+    overlaysize 0x1100
+    overlaynums 0 1 2 3 4 5
+    backbuffer  yes
 }

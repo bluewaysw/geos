@@ -606,6 +606,8 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo write $< $(GEOS_OUT) | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/config.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/geospace.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite space/catalog/catalog_extra.cvt | $(C1541) $@ >/dev/null; \
+		echo geoswrite space/catalog/catalog_finke.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/mount.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/clock.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite $(BUILD_DIR)/joydrv.cvt | $(C1541) $@ >/dev/null; \
@@ -628,6 +630,8 @@ $(BUILD_DIR)/$(D81_RESULT): $(BUILD_DIR)/kernal_compressed.prg $(BUILD_DIR)/topd
 		echo geosfolder "Input\\ Drivers" "COMM\\ 1351"| $(C1541) $@ >/dev/null; \
 		echo geosfolder "Input\\ Drivers" "JOYSTICK"| $(C1541) $@ >/dev/null; \
 		echo geosfolder "Input\\ Drivers" "MEGA\\ 1351"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Other\\ Data" "Default\\ Add-ons"| $(C1541) $@ >/dev/null; \
+		echo geosfolder "Other\\ Data" "Finke\\ Collection"| $(C1541) $@ >/dev/null; \
 		echo geoswrite california.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite cory.cvt | $(C1541) $@ >/dev/null; \
 		echo geoswrite dwinelle.cvt | $(C1541) $@ >/dev/null; \
@@ -920,8 +924,8 @@ $(BUILD_DIR)/mount.cvt: $(BUILD_DIR)/mount/mount.o $(BUILD_DIR)/mount/main.o
 	$(LD) --allow-multiple-definition -t geos-cbm -o $@ $(BUILD_DIR)/mount/mount.o -m $(BUILD_DIR)/mount.map $(BUILD_DIR)/mount/main.o
 
 $(BUILD_DIR)/geospace.cvt: $(BUILD_DIR)/space/space.o $(BUILD_DIR)/space/main.o \
-	$(BUILD_DIR)/space/ip/eth.o $(BUILD_DIR)/space/ip/arp.o $(BUILD_DIR)/space/ip/nwk.o $(BUILD_DIR)/space/ip/socket.o $(BUILD_DIR)/space/ip/socket.o $(BUILD_DIR)/space/ip/checksum.o $(BUILD_DIR)/space/ip/dhcp.o $(BUILD_DIR)/space/ip/dns.o $(BUILD_DIR)/space/ip/task.o
-	$(LD) --allow-multiple-definition -t geos-cbm -o $@ $(BUILD_DIR)/space/space.o -m $(BUILD_DIR)/space.map $(BUILD_DIR)/space/main.o $(BUILD_DIR)/space/ip/eth.o $(BUILD_DIR)/space/ip/arp.o $(BUILD_DIR)/space/ip/nwk.o $(BUILD_DIR)/space/ip/socket.o $(BUILD_DIR)/space/ip/checksum.o $(BUILD_DIR)/space/ip/dhcp.o $(BUILD_DIR)/space/ip/dns.o $(BUILD_DIR)/space/ip/task.o
+	$(BUILD_DIR)/space/ip/eth.o $(BUILD_DIR)/space/ip/arp.o $(BUILD_DIR)/space/ip/nwk.o $(BUILD_DIR)/space/ip/socket.o $(BUILD_DIR)/space/ip/socket.o $(BUILD_DIR)/space/ip/checksum.o $(BUILD_DIR)/space/ip/dhcp.o $(BUILD_DIR)/space/ip/dns.o $(BUILD_DIR)/space/ip/task.o $(BUILD_DIR)/space/catalog/catalog_ui.o $(BUILD_DIR)/space/catalog/patch.o $(BUILD_DIR)/space/catalog/d64.o
+	$(LD) --allow-multiple-definition -C space/space.cfg -o $@ $(BUILD_DIR)/space/space.o -m $(BUILD_DIR)/space.map $(BUILD_DIR)/space/main.o $(BUILD_DIR)/space/ip/eth.o $(BUILD_DIR)/space/ip/arp.o $(BUILD_DIR)/space/ip/nwk.o $(BUILD_DIR)/space/ip/socket.o $(BUILD_DIR)/space/ip/checksum.o $(BUILD_DIR)/space/ip/dhcp.o $(BUILD_DIR)/space/ip/dns.o $(BUILD_DIR)/space/ip/task.o $(BUILD_DIR)/space/catalog/catalog_ui.o $(BUILD_DIR)/space/catalog/patch.o $(BUILD_DIR)/space/catalog/d64.o
 
 $(BUILD_DIR)/clock.cvt: $(BUILD_DIR)/clock/clock.o $(BUILD_DIR)/clock/main.o
 	$(LD) --allow-multiple-definition -t geos-cbm -o $@ $(BUILD_DIR)/clock/clock.o -m $(BUILD_DIR)/clock.map $(BUILD_DIR)/clock/main.o
