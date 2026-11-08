@@ -175,6 +175,8 @@
 .import _NormalizeY
 .import _map_FollowChain
 .import _map_FindFTypes
+.import _map_ReadFile
+.import _map_WriteFile
 .import _map_FindFile
 .import _map_SetDevice
 .import _map_GetFHdrInfo
@@ -680,11 +682,19 @@ BldGDirEntry:
 GetFreeDirBlk:
 	jmp (_GetFreeDirBlk)
 WriteFile:
+.ifdef mega65
+	jmp _map_WriteFile
+.else
 	jmp _WriteFile
+.endif
 BlkAlloc:
 	jmp (_BlkAlloc)
 ReadFile:
+.ifdef mega65
+	jmp _map_ReadFile
+.else
 	jmp _ReadFile
+.endif
 SmallPutChar:
 	jmp _SmallPutChar
 FollowChain:

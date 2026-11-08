@@ -286,7 +286,13 @@ DBGFilesHelp1:
 .endif
 
 DBGFilesArrowsIcons:
+.ifdef mega65
+	; the picture lives in the underlay; BitmapUp reads pointers with
+	; this flag (any pointer >= $C000) from the underlay bank
+	.word DBGFArrowPic | $4000
+.else
 	.word DBGFArrowPic
+.endif
 DBGFArrowX:
 	.word 0
 .ifdef wheels_dlgbox_features

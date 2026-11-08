@@ -80,12 +80,36 @@ _FollowChain:
 	LoadW r4, diskBlkBuf
 .endif
 	ldy #0
+.ifdef mega65
+	; The T/S table at r3 belongs to the application and may live at
+	; $A000-$BFFF, which is hidden by the kernel underlay while this code
+	; runs. Write it through the flat 32-bit pointer r3/r4 (bank 0);
+	; r4 is the ReadBuff buffer pointer, so save it around the writes.
+@1:	PushW r4
+	LoadW r4, 0
+	phy
+	plz
+	lda r1L
+	EOM
+	sta (r3),z
+	iny
+	phy
+	plz
+	lda r1H
+	EOM
+	sta (r3),z
+	iny
+	ldz #0
+	PopW r4
+	cpy #0			; PopW changed the flags, retest y
+.else
 @1:	lda r1L
 	sta (r3),y
 	iny
 	lda r1H
 	sta (r3),y
 	iny
+.endif
 	bne @2
 	inc r3H
 @2:	lda r1L
@@ -242,7 +266,30 @@ FFTypesStart:
 	sta r0L
 	bcc @1
 	inc r0H
+.ifdef mega65
+	; The output buffer at r6 belongs to the application and may live
+	; at $A000-$BFFF, which is hidden by the kernel underlay while this
+	; code runs. Clear it through the flat 32-bit pointer r1/r2 (bank 0)
+	; instead of calling ClearRam, which would clear the underlay.
+@1:	PushW r2
+	LoadW r2, 0
+	ldz #0
+@1a:	lda r0L
+	ora r0H
+	beq @1c
+	lda #0
+	EOM
+	sta (r1),z
+	IncW r1
+	lda r0L
+	bne @1b
+	dec r0H
+@1b:	dec r0L
+	bra @1a
+@1c:	PopW r2
+.else
 @1:	jsr ClearRam
+.endif
 	SubVW 3, r6
 	jsr Get1stDirEntry
 	bnex @7
@@ -270,6 +317,30 @@ FFTypesStart:
 	bnex @7
 	tya
 	bne @6
+.ifdef mega65
+	; write the name through the flat 32-bit pointer r6/r7 (bank 0);
+	; r7 holds the type and count, so it is saved around the copy
+	PushW r7
+	LoadW r7, 0
+	ldy #OFF_FNAME
+@3:	lda (r5),y
+	cmp #$a0
+	beq @4
+	phy
+	plz
+	EOM
+	sta (r6),z
+	iny
+	cpy #OFF_FNAME + $10
+	bne @3
+@4:	phy
+	plz
+	lda #NULL
+	EOM
+	sta (r6),z
+	ldz #0
+	PopW r7
+.else
 	ldy #OFF_FNAME
 @3:	lda (r5),y
 	cmp #$a0
@@ -280,6 +351,7 @@ FFTypesStart:
 	bne @3
 @4:	lda #NULL
 	sta (r6),y
+.endif
 	clc
 	lda #$11
 	adc r6L

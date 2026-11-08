@@ -302,6 +302,32 @@ _RenameFile:
 	PopW r0
 	bnex @4
 	AddVW OFF_FNAME, r5
+.ifdef mega65
+	; The new name at r0 belongs to the application and may live at
+	; $A000-$BFFF, which is hidden by the kernel underlay while this code
+	; runs. Read it through the flat 32-bit pointer r0/r1 (bank 0);
+	; r1 holds the directory block T/S for WriteBuff, so save it.
+	PushW r1
+	LoadW r1, 0
+	ldy #0
+@1:	phy
+	plz
+	EOM
+	lda (r0),z
+	beq @2
+	sta (r5),y
+	iny
+	cpy #16
+	bcc @1
+	bcs @3
+@2:	lda #$a0
+	sta (r5),y
+	iny
+	cpy #16
+	bcc @2
+@3:	ldz #0
+	PopW r1
+.else
 	ldy #0
 @1:	lda (r0),y
 	beq @2
@@ -316,6 +342,7 @@ _RenameFile:
 	cpy #16
 	bcc @2
 @3:
+.endif
 .ifdef wheels
 	jmp WriteBuff
 .else
