@@ -55,6 +55,34 @@ _SetMsePic:
 	sta	VDCMouseSet
 
 	AddVW	16, r0
+.ifdef mega65
+	; The picture at r0 belongs to the application and may live at
+	; $A000-$BFFF, which is hidden by the kernel underlay while this
+	; code runs. Read it through the flat 32-bit pointer r0/r1 (bank 0).
+	PushW	r1
+	LoadW	r1, 0
+	ldz	#0	; input offset
+	ldx	#0	; output offset
+@1:
+	EOM
+	lda	(r0), z
+	sta	VDCPointer, x
+	inx
+	inz
+	EOM
+	lda	(r0), z
+	sta	VDCPointer, x
+	inx
+	inz
+	lda	#0
+	sta	VDCPointer, x
+	inx
+	cpx	#24
+	bne	@1
+	ldz	#0
+	PopW	r1
+	rts
+.else
 	ldy	#0	; input offset
 	ldx	#0	; output offset
 @1:
@@ -72,6 +100,7 @@ _SetMsePic:
 	cpx	#24
 	bne	@1
 	rts
+.endif
 
 .segment "mouse2"
 
@@ -375,3 +404,8 @@ VDCPointer:
 	.repeat 23
 		.byte 0
 	.endrep
+.ifdef mega65
+	; this segment is used from the IRQ with I/O switched in, so it
+	; must not reach into $D000-$DFFF
+	.assert * <= $D000 || * > $E000, error, "mouse2 reaches into the I/O area"
+.endif

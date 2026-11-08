@@ -306,6 +306,12 @@ SetDevDrivesTabH:
 
 _GetFHdrInfo:
 	ldy #OFF_GHDR_PTR
+.ifdef mega65
+	; r9 may point into application memory at $A000-$BFFF, which is
+	; hidden by the kernel underlay while this code runs
+	jsr ReadR9Flat
+	MoveW r1, fileTrScTab
+.else
 	lda (r9),y
 	sta r1L
 .ifdef wheels
@@ -319,6 +325,7 @@ _GetFHdrInfo:
 .else
 	MoveW r1, fileTrScTab
 .endif
+.endif
 	jsr SetFHeadVector
 	jsr GetBlock
 .ifdef wheels
@@ -327,7 +334,9 @@ _GetFHdrInfo:
 	bnex @1
 .endif
 	ldy #OFF_DE_TR_SC
-.ifdef wheels
+.ifdef mega65
+	jsr ReadR9Flat
+.elseif .defined(wheels)
 	jsr ReadR9
 .else
 	lda (r9),y
@@ -338,6 +347,36 @@ _GetFHdrInfo:
 .endif
 	jsr GetStartHAddr
 @1:	rts
+
+.ifdef mega65
+;---------------------------------------------------------------
+; ReadR9Flat
+;
+; Reads the word at (r9),y into r1 using a flat 32-bit pointer
+; r9/r10 into bank 0, so application memory is reached even while
+; $A000-$BFFF is mapped to the kernel underlay.
+;
+; Pass:      r9  pointer, y offset
+; Return:    r1  word read, y incremented by one
+; Destroyed: a, z (left at 0)
+;---------------------------------------------------------------
+ReadR9Flat:
+	PushW r10
+	LoadW r10, 0
+	phy
+	plz
+	EOM
+	lda (r9),z
+	sta r1L
+	inz
+	iny
+	EOM
+	lda (r9),z
+	sta r1H
+	ldz #0
+	PopW r10
+	rts
+.endif
 
 .ifdef wheels
 .global ReadR9
@@ -385,12 +424,35 @@ GetHeaderFileName:
 	beq @3
 @Y:
 .endif
+.ifdef mega65
+	; The class string at r10 belongs to the application and may live
+	; at $A000-$BFFF, which is hidden by the kernel underlay while this
+	; code runs. Read it through the flat 32-bit pointer r10/r11 (bank 0).
+	PushW r11
+	LoadW r11, 0
+@1:	phy
+	plz
+	EOM
+	lda (r10),z
+	beq @2a
+	cmp fileHeader+O_GHFNAME,y
+	bne @3a
+	iny
+	bne @1
+@2a:	ldz #0
+	PopW r11
+	bra @2
+@3a:	ldz #0
+	PopW r11
+	bra @3
+.else
 @1:	lda (r10),y
 	beq @2
 	cmp fileHeader+O_GHFNAME,y
 	bne @3
 	iny
 	bne @1
+.endif
 @2:	ldy #0
 	rts
 @3:	ldy #$ff

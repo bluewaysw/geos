@@ -40,6 +40,8 @@
 .import RecordTableTS
 
 .import _FollowChain
+.import _ReadFile
+.import _WriteFile
 .import _FindFTypes
 .import _FindFile
 .import _SetDevice
@@ -75,6 +77,8 @@
 .import _SetMsePic
 
 .global _map_FollowChain
+.global _map_ReadFile
+.global _map_WriteFile
 .global _map_FindFTypes
 .global _map_FindFile
 .global _map_SetDevice
@@ -366,6 +370,109 @@ _map_SetMsePic:
     jsr MapUnderlay
     jsr _SetMsePic
     bra __unmap
+
+; Kept in its own segment at the end of the KERNAL area, so adding it
+; doesn't shift the code below $D000 (e.g. mouse2) under the I/O area.
+.segment "map2"
+
+;---------------------------------------------------------------
+; _map_ReadFile / _map_WriteFile
+;
+; ReadFile and WriteFile copy between the disk buffer and the
+; application buffer at r7. When they are called from kernel code
+; running in the underlay (ReadRecord, WriteRecord, SaveFile, desk
+; accessory swapping), $A000-$BFFF is mapped to the kernel underlay,
+; so an application buffer there would be read from or written into
+; the kernel code. These wrappers switch the application's view of
+; $A000-$BFFF back in for the duration of the call and restore the
+; underlay afterwards.
+;
+; The application's view is the mapping that was active when the
+; underlay was mapped (lastHighMap), except in 80 column mode: there
+; the application's RAM at $A000-$BFFF is bank 0 (as _EndScanLine
+; maps it), and lastHighMap can still hold a video mapping left behind
+; by a graphics routine that doesn't call _EndScanLine (DrawPoint).
+; Restoring that would send the data into video and color RAM.
+; ReadFile/WriteFile code itself lives in LOKERNAL ($9D80-$9FFF) and
+; is not affected by the mapping.
+;
+; Return: x  error code from ReadFile/WriteFile, Z flag set from x
+;---------------------------------------------------------------
+_map_ReadFile:
+    lda countHighMap
+    bne @1
+    jmp _ReadFile           ; underlay not mapped, nothing to do
+@1: jsr SuspendUnderlay
+    jsr _ReadFile
+    bra ResumeUnderlay
+
+_map_WriteFile:
+    lda countHighMap
+    bne @1
+    jmp _WriteFile          ; underlay not mapped, nothing to do
+@1: jsr SuspendUnderlay
+    jsr _WriteFile
+    bra ResumeUnderlay
+
+; Map the application's view at $A000-$BFFF, keeping the outer
+; MapUnderlay state (count, lastHighMap, lastHighMapBnk) for
+; ResumeUnderlay. Preserves x, y, z.
+SuspendUnderlay:
+    php
+    sei
+    phx
+    phy
+    phz
+    lda countHighMap
+    sta suspendedHighMapCount
+    lda lastHighMap
+    sta suspendedLastHighMap
+    ldx lastHighMapBnk
+    stx suspendedLastHighMapBnk
+    bbrf 7, graphMode, @1   ; not 80 col: use the saved mapping
+    lda #0                  ; 80 col: bank 0 application RAM
+    tax
+@1: ldy #0
+    sty countHighMap        ; _MapHigh refuses non-underlay maps otherwise
+    jsr _MapHigh
+    plz
+    ply
+    plx
+    plp
+    rts
+
+; Map the underlay again and restore the outer MapUnderlay state.
+; Preserves x (result), y, z; sets the Z flag from x.
+ResumeUnderlay:
+    php
+    sei
+    phx
+    phy
+    phz
+    lda #$80
+    ldx #0
+    jsr _MapHigh            ; $A000-$BFFF -> kernel underlay
+    lda suspendedHighMapCount
+    sta countHighMap
+    lda suspendedLastHighMap
+    sta lastHighMap
+    lda suspendedLastHighMapBnk
+    sta lastHighMapBnk
+    plz
+    ply
+    plx
+    plp
+    cpx #0
+    rts
+
+suspendedHighMapCount:
+    .byte 0
+suspendedLastHighMap:
+    .byte 0
+suspendedLastHighMapBnk:
+    .byte 0
+
+.segment "map"
 	
 MapUnderlay:
     pha
