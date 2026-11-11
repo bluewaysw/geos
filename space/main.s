@@ -2862,7 +2862,7 @@ WelcomeDialog:
 welcomeText:
 	.byte	BOLDON, OUTLINEON, "Welcome!", PLAINTEXT, NULL
 geosVersionText:
-	.byte	BOLDON, "GEOS 6.0",PLAINTEXT," (r4+ BETA) for the ", BOLDON,"MEGA65", PLAINTEXT, NULL
+	.byte	BOLDON, "GEOS 6.0",PLAINTEXT," (r5 BETA) for the ", BOLDON,"MEGA65", PLAINTEXT, NULL
 versionDetails:
 	.byte	"https://github.com/bluewaysw/geos.git", NULL
 warranties2:
